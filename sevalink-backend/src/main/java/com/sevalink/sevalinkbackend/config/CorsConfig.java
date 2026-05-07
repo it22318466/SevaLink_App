@@ -14,13 +14,11 @@ public class CorsConfig {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/api/**")
-                        // Allow your Flutter frontend
                         .allowedOrigins(
-                                "http://localhost:5000",      // Flutter default dev port
-                                "http://localhost",           // Flutter web
-                                // Allow your Vite React frontend
-                                "http://localhost:5173",      // Vite default dev port
-                                "http://localhost:3000"       // Alternative port
+                                "http://localhost:5173",
+                                "http://localhost:3000",
+                                "http://localhost:5000",
+                                "http://localhost"
                         )
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
                         .allowedHeaders("*")
