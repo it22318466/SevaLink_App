@@ -1,6 +1,5 @@
 package com.sevalink.sevalinkbackend.dto;
 
-import com.sevalink.sevalinkbackend.model.UserRole;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 

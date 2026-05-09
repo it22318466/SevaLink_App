@@ -13,47 +13,70 @@ public class EmailService {
 
     private static final Logger logger = LoggerFactory.getLogger(EmailService.class);
 
-    @Autowired(required = false)  // Required = false means emails are optional
+    @Autowired(required = false)
     private JavaMailSender mailSender;
 
     @Value("${spring.mail.username:}")
     private String fromEmail;
 
+    @Value("${app.email.enabled:false}")
+    private boolean emailEnabled;
+
     public void sendPasswordResetEmail(String to, String resetToken) {
         String resetLink = "http://localhost:3000/reset-password?token=" + resetToken;
-        String emailBody = String.format(
-                "Hello,\n\n" +
-                        "We received a request to reset your password for your SevaLink account.\n\n" +
-                        "Please click the link below to reset your password:\n" +
-                        "%s\n\n" +
-                        "This link will expire in 1 hour.\n\n" +
-                        "If you didn't request this, please ignore this email.\n\n" +
-                        "Best regards,\n" +
-                        "SevaLink Team",
-                resetLink
-        );
 
-        // Log the reset link (useful for development)
-        logger.info("Password reset requested for: {}", to);
+        // Always log for development
+        logger.info("========================================");
+        logger.info("📧 PASSWORD RESET REQUEST");
+        logger.info("========================================");
+        logger.info("To: {}", to);
+        logger.info("From: {}", fromEmail);
+        logger.info("Email Enabled: {}", emailEnabled);
+        logger.info("MailSender Present: {}", mailSender != null);
+        logger.info("Reset token: {}", resetToken);
         logger.info("Reset link: {}", resetLink);
+        logger.info("========================================");
 
-        // Send email if mail sender is configured
-        if (mailSender != null && !fromEmail.isEmpty()) {
+        // Only send email if configured
+        if (emailEnabled && mailSender != null && !fromEmail.isEmpty()) {
             try {
                 SimpleMailMessage message = new SimpleMailMessage();
                 message.setTo(to);
                 message.setSubject("SevaLink - Password Reset Request");
-                message.setText(emailBody);
+                message.setText(buildEmailBody(resetLink));
                 message.setFrom(fromEmail);
+                message.setReplyTo(fromEmail);
+
+                logger.info("Attempting to send email...");
                 mailSender.send(message);
-                logger.info("Password reset email sent to: {}", to);
+                logger.info("✅ Email sent successfully to: {}", to);
             } catch (Exception e) {
-                logger.error("Failed to send email to: {}", to, e);
-                throw new RuntimeException("Failed to send reset email. Please try again later.");
+                logger.error("❌ Failed to send email: {}", e.getMessage());
+                e.printStackTrace(); // Print full stack trace
             }
         } else {
-            // For development: Just log the link
-            logger.warn("Email not configured. Reset link for {}: {}", to, resetLink);
+            logger.warn("⚠️ Email not sent - Check configuration:");
+            if (!emailEnabled) logger.warn("  - Email disabled (app.email.enabled=false)");
+            if (mailSender == null) logger.warn("  - MailSender bean not available");
+            if (fromEmail.isEmpty()) logger.warn("  - From email not configured");
         }
+    }
+
+    private String buildEmailBody(String resetLink) {
+        return """
+            Hello,
+            
+            We received a request to reset your password for your SevaLink account.
+            
+            Click the link below to reset your password:
+            %s
+            
+            This link will expire in 1 hour.
+            
+            If you didn't request this, please ignore this email.
+            
+            Best regards,
+            SevaLink Team
+            """.formatted(resetLink);
     }
 }

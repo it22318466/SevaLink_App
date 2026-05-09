@@ -1,6 +1,4 @@
 package com.sevalink.sevalinkbackend.security;
-
-import com.sevalink.sevalinkbackend.security.JwtAuthenticationFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -44,7 +42,15 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
                         // Public endpoints (no authentication needed)
-                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers(
+                                    "/api/auth/**"
+//                                "/api/auth/register",
+//                                "/api/auth/login",
+//                                "/api/auth/forgot-password",
+//                                "/api/auth/reset-password",
+//                                "/api/auth/refresh",
+//                                "/api/auth/me"
+                                ).permitAll()
                         .requestMatchers("/api/public/**").permitAll()
 
                         // Role-based protected endpoints

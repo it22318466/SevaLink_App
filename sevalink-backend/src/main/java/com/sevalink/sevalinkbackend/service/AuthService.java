@@ -2,13 +2,9 @@ package com.sevalink.sevalinkbackend.service;
 
 import com.sevalink.sevalinkbackend.dto.*;
 import com.sevalink.sevalinkbackend.model.User;
-import com.sevalink.sevalinkbackend.model.UserRole;
 import com.sevalink.sevalinkbackend.repository.UserRepository;
 import com.sevalink.sevalinkbackend.security.JwtTokenProvider;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -28,8 +24,6 @@ public class AuthService {
     @Autowired
     private JwtTokenProvider jwtTokenProvider;
 
-    @Autowired
-    private AuthenticationManager authenticationManager;
 
     @Autowired
     private EmailService emailService;
@@ -206,6 +200,9 @@ public class AuthService {
      * In production: Add token to blacklist in Redis
      */
     public void logout(String accessToken) {
+        if (!jwtTokenProvider.validateToken(accessToken)) {
+            throw new RuntimeException("Invalid access token");
+        }
         // TODO: Add token to blacklist
         // This prevents the token from being used even if not expired
         SecurityContextHolder.clearContext();

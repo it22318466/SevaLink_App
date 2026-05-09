@@ -85,7 +85,7 @@ public class AuthController {
     public ResponseEntity<ApiResponse<AuthResponse>> refreshToken(
             @RequestHeader("Authorization") String authHeader) {
         try {
-            String refreshToken = authHeader.substring(7); // Remove "Bearer "
+            String refreshToken = extractBearerToken(authHeader);
             AuthResponse response = authService.refreshToken(refreshToken);
             return ResponseEntity.ok(ApiResponse.success("Token refreshed", response));
         } catch (RuntimeException e) {
@@ -100,9 +100,13 @@ public class AuthController {
     @PostMapping("/logout")
     public ResponseEntity<ApiResponse<Void>> logout(
             @RequestHeader("Authorization") String authHeader) {
-        String token = authHeader.substring(7);
-        authService.logout(token);
-        return ResponseEntity.ok(ApiResponse.success("Logout successful", null));
+        try {
+            String token = extractBearerToken(authHeader);
+            authService.logout(token);
+            return ResponseEntity.ok(ApiResponse.success("Logout successful", null));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(401).body(ApiResponse.error(e.getMessage()));
+        }
     }
 
     /**
@@ -114,9 +118,30 @@ public class AuthController {
     public ResponseEntity<ApiResponse<UserDTO>> getCurrentUser() {
         // Get email from SecurityContext (set by JwtAuthenticationFilter)
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()
+                || "anonymousUser".equals(authentication.getPrincipal())) {
+            return ResponseEntity.status(401).body(ApiResponse.error("Unauthorized"));
+        }
         String email = authentication.getName();  // Returns the email we stored in JWT
 
         UserDTO user = authService.getCurrentUser(email);
         return ResponseEntity.ok(ApiResponse.success("User found", user));
+    }
+
+    private String extractBearerToken(String authHeader) {
+        if (authHeader == null || !authHeader.startsWith("Bearer ") || authHeader.length() <= 7) {
+            throw new RuntimeException("Invalid Authorization header");
+        }
+        return authHeader.substring(7);
+    }
+
+    @GetMapping("/client-only")
+    public ResponseEntity<ApiResponse<String>> clientOnlyEndpoint() {
+        return ResponseEntity.ok(ApiResponse.success("This is CLIENT only content", null));
+    }
+
+    @GetMapping("/worker-only")
+    public ResponseEntity<ApiResponse<String>> workerOnlyEndpoint() {
+        return ResponseEntity.ok(ApiResponse.success("This is WORKER only content", null));
     }
 }
