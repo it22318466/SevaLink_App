@@ -1,18 +1,22 @@
 package com.sevalink.sevalinkbackend.dto;
 
-import com.sevalink.sevalinkbackend.security.UserRole;
+import com.sevalink.sevalinkbackend.model.UserRole;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
 @Data
 @AllArgsConstructor
 public class AuthResponse {
-    private String token;
-    private String tokenType;
-    private Long userId;
-    private String name;
-    private String email;
-    private String phone;
-    private UserRole role;
-}
+    private String accessToken;
+    private String refreshToken;
+    private String tokenType="Bearer";
+    private UserDTO user;
 
+    public AuthResponse(String accessToken, String refreshToken, UserDTO user) {
+        this.accessToken = accessToken;
+        this.refreshToken = refreshToken;
+        this.user = user;
+    }
+
+
+}

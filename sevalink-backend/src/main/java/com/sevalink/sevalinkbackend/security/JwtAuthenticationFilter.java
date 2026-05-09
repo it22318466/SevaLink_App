@@ -1,58 +1,69 @@
 package com.sevalink.sevalinkbackend.security;
 
-import com.sevalink.sevalinkbackend.model.User;
-import com.sevalink.sevalinkbackend.repository.UserRepository;
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
+import jakarta.servlet.*;
+import jakarta.servlet.http.HttpServletMapping;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpHeaders;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
 @Component
-@RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
-    private final JwtTokenProvider jwtTokenProvider;
-    private final UserRepository userRepository;
+    @Autowired
+    private JwtTokenProvider jwtTokenProvider;
+    @Autowired
+    private CustomUserDetailsService userDetailsService;
 
+    //    * This method runs for EVERY HTTP request to your API
+//    * It checks: "Does this request have a valid JWT token?"
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
-        if (!StringUtils.hasText(authHeader) || !authHeader.startsWith("Bearer ")) {
-            filterChain.doFilter(request, response);
-            return;
-        }
+        // Step 1: Extract JWT token from Authorization header
+        String token = extractToken(request);
+        // Step 2: If token exists AND is valid
+        if (token != null && jwtTokenProvider.validateToken(token)) {
+            // Step 3: Get user email from token
+            String email = jwtTokenProvider.getEmailFromToken(token);
+            // Step 4: Load user details from database
+            UserDetails userDetails = userDetailsService.loadUserByUsername(email);
 
-        String token = authHeader.substring(7);
-        if (!jwtTokenProvider.validateToken(token)) {
-            filterChain.doFilter(request, response);
-            return;
-        }
+            // Step 5: Create authentication object
+            // This tells Spring Security: "This user is authenticated!"
+            UsernamePasswordAuthenticationToken authentication =
+                    new UsernamePasswordAuthenticationToken(
+                            userDetails,           // The user
+                            null,                  // Credentials (already authenticated)
+                            userDetails.getAuthorities()  // Roles (CLIENT/WORKER/ADMIN)
+                    );
+            // Step 6: Add IP address, session info to authentication
+            authentication.setDetails(
+                    new WebAuthenticationDetailsSource().buildDetails(request)
+            );
 
-        Long userId = jwtTokenProvider.getUserIdFromToken(token);
-        if (userId != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            User user = userRepository.findById(userId).orElse(null);
-            if (user != null && Boolean.TRUE.equals(user.getIsActive())) {
-                AuthenticatedUser principal = AuthenticatedUser.from(user);
-                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                        principal,
-                        null,
-                        principal.getAuthorities()
-                );
-                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(authentication);
-            }
+            // Step 7: Set authentication in Security Context
+            // This is CRITICAL - without this, Spring Security thinks user is not logged in
+            SecurityContextHolder.getContext().setAuthentication(authentication);
         }
-
+        // Step 8: Continue to the controller
+        // If authentication was set, controller will see @PreAuthorize or hasRole()
         filterChain.doFilter(request, response);
     }
+
+    private String extractToken(HttpServletRequest request){
+        String BearerToken = request.getHeader("Authorization");
+        if (BearerToken != null &&  BearerToken.startsWith("Bearer ")) {
+            return BearerToken.substring(7);
+        }
+        return null;
+    }
+
 }
 
