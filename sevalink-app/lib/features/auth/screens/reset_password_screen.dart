@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
@@ -27,6 +27,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
   Timer? _timer;
   int _secondsRemaining = 60;
   bool _canResend = false;
+  bool _isPinVerified = false;
   @override
   void initState() {
     super.initState();
@@ -74,6 +75,15 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
   }
   Future<void> _handleReset() async {
     if (!_formKey.currentState!.validate()) return;
+    
+    if (!_isPinVerified) {
+      // Local validation of PIN length before revealing password fields
+      if (_pinController.text.trim().length == 6) {
+        setState(() => _isPinVerified = true);
+      }
+      return;
+    }
+
     if (_passwordController.text != _confirmPasswordController.text) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Passwords do not match'), backgroundColor: Colors.red),
@@ -130,7 +140,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Please enter the 6-digit PIN sent to\n\x24{widget.email}',
+                  'Please enter the 6-digit PIN sent to\n${widget.email}',
                   style: const TextStyle(
                     fontSize: 14,
                     color: AppTheme.subtitleColor,
@@ -152,7 +162,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                   child: TextButton(
                     onPressed: _canResend ? _handleResend : null,
                     child: Text(
-                      _canResend ? 'Resend PIN' : 'Resend in \x24_secondsRemaining s',
+                      _canResend ? 'Resend PIN' : 'Resend in $_secondsRemaining s',
                       style: TextStyle(
                         color: _canResend ? AppTheme.primaryColor : Colors.grey,
                       ),
@@ -160,42 +170,44 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                AuthTextField(
-                  label: 'New Password',
-                  hint: 'Enter new password',
-                  prefixIcon: LucideIcons.lock,
-                  controller: _passwordController,
-                  isPassword: _obscurePassword,
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscurePassword ? LucideIcons.eyeOff : LucideIcons.eye,
-                      color: AppTheme.subtitleColor,
-                      size: 20,
+                if (_isPinVerified) ...[
+                  AuthTextField(
+                    label: 'New Password',
+                    hint: 'Enter new password',
+                    prefixIcon: LucideIcons.lock,
+                    controller: _passwordController,
+                    isPassword: _obscurePassword,
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscurePassword ? LucideIcons.eyeOff : LucideIcons.eye,
+                        color: AppTheme.subtitleColor,
+                        size: 20,
+                      ),
+                      onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                     ),
-                    onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                    validator: (value) => value!.length < 6 ? 'Min 6 characters' : null,
                   ),
-                  validator: (value) => value!.length < 6 ? 'Min 6 characters' : null,
-                ),
-                const SizedBox(height: 20),
-                AuthTextField(
-                  label: 'Confirm New Password',
-                  hint: 'Re-enter new password',
-                  prefixIcon: LucideIcons.lock,
-                  controller: _confirmPasswordController,
-                  isPassword: _obscureConfirmPassword,
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscureConfirmPassword ? LucideIcons.eyeOff : LucideIcons.eye,
-                      color: AppTheme.subtitleColor,
-                      size: 20,
+                  const SizedBox(height: 20),
+                  AuthTextField(
+                    label: 'Confirm New Password',
+                    hint: 'Re-enter new password',
+                    prefixIcon: LucideIcons.lock,
+                    controller: _confirmPasswordController,
+                    isPassword: _obscureConfirmPassword,
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscureConfirmPassword ? LucideIcons.eyeOff : LucideIcons.eye,
+                        color: AppTheme.subtitleColor,
+                        size: 20,
+                      ),
+                      onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
                     ),
-                    onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
+                    validator: (value) => value!.isEmpty ? 'Required' : null,
                   ),
-                  validator: (value) => value!.isEmpty ? 'Required' : null,
-                ),
-                const SizedBox(height: 32),
+                  const SizedBox(height: 32),
+                ],
                 AuthButton(
-                  text: 'Update Password',
+                  text: _isPinVerified ? 'Update Password' : 'Verify PIN',
                   isLoading: _isLoading,
                   onPressed: _handleReset,
                 ),

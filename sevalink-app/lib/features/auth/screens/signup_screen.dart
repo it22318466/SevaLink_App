@@ -77,7 +77,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       ),
     );
     if (success && mounted) {
-       context.push('/auth/email-verification');
+       context.go('/check-auth');
     } else if (mounted) {
       final error = ref.read(authProvider).error ?? 'Registration failed';
       ScaffoldMessenger.of(context).showSnackBar(

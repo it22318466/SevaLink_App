@@ -12,12 +12,24 @@ import '../features/auth/screens/email_verification_sent_screen.dart';
 import '../features/splash/screens/splash_screen.dart';
 import '../features/dashboard/screens/client_dashboard_screen.dart';
 import '../features/dashboard/screens/worker_dashboard_screen.dart';
+
+class RouterNotifier extends ChangeNotifier {
+  final Ref _ref;
+  RouterNotifier(this._ref) {
+    _ref.listen(authProvider, (previous, next) {
+      notifyListeners();
+    });
+  }
+}
 final routerProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authProvider);
+  final notifier = RouterNotifier(ref);
+
   return GoRouter(
     initialLocation: '/',
+    refreshListenable: notifier,
     redirect: (context, state) {
-      if (state.matchedLocation == '/') return null; // Allow splash screen to show
+      final authState = ref.read(authProvider);
+      if (state.matchedLocation == '/') return null; // Allow splash screen
       if (authState.isLoading) return null;
       
       final isLoggedIn = authState.user != null;
