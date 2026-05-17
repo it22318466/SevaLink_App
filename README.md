@@ -32,4 +32,4 @@ npm run dev
 - Java 17
 - Flutter 3.x
 - Node.js 18+
-- MySQL 8
+- PostgreSQL 18
