@@ -1,4 +1,4 @@
-# sevalink_app_temp
+# sevalink_app
 
 A new Flutter project.
 

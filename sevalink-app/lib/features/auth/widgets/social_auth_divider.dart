@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/themes/app_theme.dart';
 class SocialAuthDivider extends StatelessWidget {
-  const SocialAuthDivider({Key? key}) : super(key: key);
+  const SocialAuthDivider({super.key});
   @override
   Widget build(BuildContext context) {
     return const Row(
