@@ -7,6 +7,8 @@ void main() {
 }
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -18,8 +20,10 @@ class MyApp extends StatelessWidget {
 }
 
 class UserScreen extends StatefulWidget {
+  const UserScreen({super.key});
+
   @override
-  _UserScreenState createState() => _UserScreenState();
+  State<UserScreen> createState() => _UserScreenState();
 }
 
 class _UserScreenState extends State<UserScreen> {
@@ -40,7 +44,7 @@ class _UserScreenState extends State<UserScreen> {
         setState(() => testUsers = json.decode(response.body));
       }
     } catch (e) {
-      print('Error: $e');
+      debugPrint('Error: $e');
     }
   }
 
@@ -58,7 +62,7 @@ class _UserScreenState extends State<UserScreen> {
 
       if (response.statusCode == 200) fetchTestUsers();
     } catch (e) {
-      print('Error saving user: $e');
+      debugPrint('Error saving user: $e');
     }
   }
 
@@ -67,7 +71,7 @@ class _UserScreenState extends State<UserScreen> {
       await http.delete(Uri.parse('$baseUrl/$id'));
       fetchTestUsers();
     } catch (e) {
-      print('Error deleting user: $e');
+      debugPrint('Error deleting user: $e');
     }
   }
 
