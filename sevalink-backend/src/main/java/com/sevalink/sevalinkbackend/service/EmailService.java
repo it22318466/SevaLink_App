@@ -23,18 +23,15 @@ public class EmailService {
     private boolean emailEnabled;
 
     public void sendPasswordResetEmail(String to, String resetToken) {
-        String resetLink = "http://localhost:3000/reset-password?token=" + resetToken;
-
         // Always log for development
         logger.info("========================================");
-        logger.info("📧 PASSWORD RESET REQUEST");
+        logger.info("🔐 PASSWORD RESET REQUEST");
         logger.info("========================================");
         logger.info("To: {}", to);
         logger.info("From: {}", fromEmail);
         logger.info("Email Enabled: {}", emailEnabled);
         logger.info("MailSender Present: {}", mailSender != null);
-        logger.info("Reset token: {}", resetToken);
-        logger.info("Reset link: {}", resetLink);
+        logger.info("Reset PIN: {}", resetToken);
         logger.info("========================================");
 
         // Only send email if configured
@@ -42,8 +39,8 @@ public class EmailService {
             try {
                 SimpleMailMessage message = new SimpleMailMessage();
                 message.setTo(to);
-                message.setSubject("SevaLink - Password Reset Request");
-                message.setText(buildEmailBody(resetLink));
+                message.setSubject("SevaLink - Your Password Reset PIN code");
+                message.setText(buildEmailBody(resetToken));
                 message.setFrom(fromEmail);
                 message.setReplyTo(fromEmail);
 
@@ -62,21 +59,21 @@ public class EmailService {
         }
     }
 
-    private String buildEmailBody(String resetLink) {
+    private String buildEmailBody(String resetToken) {
         return """
             Hello,
             
             We received a request to reset your password for your SevaLink account.
             
-            Click the link below to reset your password:
+            Your password reset PIN code is:
             %s
             
-            This link will expire in 1 hour.
+            This code will expire in 5 minutes.
             
             If you didn't request this, please ignore this email.
             
             Best regards,
             SevaLink Team
-            """.formatted(resetLink);
+            """.formatted(resetToken);
     }
 }

@@ -1,5 +1,7 @@
-name: sevalink_app
+name: sevalink_app_temp
 description: "A new Flutter project."
+# The following line prevents the package from being accidentally published to
+# pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 
 # The following defines the version and build number for your application.
@@ -28,10 +30,21 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  http: ^1.1.0
+
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
+  dio: ^5.9.2
+  riverpod: ^3.2.1
+  flutter_riverpod: ^3.3.1
+  go_router: ^17.2.3
+  flutter_secure_storage: ^10.2.0
+  email_validator: ^3.0.0
+  flutter_native_splash: ^2.4.7
+  lucide_icons: ^0.257.0
+  equatable: ^2.0.8
+  shared_preferences: ^2.5.5
+  state_notifier: ^1.0.0
 
 dev_dependencies:
   flutter_test:

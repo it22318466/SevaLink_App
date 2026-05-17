@@ -119,20 +119,26 @@ public class AuthService {
 
     /**
      * FORGOT PASSWORD - Send reset link to email
-     * Flow: Find user → Generate random token → Save token → Send email
+     * Flow: Find user †’ Generate random token †’ Save token †’ Send email
      */
     @Transactional
     public void forgotPassword(ForgotPasswordRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("User not found with this email"));
 
-        // Generate unique reset token (UUID = Universally Unique Identifier)
-        // Example: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
-        String resetToken = UUID.randomUUID().toString();
+        // Check 1 minute wait time
+        if (user.getResetPasswordLastSentAt() != null &&
+            user.getResetPasswordLastSentAt().plusMinutes(1).isAfter(LocalDateTime.now())) {
+            throw new RuntimeException("Please wait 1 minute before requesting another PIN");
+        }
 
-        // Save token with expiry (1 hour from now)
+        // Generate 6-digit PIN
+        String resetToken = String.format("%06d", new java.util.Random().nextInt(1000000));
+
+        // Save token with expiry (5 minutes from now)
         user.setResetPasswordToken(resetToken);
-        user.setResetPasswordTokenExpiry(LocalDateTime.now().plusHours(1));
+        user.setResetPasswordTokenExpiry(LocalDateTime.now().plusMinutes(5));
+        user.setResetPasswordLastSentAt(LocalDateTime.now());
         userRepository.save(user);
 
         // Send email with reset link
