@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/auth_provider.dart';
@@ -9,15 +9,26 @@ import '../features/auth/screens/forgot_password_screen.dart';
 import '../features/auth/screens/reset_password_screen.dart';
 import '../features/auth/screens/reset_success_screen.dart';
 import '../features/auth/screens/email_verification_sent_screen.dart';
+import '../features/splash/screens/splash_screen.dart';
+import '../features/dashboard/screens/client_dashboard_screen.dart';
+import '../features/dashboard/screens/worker_dashboard_screen.dart';
 final routerProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authProvider);
   return GoRouter(
     initialLocation: '/',
     redirect: (context, state) {
+      if (state.matchedLocation == '/') return null; // Allow splash screen to show
       if (authState.isLoading) return null;
+      
       final isLoggedIn = authState.user != null;
       final isAuthRoute = state.matchedLocation.startsWith('/auth');
-      if (!isLoggedIn && !isAuthRoute) {
+      
+      if (state.matchedLocation == '/check-auth') {
+        if (!isLoggedIn) return '/auth/role-selection';
+        return authState.user?.role == 'CLIENT' ? '/client/home' : '/worker/home';
+      }
+
+      if (!isLoggedIn && !isAuthRoute && state.matchedLocation != '/') {
         return '/auth/role-selection';
       }
       if (isLoggedIn && isAuthRoute) {
@@ -28,6 +39,10 @@ final routerProvider = Provider<GoRouter>((ref) {
     routes: [
       GoRoute(
         path: '/',
+        builder: (context, state) => const SplashScreen(),
+      ),
+      GoRoute(
+        path: '/check-auth',
         builder: (context, state) => const Scaffold(
           body: Center(child: CircularProgressIndicator()),
         ),
@@ -68,33 +83,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/client/home',
-        builder: (context, state) => Scaffold(
-          appBar: AppBar(
-            title: const Text('Client Home'),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.logout),
-                onPressed: () => ref.read(authProvider.notifier).logout(),
-              )
-            ],
-          ),
-          body: const Center(child: Text("Welcome Client!")),
-        ),
+        builder: (context, state) => const ClientDashboardScreen(),
       ),
       GoRoute(
         path: '/worker/home',
-        builder: (context, state) => Scaffold(
-           appBar: AppBar(
-            title: const Text('Worker Home'),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.logout),
-                onPressed: () => ref.read(authProvider.notifier).logout(),
-              )
-            ],
-          ),
-          body: const Center(child: Text("Welcome Worker!")),
-        ),
+        builder: (context, state) => const WorkerDashboardScreen(),
       ),
     ],
   );
