@@ -89,11 +89,11 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "com.example" "\0"
+            VALUE "CompanyName", "com.sevalink" "\0"
             VALUE "FileDescription", "sevalink_app" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "sevalink_app" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2026 com.example. All rights reserved." "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2026 com.sevalink. All rights reserved." "\0"
             VALUE "OriginalFilename", "sevalink_app.exe" "\0"
             VALUE "ProductName", "sevalink_app" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
