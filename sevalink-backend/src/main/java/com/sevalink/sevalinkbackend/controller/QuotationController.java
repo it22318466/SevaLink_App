@@ -6,7 +6,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
-
 @RestController
 @RequestMapping("/api/quotations")
 @CrossOrigin(origins = "*")
@@ -61,6 +60,21 @@ public class QuotationController {
             Quotation rejected = quotationService.rejectQuotation(id);
             return ResponseEntity.ok(rejected);
         } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+
+    // Get contact details after acceptance (phone reveal)
+    // GET http://localhost:8080/api/quotations/{id}/contact
+    @GetMapping("/{id}/contact")
+    public ResponseEntity<?> getContactDetails(@PathVariable Long id) {
+        try {
+            return ResponseEntity.ok(quotationService.getContactDetails(id));
+        } catch (RuntimeException e) {
+            if (e.getMessage().contains("only available after acceptance")) {
+                return ResponseEntity.status(403).body(e.getMessage());
+            }
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
