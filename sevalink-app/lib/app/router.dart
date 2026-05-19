@@ -48,7 +48,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       }
       return null;
     },
+   
     routes: [
+    
       GoRoute(
         path: '/',
         builder: (context, state) => const SplashScreen(),
