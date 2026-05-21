@@ -12,6 +12,10 @@ import '../features/auth/screens/email_verification_sent_screen.dart';
 import '../features/splash/screens/splash_screen.dart';
 import '../features/dashboard/screens/client_dashboard_screen.dart';
 import '../features/dashboard/screens/worker_dashboard_screen.dart';
+import '../features/worker/screens/job_details_screen.dart';
+import '../features/worker/screens/send_quote_screen.dart';
+import '../data/models/job.dart';
+import '../features/worker/screens/worker_home_screen.dart';
 
 class RouterNotifier extends ChangeNotifier {
   final Ref _ref;
@@ -102,6 +106,24 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/worker/home',
         builder: (context, state) => const WorkerDashboardScreen(),
+      ),
+      GoRoute(
+        path: '/worker/job-details',
+        builder: (context, state) {
+          final job = state.extra as Job;
+          return JobDetailsScreen(job: job);
+        },
+      ),
+      GoRoute(
+        path: '/worker/send-quote',
+        builder: (context, state) {
+          final job = state.extra as Job;
+          return SendQuoteScreen(job: job);
+        },
+      ),
+      GoRoute(
+        path: '/worker/home',
+        builder: (context, state) => const WorkerHomeScreen(),
       ),
     ],
   );
