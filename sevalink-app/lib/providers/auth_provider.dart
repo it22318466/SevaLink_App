@@ -1,9 +1,30 @@
-﻿import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/network/dio_client.dart';
 import '../data/repositories/auth_repository.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../data/models/auth_models.dart';
 import '../data/models/user.dart';
+
+// Extended User model with local-only profile fields
+class ProfileExtra {
+  final String location;
+  final String bio;
+  final String hourlyRate;
+
+  const ProfileExtra({
+    this.location = 'Colombo, Sri Lanka',
+    this.bio = 'Experienced electrician with 8+ years working on residential and commercial projects.',
+    this.hourlyRate = '2,500',
+  });
+
+  ProfileExtra copyWith({String? location, String? bio, String? hourlyRate}) {
+    return ProfileExtra(
+      location: location ?? this.location,
+      bio: bio ?? this.bio,
+      hourlyRate: hourlyRate ?? this.hourlyRate,
+    );
+  }
+}
 final secureStorageProvider = Provider((ref) => const FlutterSecureStorage());
 final dioClientProvider = Provider((ref) => DioClient());
 final authRepositoryProvider = Provider((ref) {
@@ -14,12 +35,22 @@ class AuthState {
   final User? user;
   final bool isLoading;
   final String? error;
-  AuthState({this.user, this.isLoading = false, this.error});
-  AuthState copyWith({User? user, bool? isLoading, String? error}) {
+  final ProfileExtra profileExtra;
+
+  AuthState({this.user, this.isLoading = false, this.error, ProfileExtra? profileExtra})
+      : profileExtra = profileExtra ?? const ProfileExtra();
+
+  AuthState copyWith({
+    User? user,
+    bool? isLoading,
+    String? error,
+    ProfileExtra? profileExtra,
+  }) {
     return AuthState(
       user: user ?? this.user,
       isLoading: isLoading ?? this.isLoading,
       error: error,
+      profileExtra: profileExtra ?? this.profileExtra,
     );
   }
 }
@@ -76,6 +107,33 @@ class AuthNotifier extends Notifier<AuthState> {
       return false;
     }
   }
+  // Update profile locally (and optionally sync to API in the future)
+  void updateProfile({
+    required String fullName,
+    required String phoneNumber,
+    required String location,
+    required String bio,
+    required String hourlyRate,
+  }) {
+    final updatedUser = state.user == null
+        ? null
+        : User(
+            id: state.user!.id,
+            fullName: fullName,
+            email: state.user!.email,
+            phoneNumber: phoneNumber,
+            role: state.user!.role,
+          );
+    state = state.copyWith(
+      user: updatedUser,
+      profileExtra: state.profileExtra.copyWith(
+        location: location,
+        bio: bio,
+        hourlyRate: hourlyRate,
+      ),
+    );
+  }
+
   Future<bool> logout() async {
     try {
       state = state.copyWith(isLoading: true);

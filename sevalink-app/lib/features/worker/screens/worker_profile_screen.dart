@@ -1,6 +1,8 @@
 
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../providers/auth_provider.dart';
 
 class WorkerProfileScreen extends ConsumerStatefulWidget {
@@ -16,6 +18,7 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
   final _formKey = GlobalKey<FormState>();
   bool _isEditing = false;
   bool _isSaving = false;
+  File? _profileImage;
 
   // Controllers
   late TextEditingController _nameController;
@@ -27,23 +30,23 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
   late TextEditingController _rateController;
 
   // Mock skill tags
-  List<String> _skillTags = ['Electrician', 'AC Repair', 'Wiring'];
+  final List<String> _skillTags = ['Electrician', 'AC Repair', 'Wiring'];
 
   @override
   void initState() {
     super.initState();
-    final user = ref.read(authProvider).user;
+    final authState = ref.read(authProvider);
+    final user = authState.user;
+    final extra = authState.profileExtra;
     _nameController = TextEditingController(text: user?.fullName ?? 'Worker');
     _emailController =
         TextEditingController(text: user?.email ?? 'worker@sevalink.lk');
     _phoneController =
         TextEditingController(text: user?.phoneNumber ?? '+94 77 123 4567');
-    _locationController = TextEditingController(text: 'Colombo, Sri Lanka');
-    _bioController = TextEditingController(
-        text:
-        'Experienced electrician with 8+ years working on residential and commercial projects.');
+    _locationController = TextEditingController(text: extra.location);
+    _bioController = TextEditingController(text: extra.bio);
     _skillsController = TextEditingController();
-    _rateController = TextEditingController(text: '2,500');
+    _rateController = TextEditingController(text: extra.hourlyRate);
   }
 
   @override
@@ -58,11 +61,115 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
     super.dispose();
   }
 
+  Future<void> _pickProfileImage() async {
+    final picker = ImagePicker();
+    await showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const Text(
+                'Update Profile Picture',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 12),
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE8F5F2),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.photo_library_rounded,
+                      color: Color(0xFF006B5E)),
+                ),
+                title: const Text('Choose from Gallery'),
+                onTap: () async {
+                  Navigator.pop(context);
+                  final picked = await picker.pickImage(
+                    source: ImageSource.gallery,
+                    imageQuality: 85,
+                  );
+                  if (picked != null && mounted) {
+                    setState(() => _profileImage = File(picked.path));
+                  }
+                },
+              ),
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEFF6FF),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.camera_alt_rounded,
+                      color: Color(0xFF1A3FBB)),
+                ),
+                title: const Text('Take a Photo'),
+                onTap: () async {
+                  Navigator.pop(context);
+                  final picked = await picker.pickImage(
+                    source: ImageSource.camera,
+                    imageQuality: 85,
+                  );
+                  if (picked != null && mounted) {
+                    setState(() => _profileImage = File(picked.path));
+                  }
+                },
+              ),
+              if (_profileImage != null)
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFEF2F2),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.delete_outline_rounded,
+                        color: Color(0xFFEF4444)),
+                  ),
+                  title: const Text('Remove Photo',
+                      style: TextStyle(color: Color(0xFFEF4444))),
+                  onTap: () {
+                    Navigator.pop(context);
+                    setState(() => _profileImage = null);
+                  },
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Future<void> _saveProfile() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isSaving = true);
-    // Simulate API call
+    // Simulate API call delay
     await Future.delayed(const Duration(milliseconds: 900));
+    // Persist changes to Riverpod state so all screens see the update
+    ref.read(authProvider.notifier).updateProfile(
+      fullName: _nameController.text.trim(),
+      phoneNumber: _phoneController.text.trim(),
+      location: _locationController.text.trim(),
+      bio: _bioController.text.trim(),
+      hourlyRate: _rateController.text.trim(),
+    );
     setState(() {
       _isSaving = false;
       _isEditing = false;
@@ -159,14 +266,7 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
                           maxLines: 3,
                         ),
                         const SizedBox(height: 14),
-                        _buildField(
-                          label: 'Hourly Rate (Rs.)',
-                          controller: _rateController,
-                          icon: Icons.attach_money_rounded,
-                          enabled: _isEditing,
-                          keyboardType: TextInputType.number,
-                          prefix: 'Rs. ',
-                        ),
+                        _buildRateField(),
                         const SizedBox(height: 14),
                         _buildSkillsSection(),
                       ]),
@@ -278,52 +378,68 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
       ),
       child: Row(
         children: [
-          Stack(
-            children: [
-              Container(
-                width: 76,
-                height: 76,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF1A3FBB), Color(0xFF006B5E)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+          GestureDetector(
+            onTap: _pickProfileImage,
+            child: Stack(
+              children: [
+                Container(
+                  width: 76,
+                  height: 76,
+                  decoration: BoxDecoration(
+                    gradient: _profileImage == null
+                        ? const LinearGradient(
+                            colors: [Color(0xFF1A3FBB), Color(0xFF006B5E)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          )
+                        : null,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF1A3FBB).withValues(alpha: 0.3),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF1A3FBB).withValues(alpha: 0.3),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
+                  child: _profileImage != null
+                      ? ClipOval(
+                          child: Image.file(
+                            _profileImage!,
+                            width: 76,
+                            height: 76,
+                            fit: BoxFit.cover,
+                          ),
+                        )
+                      : Center(
+                          child: Text(
+                            _getInitials(_nameController.text),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 26,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
                 ),
-                child: Center(
-                  child: Text(
-                    _getInitials(_nameController.text),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 26,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-              if (_isEditing)
                 Positioned(
                   bottom: 0,
                   right: 0,
                   child: Container(
                     padding: const EdgeInsets.all(5),
-                    decoration: const BoxDecoration(
-                      color: Color(0xFF006B5E),
+                    decoration: BoxDecoration(
+                      color: _isEditing
+                          ? const Color(0xFF006B5E)
+                          : const Color(0xFF1A3FBB),
                       shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 1.5),
                     ),
                     child: const Icon(Icons.camera_alt_rounded,
                         color: Colors.white, size: 14),
                   ),
                 ),
-            ],
+              ],
+            ),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -372,14 +488,19 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
                 ),
                 const SizedBox(height: 6),
                 Row(
-                  children: const [
-                    Icon(Icons.location_on_outlined,
+                  children: [
+                    const Icon(Icons.location_on_outlined,
                         size: 13, color: Color(0xFF9CA3AF)),
-                    SizedBox(width: 3),
-                    Text(
-                      'Colombo, Sri Lanka',
-                      style:
-                      TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
+                    const SizedBox(width: 3),
+                    Expanded(
+                      child: Text(
+                        _locationController.text.isNotEmpty
+                            ? _locationController.text
+                            : 'Colombo, Sri Lanka',
+                        style: const TextStyle(
+                            fontSize: 12, color: Color(0xFF6B7280)),
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ],
                 ),
@@ -478,6 +599,60 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
         ),
         contentPadding:
         const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      ),
+    );
+  }
+
+  //  HOURLY RATE (custom — pure text prefix, no icon fallback issues)
+
+  Widget _buildRateField() {
+    return TextFormField(
+      controller: _rateController,
+      enabled: _isEditing,
+      keyboardType: TextInputType.number,
+      style: const TextStyle(
+          fontSize: 14,
+          color: Color(0xFF1F2937),
+          fontWeight: FontWeight.w500),
+      decoration: InputDecoration(
+        labelText: 'Hourly Rate',
+        labelStyle: TextStyle(
+          fontSize: 13,
+          color: _isEditing ? const Color(0xFF6B7280) : Colors.grey.shade400,
+        ),
+        // Use a pure text prefix — no icon that could render as $ fallback
+        prefix: Text(
+          'Rs. ',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: _isEditing ? const Color(0xFF1F2937) : Colors.grey.shade500,
+          ),
+        ),
+        prefixIcon: Icon(
+          Icons.account_balance_wallet_outlined,
+          size: 18,
+          color: _isEditing ? const Color(0xFF006B5E) : Colors.grey.shade400,
+        ),
+        filled: true,
+        fillColor: _isEditing ? const Color(0xFFF9FAFB) : const Color(0xFFF3F4F6),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey.shade200),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFF006B5E), width: 1.5),
+        ),
+        disabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey.shade200),
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       ),
     );
   }
