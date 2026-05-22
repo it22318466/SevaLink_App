@@ -42,12 +42,17 @@ public class User {
     @Column(nullable = false)
     private Boolean isActive = true;
 
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    @Column(nullable = false)
+    private LocalDateTime updatedAt;
+
     private String resetPasswordToken;
     private LocalDateTime resetPasswordTokenExpiry;
     private LocalDateTime resetPasswordLastSentAt;
 
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+
     private LocalDateTime lastLogin;
 
     @PrePersist
@@ -60,5 +65,8 @@ public class User {
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
+
+
+
 
 }

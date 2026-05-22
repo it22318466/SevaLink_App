@@ -1,4 +1,4 @@
-// lib/features/dashboard/screens/worker_dashboard_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -6,9 +6,9 @@ import '../../../providers/auth_provider.dart';
 import '../../../data/models/job.dart';
 import '../../worker/screens/job_details_screen.dart';
 
-// ============================================================================
+
 // WORKER DASHBOARD SCREEN
-// ============================================================================
+
 
 class WorkerDashboardScreen extends ConsumerStatefulWidget {
   const WorkerDashboardScreen({super.key});
@@ -134,9 +134,8 @@ class _WorkerDashboardScreenState
     );
   }
 
-  // ==========================================================================
+
   // HEADER — Blue gradient with stats chips
-  // ==========================================================================
 
   Widget _buildSliverHeader(String workerName) {
     return SliverToBoxAdapter(
@@ -273,9 +272,9 @@ class _WorkerDashboardScreenState
     );
   }
 
-  // ==========================================================================
+
   // QUICK ACTION CARDS
-  // ==========================================================================
+
 
   Widget _buildQuickActionCards() {
     return Padding(
@@ -368,9 +367,9 @@ class _WorkerDashboardScreenState
     );
   }
 
-  // ==========================================================================
+
   // EARNINGS BANNER
-  // ==========================================================================
+
 
   Widget _buildEarningsBanner() {
     return Container(
@@ -455,9 +454,9 @@ class _WorkerDashboardScreenState
     );
   }
 
-  // ==========================================================================
+
   // AVAILABLE JOBS SECTION
-  // ==========================================================================
+
 
   Widget _buildAvailableJobsHeader() {
     return Row(
@@ -605,15 +604,18 @@ class _WorkerDashboardScreenState
                   const Icon(Icons.attach_money_rounded,
                       size: 16, color: Color(0xFF006B5E)),
                   const SizedBox(width: 2),
-                  Text(
-                    'Rs. ${_formatBudget(job.minBudget)} - Rs. ${_formatBudget(job.maxBudget)}',
-                    style: const TextStyle(
-                      color: Color(0xFF006B5E),
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13,
+                  Expanded(
+                    child: Text(
+                      'Rs. ${_formatBudget(job.minBudget)} - Rs. ${_formatBudget(job.maxBudget)}',
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Color(0xFF006B5E),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                      ),
                     ),
                   ),
-                  const Spacer(),
+                  const SizedBox(width: 8),
                   // View Details button
                   GestureDetector(
                     onTap: () {
@@ -689,9 +691,9 @@ class _WorkerDashboardScreenState
     return amount.toString();
   }
 
-  // ==========================================================================
+
   // BOTTOM NAVIGATION BAR
-  // ==========================================================================
+
 
   Widget _buildBottomNavigationBar() {
     return Container(

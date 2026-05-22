@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'worker_profile_screen.dart';
+import 'job_details_screen.dart';
+import 'my_jobs_screen.dart';
+import '../../../data/models/job.dart';
+import '../../../providers/auth_provider.dart';
 
-
+//  Local UI model
 class JobListing {
   final String id;
   final String title;
@@ -24,7 +29,7 @@ class JobListing {
   });
 }
 
-//  Mock Data
+//  Mock data
 const _mockJobs = [
   JobListing(
     id: '1',
@@ -72,36 +77,74 @@ class WorkerHomeScreen extends ConsumerStatefulWidget {
 class _WorkerHomeScreenState extends ConsumerState<WorkerHomeScreen> {
   int _selectedIndex = 0;
 
+  void _goToTab(int index) => setState(() => _selectedIndex = index);
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF2F4F8),
-      body: _selectedIndex == 0
-          ? const _HomeContent()
-          : _PlaceholderPage(
-        label: ['Jobs', 'Chat', 'Profile'][_selectedIndex - 1],
-      ),
+      body: _buildBody(),
       bottomNavigationBar: _BottomNav(
         selectedIndex: _selectedIndex,
         onTap: (i) => setState(() => _selectedIndex = i),
       ),
     );
   }
+
+  Widget _buildBody() {
+    //  Read real user name from auth provider
+    final user = ref.watch(authProvider).user;
+    final workerName = user?.fullName ?? 'Worker';
+
+    switch (_selectedIndex) {
+      case 0:
+        return _HomeContent(
+          workerName: workerName,
+          onGoToJobs: () => _goToTab(1),
+          onGoToProfile: () => _goToTab(3),
+        );
+      case 1:
+        return const MyJobsScreen();
+      case 2:
+        return const _ChatPage();
+      case 3:
+        return const WorkerProfileScreen(showBackButton: false);
+      default:
+        return _HomeContent(
+          workerName: workerName,
+          onGoToJobs: () => _goToTab(1),
+          onGoToProfile: () => _goToTab(3),
+        );
+    }
+  }
 }
 
 //  Home Content
 class _HomeContent extends StatelessWidget {
-  const _HomeContent();
+  final VoidCallback? onGoToJobs;
+  final VoidCallback? onGoToProfile;
+  final String workerName;
+
+  const _HomeContent({
+    this.workerName = 'Worker',
+    this.onGoToJobs,
+    this.onGoToProfile
+
+  });
 
   @override
   Widget build(BuildContext context) {
     return CustomScrollView(
       slivers: [
-        SliverToBoxAdapter(child: _Header()),
+        SliverToBoxAdapter(
+            child: _Header(workerName: workerName)),
         SliverToBoxAdapter(
           child: Transform.translate(
             offset: const Offset(0, -24),
-            child: const _QuickAccessSection(),
+            child: _QuickAccessSection(
+              onMyJobsTap: onGoToJobs,
+              onProfileTap: onGoToProfile,
+            ),
           ),
         ),
         SliverToBoxAdapter(
@@ -125,10 +168,10 @@ class _HomeContent extends StatelessWidget {
                   ),
                 ),
                 Container(
-                  padding:
-                  const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF0F9B8E).withOpacity(0.12),
+                    color: const Color(0xFF0F9B8E).withValues(alpha:0.12),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Text(
@@ -160,7 +203,11 @@ class _HomeContent extends StatelessWidget {
 }
 
 //  Header
+
 class _Header extends StatelessWidget {
+  final String workerName;
+  const _Header({required this.workerName});
+
   @override
   Widget build(BuildContext context) {
     final topPadding = MediaQuery.of(context).padding.top;
@@ -179,18 +226,24 @@ class _Header extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Column(
+
+              Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Welcome back,',
-                      style: TextStyle(color: Colors.white70, fontSize: 14)),
-                  SizedBox(height: 2),
-                  Text('Rajesh Kumar',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                      )),
+                  const Text(
+                    'Welcome back,',
+                    style: TextStyle(color: Colors.white70, fontSize: 14),
+                  ),
+                  const SizedBox(height: 2),
+
+                  Text(
+                    workerName,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ],
               ),
               Stack(
@@ -199,11 +252,14 @@ class _Header extends StatelessWidget {
                     width: 44,
                     height: 44,
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.15),
+                      color: Colors.white.withValues(alpha: 0.15),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.notifications_outlined,
-                        color: Colors.white, size: 22),
+                    child: const Icon(
+                      Icons.notifications_outlined,
+                      color: Colors.white,
+                      size: 22,
+                    ),
                   ),
                   Positioned(
                     top: 7,
@@ -228,7 +284,7 @@ class _Header extends StatelessWidget {
               SizedBox(width: 10),
               Expanded(child: _StatChip(value: '4.8', label: 'Rating')),
               SizedBox(width: 10),
-              Expanded(child: _StatChip(value: '₹45k', label: 'This Month')),
+              Expanded(child: _StatChip(value: 'Rs. 45k', label: 'This Month')),
             ],
           ),
         ],
@@ -247,7 +303,8 @@ class _StatChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.15),
+
+        color: Colors.white.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(14),
       ),
       child: Column(
@@ -256,7 +313,7 @@ class _StatChip extends StatelessWidget {
           Text(value,
               style: const TextStyle(
                   color: Colors.white,
-                  fontSize: 20,
+                  fontSize: 18,
                   fontWeight: FontWeight.bold)),
           const SizedBox(height: 2),
           Text(label,
@@ -269,7 +326,9 @@ class _StatChip extends StatelessWidget {
 
 //  Quick Access
 class _QuickAccessSection extends StatelessWidget {
-  const _QuickAccessSection();
+  final VoidCallback? onMyJobsTap;
+  final VoidCallback? onProfileTap;
+  const _QuickAccessSection({this.onMyJobsTap, this.onProfileTap});
 
   @override
   Widget build(BuildContext context) {
@@ -282,7 +341,7 @@ class _QuickAccessSection extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.07),
+              color: Colors.black.withValues(alpha:0.07),
               blurRadius: 16,
               offset: const Offset(0, 4),
             ),
@@ -296,7 +355,7 @@ class _QuickAccessSection extends StatelessWidget {
                 sublabel: '3 active jobs',
                 color: const Color(0xFF27AE60),
                 icon: Icons.assignment_outlined,
-                onTap: () {},
+                onTap: onMyJobsTap ?? () {},
               ),
             ),
             const SizedBox(width: 12),
@@ -306,7 +365,7 @@ class _QuickAccessSection extends StatelessWidget {
                 sublabel: 'Edit details',
                 color: const Color(0xFF8B2FC9),
                 icon: Icons.person_outline,
-                onTap: () {},
+                onTap: onProfileTap ?? () {},
               ),
             ),
           ],
@@ -338,9 +397,7 @@ class _QuickCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.circular(14),
-        ),
+            color: color, borderRadius: BorderRadius.circular(14)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -352,7 +409,8 @@ class _QuickCard extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                     fontSize: 15)),
             Text(sublabel,
-                style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                style: const TextStyle(
+                    color: Colors.white70, fontSize: 12)),
           ],
         ),
       ),
@@ -360,7 +418,7 @@ class _QuickCard extends StatelessWidget {
   }
 }
 
-//  Earnings Card
+// Earnings Card
 class _EarningsCard extends StatelessWidget {
   const _EarningsCard();
 
@@ -383,16 +441,18 @@ class _EarningsCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: const [
                 Text("Today's Earnings",
-                    style: TextStyle(color: Colors.white70, fontSize: 13)),
+                    style:
+                    TextStyle(color: Colors.white70, fontSize: 13)),
                 SizedBox(height: 6),
-                Text('₹2,450',
+                Text('Rs.2,450',
                     style: TextStyle(
                         color: Colors.white,
                         fontSize: 30,
                         fontWeight: FontWeight.bold)),
                 SizedBox(height: 4),
                 Text('+15% from yesterday',
-                    style: TextStyle(color: Colors.white70, fontSize: 12)),
+                    style:
+                    TextStyle(color: Colors.white70, fontSize: 12)),
               ],
             ),
           ),
@@ -404,10 +464,27 @@ class _EarningsCard extends StatelessWidget {
   }
 }
 
-//  Job Card
+//  Job Card — FIXED overflow
 class _JobCard extends StatelessWidget {
   final JobListing job;
   const _JobCard({required this.job});
+
+  // Convert local JobListing → your data-layer Job model
+  Job _toDataJob() => Job(
+    id: int.tryParse(job.id) ?? 0,
+    title: job.title,
+    description: job.description,
+    location: job.location,
+    postedAt: job.postedAgo,
+    minBudget: int.tryParse(
+        job.minBudget.replaceAll(RegExp(r'[^0-9]'), '')) ??
+        0,
+    maxBudget: int.tryParse(
+        job.maxBudget.replaceAll(RegExp(r'[^0-9]'), '')) ??
+        0,
+    isNew: job.isNew,
+    category: 'General',
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -417,7 +494,7 @@ class _JobCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha:0.05),
             blurRadius: 12,
             offset: const Offset(0, 2),
           ),
@@ -428,6 +505,7 @@ class _JobCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Title + New badge
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -444,7 +522,7 @@ class _JobCard extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 10, vertical: 3),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF0F9B8E).withOpacity(0.12),
+                      color: const Color(0xFF0F9B8E).withValues(alpha:0.12),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: const Text('New',
@@ -456,22 +534,31 @@ class _JobCard extends StatelessWidget {
                 ],
               ],
             ),
+
             const SizedBox(height: 6),
             Text(job.description,
                 style: const TextStyle(
-                    color: Color(0xFF6B7280), fontSize: 13, height: 1.4)),
+                    color: Color(0xFF6B7280),
+                    fontSize: 13,
+                    height: 1.4)),
+
             const SizedBox(height: 12),
             const Divider(height: 1, color: Color(0xFFF0F0F0)),
             const SizedBox(height: 12),
+
+            // Location + time
             Row(
               children: [
                 const Icon(Icons.location_on_outlined,
                     size: 14, color: Color(0xFF9CA3AF)),
                 const SizedBox(width: 4),
-                Text(job.location,
-                    style: const TextStyle(
-                        color: Color(0xFF6B7280), fontSize: 12)),
-                const SizedBox(width: 16),
+                Expanded(
+                  child: Text(job.location,
+                      style: const TextStyle(
+                          color: Color(0xFF6B7280), fontSize: 12),
+                      overflow: TextOverflow.ellipsis),
+                ),
+                const SizedBox(width: 8),
                 const Icon(Icons.access_time,
                     size: 14, color: Color(0xFF9CA3AF)),
                 const SizedBox(width: 4),
@@ -480,50 +567,75 @@ class _JobCard extends StatelessWidget {
                         color: Color(0xFF6B7280), fontSize: 12)),
               ],
             ),
-            const SizedBox(height: 14),
+
+            const SizedBox(height: 10),
+
+            // Budget — own row so it never competes with buttons
             Row(
               children: [
                 const Icon(Icons.attach_money,
                     size: 16, color: Color(0xFF0F9B8E)),
                 const SizedBox(width: 2),
                 Expanded(
-                  child: Text('${job.minBudget} - ${job.maxBudget}',
-                      style: const TextStyle(
-                          color: Color(0xFF0F9B8E),
-                          fontWeight: FontWeight.w600,
-                          fontSize: 13)),
-                ),
-                OutlinedButton(
-                  onPressed: () {},
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 8),
-                    side: const BorderSide(color: Color(0xFFD1D5DB)),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10)),
-                    foregroundColor: const Color(0xFF374151),
-                    textStyle: const TextStyle(fontSize: 12),
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  child: Text(
+                    'Rs.{job.minBudget} - Rs.{job.maxBudget}',
+                    style: const TextStyle(
+                        color: Color(0xFF0F9B8E),
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13),
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  child: const Text('View Details'),
                 ),
-                const SizedBox(width: 8),
-                ElevatedButton(
-                  onPressed: () {},
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0F4C3A),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 8),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10)),
-                    elevation: 0,
-                    textStyle: const TextStyle(fontSize: 12),
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ],
+            ),
+
+            const SizedBox(height: 10),
+
+            //  Buttons — each Expanded, NO overflow ever
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              JobDetailsScreen(job: _toDataJob()),
+                        ),
+                      );
+                    },
+                    style: OutlinedButton.styleFrom(
+                      padding:
+                      const EdgeInsets.symmetric(vertical: 10),
+                      side: const BorderSide(
+                          color: Color(0xFFD1D5DB)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10)),
+                      foregroundColor: const Color(0xFF374151),
+                      textStyle: const TextStyle(fontSize: 13),
+                    ),
+                    child: const Text('View Details'),
                   ),
-                  child: const Text('Send Quote',
-                      style: TextStyle(color: Colors.white)),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      // TODO: navigate to send_quote_screen.dart
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF0F4C3A),
+                      padding:
+                      const EdgeInsets.symmetric(vertical: 10),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10)),
+                      elevation: 0,
+                      textStyle: const TextStyle(fontSize: 13),
+                    ),
+                    child: const Text('Send Quote',
+                        style: TextStyle(color: Colors.white)),
+                  ),
                 ),
               ],
             ),
@@ -562,7 +674,7 @@ class _BottomNav extends StatelessWidget {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha:0.08),
             blurRadius: 12,
             offset: const Offset(0, -2),
           ),
@@ -614,16 +726,30 @@ class _BottomNav extends StatelessWidget {
   }
 }
 
-// Placeholder
-class _PlaceholderPage extends StatelessWidget {
-  final String label;
-  const _PlaceholderPage({required this.label});
+//  Chat Placeholder
+class _ChatPage extends StatelessWidget {
+  const _ChatPage();
 
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Text(label,
-          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.chat_bubble_outline_rounded,
+              size: 64, color: Colors.grey.shade300),
+          const SizedBox(height: 16),
+          const Text('Chat',
+              style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1A1A2E))),
+          const SizedBox(height: 8),
+          Text('Coming soon',
+              style:
+              TextStyle(fontSize: 14, color: Colors.grey.shade500)),
+        ],
+      ),
     );
   }
 }

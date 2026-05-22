@@ -1,4 +1,4 @@
-// lib/features/worker/screens/job_details_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../data/models/job.dart';
