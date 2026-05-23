@@ -47,6 +47,10 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
     _bioController = TextEditingController(text: extra.bio);
     _skillsController = TextEditingController();
     _rateController = TextEditingController(text: extra.hourlyRate);
+    // Restore profile image from Riverpod state
+    if (extra.profileImagePath != null) {
+      _profileImage = File(extra.profileImagePath!);
+    }
   }
 
   @override
@@ -74,6 +78,7 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              // Drag handle
               Container(
                 width: 40,
                 height: 4,
@@ -84,10 +89,31 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
                 ),
               ),
               const Text(
-                'Update Profile Picture',
+                'Profile Picture',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 12),
+
+              // View — only when a photo is already set
+              if (_profileImage != null)
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEFF6FF),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.visibility_rounded,
+                        color: Color(0xFF1A3FBB)),
+                  ),
+                  title: const Text('View Profile Picture'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _viewProfileImage();
+                  },
+                ),
+
+              // Choose from Gallery
               ListTile(
                 leading: Container(
                   padding: const EdgeInsets.all(8),
@@ -107,9 +133,12 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
                   );
                   if (picked != null && mounted) {
                     setState(() => _profileImage = File(picked.path));
+                    ref.read(authProvider.notifier).updateProfileImage(picked.path);
                   }
                 },
               ),
+
+              // Take a Photo
               ListTile(
                 leading: Container(
                   padding: const EdgeInsets.all(8),
@@ -129,9 +158,12 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
                   );
                   if (picked != null && mounted) {
                     setState(() => _profileImage = File(picked.path));
+                    ref.read(authProvider.notifier).updateProfileImage(picked.path);
                   }
                 },
               ),
+
+              // Remove — only when a photo is set
               if (_profileImage != null)
                 ListTile(
                   leading: Container(
@@ -148,11 +180,26 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
                   onTap: () {
                     Navigator.pop(context);
                     setState(() => _profileImage = null);
+                    ref.read(authProvider.notifier).updateProfileImage(null);
                   },
                 ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  void _viewProfileImage() {
+    if (_profileImage == null) return;
+    Navigator.push(
+      context,
+      PageRouteBuilder(
+        opaque: false,
+        barrierColor: Colors.black,
+        pageBuilder: (ctx, anim, anim2) => _FullScreenImageViewer(image: _profileImage!),
+        transitionsBuilder: (ctx, animation, secAnim, child) =>
+            FadeTransition(opacity: animation, child: child),
       ),
     );
   }
@@ -606,6 +653,7 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
   //  HOURLY RATE (custom — pure text prefix, no icon fallback issues)
 
   Widget _buildRateField() {
+    final color = _isEditing ? const Color(0xFF006B5E) : Colors.grey.shade400;
     return TextFormField(
       controller: _rateController,
       enabled: _isEditing,
@@ -620,19 +668,21 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
           fontSize: 13,
           color: _isEditing ? const Color(0xFF6B7280) : Colors.grey.shade400,
         ),
-        // Use a pure text prefix — no icon that could render as $ fallback
-        prefix: Text(
-          'Rs. ',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: _isEditing ? const Color(0xFF1F2937) : Colors.grey.shade500,
+        // prefixIcon with a Text shows in ALL states (enabled, disabled, focused)
+        // This avoids the $ fallback that icon codepoints can produce
+        prefixIcon: Center(
+          widthFactor: 1.0,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            child: Text(
+              'Rs.',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: color,
+              ),
+            ),
           ),
-        ),
-        prefixIcon: Icon(
-          Icons.account_balance_wallet_outlined,
-          size: 18,
-          color: _isEditing ? const Color(0xFF006B5E) : Colors.grey.shade400,
         ),
         filled: true,
         fillColor: _isEditing ? const Color(0xFFF9FAFB) : const Color(0xFFF3F4F6),
@@ -926,5 +976,124 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
       return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
     }
     return name.isNotEmpty ? name[0].toUpperCase() : 'W';
+  }
+}
+
+// ─── Full-Screen Profile Image Viewer ────────────────────────────────────────
+
+class _FullScreenImageViewer extends StatefulWidget {
+  final File image;
+  const _FullScreenImageViewer({required this.image});
+
+  @override
+  State<_FullScreenImageViewer> createState() => _FullScreenImageViewerState();
+}
+
+class _FullScreenImageViewerState extends State<_FullScreenImageViewer>
+    with SingleTickerProviderStateMixin {
+  final TransformationController _transformationController =
+      TransformationController();
+  late AnimationController _animationController;
+  Animation<Matrix4>? _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 250),
+    )..addListener(() {
+        _transformationController.value = _animation!.value;
+      });
+  }
+
+  @override
+  void dispose() {
+    _transformationController.dispose();
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  void _onDoubleTap(TapDownDetails details) {
+    final isZoomedIn =
+        _transformationController.value != Matrix4.identity();
+    if (isZoomedIn) {
+      // Zoom back out
+      _animation = Matrix4Tween(
+        begin: _transformationController.value,
+        end: Matrix4.identity(),
+      ).animate(
+        CurvedAnimation(
+            parent: _animationController, curve: Curves.easeInOut),
+      );
+      _animationController.forward(from: 0);
+    } else {
+      // Zoom into tapped point (2.5x)
+      final position = details.localPosition;
+      final x = -position.dx * 1.5;
+      final y = -position.dy * 1.5;
+      final zoomed = Matrix4.identity()
+        ..translateByDouble(x, y, 0, 1)
+        ..scaleByDouble(2.5, 2.5, 1.0, 1.0);
+      _animation = Matrix4Tween(
+        begin: _transformationController.value,
+        end: zoomed,
+      ).animate(
+        CurvedAnimation(
+            parent: _animationController, curve: Curves.easeInOut),
+      );
+      _animationController.forward(from: 0);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: GestureDetector(
+          onTap: () => Navigator.pop(context),
+          child: Container(
+            margin: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.5),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.close_rounded,
+                color: Colors.white, size: 22),
+          ),
+        ),
+        title: const Text(
+          'Profile Picture',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        centerTitle: true,
+      ),
+      body: GestureDetector(
+        onDoubleTapDown: _onDoubleTap,
+        onDoubleTap: () {}, // needed for onDoubleTapDown to fire
+        child: Center(
+          child: InteractiveViewer(
+            transformationController: _transformationController,
+            minScale: 0.8,
+            maxScale: 5.0,
+            child: Hero(
+              tag: 'profile_image',
+              child: Image.file(
+                widget.image,
+                fit: BoxFit.contain,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

@@ -253,8 +253,14 @@ class JobDetailsScreen extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Icon(Icons.attach_money_rounded,
-              color: Colors.white, size: 36),
+          const Text(
+            'Rs.',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           const SizedBox(width: 12),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -265,7 +271,7 @@ class JobDetailsScreen extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                'Rs. ${job.minBudget} - Rs. ${job.maxBudget}',
+                '${job.minBudget} - ${job.maxBudget}',
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 22,

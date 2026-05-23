@@ -601,12 +601,18 @@ class _WorkerDashboardScreenState
               padding: const EdgeInsets.fromLTRB(18, 12, 18, 16),
               child: Row(
                 children: [
-                  const Icon(Icons.attach_money_rounded,
-                      size: 16, color: Color(0xFF006B5E)),
-                  const SizedBox(width: 2),
+                  const Text(
+                    'Rs.',
+                    style: TextStyle(
+                      color: Color(0xFF006B5E),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
                   Expanded(
                     child: Text(
-                      'Rs. ${_formatBudget(job.minBudget)} - Rs. ${_formatBudget(job.maxBudget)}',
+                      '${_formatBudget(job.minBudget)} - ${_formatBudget(job.maxBudget)}',
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         color: Color(0xFF006B5E),

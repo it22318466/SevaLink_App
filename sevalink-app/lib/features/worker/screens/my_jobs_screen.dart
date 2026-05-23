@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'job_details_screen.dart';
+import '../../../data/models/job.dart';
 
 //  Enums & Models
 
@@ -25,6 +27,8 @@ class WorkerJob {
     required this.status,
     this.category,
   });
+
+
 }
 
 //  Mock Data — replace with Riverpod + API
@@ -148,8 +152,38 @@ class _MyJobsScreenState extends ConsumerState<MyJobsScreen>
             child: TabBarView(
               controller: _tabController,
               children: [
-                _JobList(jobs: active,    emptyLabel: 'No active jobs right now'),
-                _JobList(jobs: pending,   emptyLabel: 'No upcoming jobs scheduled'),
+                _JobList(
+                  jobs: active,
+                  emptyLabel: 'No active jobs right now',
+                  onMarkDone: (_) => ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Job marked as done!'),
+                      backgroundColor: Color(0xFF0F9B8E),
+                    ),
+                  ),
+                ),
+                _JobList(
+                  jobs: pending,
+                  emptyLabel: 'No upcoming jobs scheduled',
+                  onViewDetails: (job) => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => JobDetailsScreen(
+                        job: Job(
+                          id: int.tryParse(job.id) ?? 0,
+                          title: job.title,
+                          description: 'No description available.',
+                          location: job.location,
+                          postedAt: job.date,
+                          minBudget: 0,
+                          maxBudget: 0,
+                          isNew: false,
+                          category: job.category ?? '',
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
                 _JobList(jobs: completed, emptyLabel: 'No completed jobs yet'),
               ],
             ),
@@ -253,7 +287,7 @@ class _MyJobsScreenState extends ConsumerState<MyJobsScreen>
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 10),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.12),
+          color: Colors.white.withValues(alpha:0.12),
           borderRadius: BorderRadius.circular(14),
         ),
         child: Column(
@@ -279,7 +313,15 @@ class _MyJobsScreenState extends ConsumerState<MyJobsScreen>
 class _JobList extends StatelessWidget {
   final List<WorkerJob> jobs;
   final String emptyLabel;
-  const _JobList({required this.jobs, required this.emptyLabel});
+  final void Function(String id)? onMarkDone;
+  final void Function(WorkerJob job)? onViewDetails;
+
+  const _JobList({
+    required this.jobs,
+    required this.emptyLabel,
+    this.onMarkDone,
+    this.onViewDetails,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -301,7 +343,11 @@ class _JobList extends StatelessWidget {
     return ListView.builder(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
       itemCount: jobs.length,
-      itemBuilder: (_, i) => _JobCard(job: jobs[i]),
+      itemBuilder: (_, i) => _JobCard(
+        job: jobs[i],
+        onMarkDone: onMarkDone == null ? null : () => onMarkDone!(jobs[i].id),
+        onViewDetails: onViewDetails == null ? null : () => onViewDetails!(jobs[i]),
+      ),
     );
   }
 }
@@ -309,7 +355,9 @@ class _JobList extends StatelessWidget {
 // Job Card
 class _JobCard extends StatelessWidget {
   final WorkerJob job;
-  const _JobCard({required this.job});
+  final VoidCallback? onMarkDone;
+  final VoidCallback? onViewDetails;
+  const _JobCard({required this.job, this.onMarkDone, this.onViewDetails});
 
   Color get _statusColor {
     switch (job.status) {
@@ -344,7 +392,7 @@ class _JobCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha:0.05),
             blurRadius: 14,
             offset: const Offset(0, 4),
           ),
@@ -364,7 +412,7 @@ class _JobCard extends StatelessWidget {
                   width: 42,
                   height: 42,
                   decoration: BoxDecoration(
-                    color: _statusColor.withOpacity(0.1),
+                    color: _statusColor.withValues(alpha:0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(_statusIcon, color: _statusColor, size: 22),
@@ -395,7 +443,7 @@ class _JobCard extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(
                       horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: _statusColor.withOpacity(0.1),
+                    color: _statusColor.withValues(alpha:0.1),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
@@ -432,16 +480,12 @@ class _JobCard extends StatelessWidget {
                     color: const Color(0xFFE8F5F2),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.attach_money_rounded,
-                          size: 15, color: Color(0xFF006B5E)),
-                      Text(job.budget,
-                          style: const TextStyle(
-                              color: Color(0xFF006B5E),
-                              fontWeight: FontWeight.w700,
-                              fontSize: 13)),
-                    ],
+                  child: Text(
+                    job.budget,
+                    style: const TextStyle(
+                        color: Color(0xFF006B5E),
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13),
                   ),
                 ),
                 const Spacer(),
@@ -472,16 +516,15 @@ class _JobCard extends StatelessWidget {
     switch (job.status) {
       case JobStatus.active:
         return ElevatedButton.icon(
-          onPressed: () {
-            // TODO: mark as done API call
-          },
-          icon: const Icon(Icons.check_rounded, size: 15, color: Colors.white),
+          onPressed: onMarkDone,
+          icon: const Icon(Icons.check_rounded,
+              size: 15, color: Colors.white),
           label: const Text('Mark Done',
               style: TextStyle(color: Colors.white, fontSize: 13)),
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFF0F9B8E),
-            padding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            padding: const EdgeInsets.symmetric(
+                horizontal: 14, vertical: 8),
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12)),
             elevation: 0,
@@ -489,19 +532,19 @@ class _JobCard extends StatelessWidget {
             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
         );
+
+
       case JobStatus.pending:
         return OutlinedButton.icon(
-          onPressed: () {
-            // TODO: navigate to job details
-          },
+          onPressed: onViewDetails,
           icon: const Icon(Icons.visibility_outlined,
               size: 15, color: Color(0xFFF59E0B)),
           label: const Text('View',
               style: TextStyle(
                   color: Color(0xFFF59E0B), fontSize: 13)),
           style: OutlinedButton.styleFrom(
-            padding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            padding: const EdgeInsets.symmetric(
+                horizontal: 14, vertical: 8),
             side: const BorderSide(color: Color(0xFFF59E0B)),
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12)),
@@ -509,10 +552,11 @@ class _JobCard extends StatelessWidget {
             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
         );
+
       case JobStatus.completed:
         return Container(
-          padding:
-          const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          padding: const EdgeInsets.symmetric(
+              horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
             color: const Color(0xFFF3F4F6),
             borderRadius: BorderRadius.circular(12),

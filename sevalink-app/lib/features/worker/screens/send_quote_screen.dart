@@ -220,7 +220,7 @@ class _SendQuoteScreenState extends State<SendQuoteScreen>
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.attach_money_rounded,
+                const Icon(Icons.currency_rupee,
                     color: Colors.white, size: 16),
                 const SizedBox(width: 4),
                 Text(

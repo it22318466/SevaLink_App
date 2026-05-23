@@ -38,8 +38,8 @@ const _mockJobs = [
     'Need complete electrical wiring for newly renovated kitchen including lights, power...',
     location: 'Dehiwala, Colombo',
     postedAgo: '2 hours ago',
-    minBudget: 'Rs. 25,000',
-    maxBudget: 'Rs. 35,000',
+    minBudget: '25,000',
+    maxBudget: '35,000',
     isNew: true,
   ),
   JobListing(
@@ -49,8 +49,8 @@ const _mockJobs = [
     'Urgent leak in bathroom sink pipe. Water dripping continuously. Need immediate fix.',
     location: 'Peradeniya, Kandy',
     postedAgo: '5 hours ago',
-    minBudget: 'Rs. 8,000',
-    maxBudget: 'Rs. 12,000',
+    minBudget: '8,000',
+    maxBudget: '12,000',
     isNew: true,
   ),
   JobListing(
@@ -60,8 +60,8 @@ const _mockJobs = [
     'Install a 1.5 ton split AC unit. Bracket and pipe work included. Brand new unit.',
     location: 'Nugegoda, Colombo',
     postedAgo: '8 hours ago',
-    minBudget: 'Rs. 5,000',
-    maxBudget: 'Rs. 8,000',
+    minBudget: '5,000',
+    maxBudget: '8,000',
     isNew: false,
   ),
 ];
@@ -76,13 +76,16 @@ class WorkerHomeScreen extends ConsumerStatefulWidget {
 
 class _WorkerHomeScreenState extends ConsumerState<WorkerHomeScreen> {
   int _selectedIndex = 0;
+  bool _hasNewNotifications = true;
 
   void _goToTab(int index) => setState(() => _selectedIndex = index);
+  void _clearNotifications() => setState(() => _hasNewNotifications = false);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF2F4F8),
+      endDrawer: const _NotificationsDrawer(),
       body: _buildBody(),
       bottomNavigationBar: _BottomNav(
         selectedIndex: _selectedIndex,
@@ -100,6 +103,8 @@ class _WorkerHomeScreenState extends ConsumerState<WorkerHomeScreen> {
       case 0:
         return _HomeContent(
           workerName: workerName,
+          hasNewNotifications: _hasNewNotifications,
+          onNotificationTap: _clearNotifications,
           onGoToJobs: () => _goToTab(1),
           onGoToProfile: () => _goToTab(3),
         );
@@ -112,6 +117,8 @@ class _WorkerHomeScreenState extends ConsumerState<WorkerHomeScreen> {
       default:
         return _HomeContent(
           workerName: workerName,
+          hasNewNotifications: _hasNewNotifications,
+          onNotificationTap: _clearNotifications,
           onGoToJobs: () => _goToTab(1),
           onGoToProfile: () => _goToTab(3),
         );
@@ -123,13 +130,16 @@ class _WorkerHomeScreenState extends ConsumerState<WorkerHomeScreen> {
 class _HomeContent extends StatelessWidget {
   final VoidCallback? onGoToJobs;
   final VoidCallback? onGoToProfile;
+  final VoidCallback? onNotificationTap;
   final String workerName;
+  final bool hasNewNotifications;
 
   const _HomeContent({
     this.workerName = 'Worker',
+    this.hasNewNotifications = false,
     this.onGoToJobs,
-    this.onGoToProfile
-
+    this.onGoToProfile,
+    this.onNotificationTap,
   });
 
   @override
@@ -137,7 +147,11 @@ class _HomeContent extends StatelessWidget {
     return CustomScrollView(
       slivers: [
         SliverToBoxAdapter(
-            child: _Header(workerName: workerName)),
+            child: _Header(
+              workerName: workerName,
+              hasNewNotifications: hasNewNotifications,
+              onNotificationTap: onNotificationTap,
+            )),
         SliverToBoxAdapter(
           child: Transform.translate(
             offset: const Offset(0, -24),
@@ -206,7 +220,14 @@ class _HomeContent extends StatelessWidget {
 
 class _Header extends StatelessWidget {
   final String workerName;
-  const _Header({required this.workerName});
+  final bool hasNewNotifications;
+  final VoidCallback? onNotificationTap;
+
+  const _Header({
+    required this.workerName,
+    this.hasNewNotifications = false,
+    this.onNotificationTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -246,34 +267,41 @@ class _Header extends StatelessWidget {
                   ),
                 ],
               ),
-              Stack(
-                children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.15),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.notifications_outlined,
-                      color: Colors.white,
-                      size: 22,
-                    ),
-                  ),
-                  Positioned(
-                    top: 7,
-                    right: 8,
-                    child: Container(
-                      width: 9,
-                      height: 9,
-                      decoration: const BoxDecoration(
-                        color: Colors.redAccent,
+              GestureDetector(
+                onTap: () {
+                  if (onNotificationTap != null) onNotificationTap!();
+                  Scaffold.of(context).openEndDrawer();
+                },
+                child: Stack(
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.15),
                         shape: BoxShape.circle,
                       ),
+                      child: const Icon(
+                        Icons.notifications_outlined,
+                        color: Colors.white,
+                        size: 22,
+                      ),
                     ),
-                  ),
-                ],
+                    if (hasNewNotifications)
+                      Positioned(
+                        top: 7,
+                        right: 8,
+                        child: Container(
+                          width: 9,
+                          height: 9,
+                          decoration: const BoxDecoration(
+                            color: Colors.redAccent,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ],
           ),
@@ -573,12 +601,18 @@ class _JobCard extends StatelessWidget {
             // Budget — own row so it never competes with buttons
             Row(
               children: [
-                const Icon(Icons.attach_money,
-                    size: 16, color: Color(0xFF0F9B8E)),
-                const SizedBox(width: 2),
+                const Text(
+                  'Rs.',
+                  style: TextStyle(
+                    color: Color(0xFF0F9B8E),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(width: 4),
                 Expanded(
                   child: Text(
-                    'Rs.{job.minBudget} - Rs.{job.maxBudget}',
+                    '${job.minBudget} - ${job.maxBudget}',
                     style: const TextStyle(
                         color: Color(0xFF0F9B8E),
                         fontWeight: FontWeight.w600,
@@ -750,6 +784,127 @@ class _ChatPage extends StatelessWidget {
               TextStyle(fontSize: 14, color: Colors.grey.shade500)),
         ],
       ),
+    );
+  }
+}
+
+//  Notifications Drawer
+class _NotificationsDrawer extends StatelessWidget {
+  const _NotificationsDrawer();
+
+  void _navigateToJob(BuildContext context, Job job) {
+    Navigator.pop(context); // close drawer
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => JobDetailsScreen(job: job)),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Drawer(
+      backgroundColor: Colors.white,
+      surfaceTintColor: Colors.transparent,
+      child: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Padding(
+              padding: EdgeInsets.fromLTRB(20, 24, 20, 16),
+              child: Text(
+                'Notifications',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1A1A2E),
+                ),
+              ),
+            ),
+            const Divider(height: 1, color: Color(0xFFF3F4F6)),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                children: [
+                  _buildNotificationItem(
+                    context,
+                    title: 'Quote Sent Successfully',
+                    subtitle: 'Your quote for "Electrical Wiring for New Kitchen" has been sent.',
+                    time: '2h',
+                    icon: Icons.check_circle_outline_rounded,
+                    iconColor: const Color(0xFF006B5E),
+                    bgColor: const Color(0xFFE8F5F2),
+                    job: _mockJobs[0],
+                  ),
+                  _buildNotificationItem(
+                    context,
+                    title: 'New Job Match',
+                    subtitle: 'A new plumbing job in Peradeniya matches your skills.',
+                    time: '5h',
+                    icon: Icons.work_outline_rounded,
+                    iconColor: const Color(0xFF1A3FBB),
+                    bgColor: const Color(0xFFEFF6FF),
+                    job: _mockJobs[1],
+                  ),
+                  _buildNotificationItem(
+                    context,
+                    title: 'New Job Match',
+                    subtitle: 'A new AC Installation job in Nugegoda.',
+                    time: '1d',
+                    icon: Icons.star_outline_rounded,
+                    iconColor: const Color(0xFFE65100),
+                    bgColor: const Color(0xFFFFF3E0),
+                    job: _mockJobs[2],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNotificationItem(
+    BuildContext context, {
+    required String title,
+    required String subtitle,
+    required String time,
+    required IconData icon,
+    required Color iconColor,
+    required Color bgColor,
+    required JobListing job,
+  }) {
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+      leading: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: bgColor,
+          shape: BoxShape.circle,
+        ),
+        child: Icon(icon, color: iconColor, size: 22),
+      ),
+      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+      subtitle: Padding(
+        padding: const EdgeInsets.only(top: 4),
+        child: Text(subtitle, style: const TextStyle(fontSize: 13, color: Colors.black54)),
+      ),
+      trailing: Text(time, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+      onTap: () {
+        // Map JobListing to Job
+        final detailedJob = Job(
+          id: int.tryParse(job.id) ?? 0,
+          title: job.title,
+          description: job.description,
+          location: job.location,
+          postedAt: job.postedAgo,
+          minBudget: int.tryParse(job.minBudget.replaceAll(',', '')) ?? 0,
+          maxBudget: int.tryParse(job.maxBudget.replaceAll(',', '')) ?? 0,
+          isNew: job.isNew,
+          category: 'General',
+        );
+        _navigateToJob(context, detailedJob);
+      },
     );
   }
 }
