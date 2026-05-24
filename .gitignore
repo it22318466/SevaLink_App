@@ -25,3 +25,6 @@ replay_pid*
 # Local environment configs
 .env
 
+# Firebase service account credentials key (Private Key)
+**/firebase-service-account.json
+
