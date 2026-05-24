@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:5173"})
+@CrossOrigin(origins = { "http://localhost:3000", "http://localhost:5173" })
 public class AuthController {
 
     @Autowired
@@ -122,7 +122,7 @@ public class AuthController {
                 || "anonymousUser".equals(authentication.getPrincipal())) {
             return ResponseEntity.status(401).body(ApiResponse.error("Unauthorized"));
         }
-        String email = authentication.getName();  // Returns the email we stored in JWT
+        String email = authentication.getName(); // Returns the email we stored in JWT
 
         UserDTO user = authService.getCurrentUser(email);
         return ResponseEntity.ok(ApiResponse.success("User found", user));

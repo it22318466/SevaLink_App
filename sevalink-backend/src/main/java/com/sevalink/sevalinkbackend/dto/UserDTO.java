@@ -3,6 +3,7 @@ package com.sevalink.sevalinkbackend.dto;
 import com.sevalink.sevalinkbackend.model.UserRole;
 import lombok.Data;
 import java.time.LocalDate;
+
 @Data
 public class UserDTO {
     private Long id;

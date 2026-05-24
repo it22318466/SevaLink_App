@@ -19,11 +19,10 @@ public class AuthService {
     private UserRepository userRepository;
 
     @Autowired
-    private PasswordEncoder passwordEncoder;  // BCrypt
+    private PasswordEncoder passwordEncoder; // BCrypt
 
     @Autowired
     private JwtTokenProvider jwtTokenProvider;
-
 
     @Autowired
     private EmailService emailService;
@@ -51,14 +50,14 @@ public class AuthService {
         user.setEmail(request.getEmail());
         user.setPhoneNumber(request.getPhoneNumber());
         user.setBirthday(request.getBirthday());
-        user.setRole(request.getRole());  // CLIENT or WORKER from role selection
+        user.setRole(request.getRole()); // CLIENT or WORKER from role selection
 
         // STEP 4: Hash the password (NEVER store plain text!)
         String hashedPassword = passwordEncoder.encode(request.getPassword());
         user.setPasswordHash(hashedPassword);
 
         // STEP 5: Set default values
-        user.setIsPhoneVerified(false);   // Will verify via SMS later
+        user.setIsPhoneVerified(false); // Will verify via SMS later
         user.setIsActive(true);
         user.setCreatedAt(LocalDateTime.now());
         user.setUpdatedAt(LocalDateTime.now());
@@ -69,8 +68,7 @@ public class AuthService {
         // STEP 7: Generate JWT tokens
         String accessToken = jwtTokenProvider.generateAccessToken(
                 savedUser.getEmail(),
-                savedUser.getRole()
-        );
+                savedUser.getRole());
         String refreshToken = jwtTokenProvider.generateRefreshToken(savedUser.getEmail());
 
         // STEP 8: Convert User entity to UserDTO (hides password hash)
@@ -108,8 +106,7 @@ public class AuthService {
         // STEP 5: Generate JWT tokens
         String accessToken = jwtTokenProvider.generateAccessToken(
                 user.getEmail(),
-                user.getRole()
-        );
+                user.getRole());
         String refreshToken = jwtTokenProvider.generateRefreshToken(user.getEmail());
 
         // STEP 6: Convert to DTO and return
@@ -128,7 +125,7 @@ public class AuthService {
 
         // Check 1 minute wait time
         if (user.getResetPasswordLastSentAt() != null &&
-            user.getResetPasswordLastSentAt().plusMinutes(1).isAfter(LocalDateTime.now())) {
+                user.getResetPasswordLastSentAt().plusMinutes(1).isAfter(LocalDateTime.now())) {
             throw new RuntimeException("Please wait 1 minute before requesting another PIN");
         }
 
@@ -190,8 +187,7 @@ public class AuthService {
         // Generate NEW access token
         String newAccessToken = jwtTokenProvider.generateAccessToken(
                 user.getEmail(),
-                user.getRole()
-        );
+                user.getRole());
 
         // Generate NEW refresh token (rotation)
         String newRefreshToken = jwtTokenProvider.generateRefreshToken(user.getEmail());
