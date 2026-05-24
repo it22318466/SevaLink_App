@@ -36,7 +36,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           _passwordController.text,
         );
     if (success && mounted) {
-      context.go('/check-auth');
+      final user = ref.read(authProvider).user;
+      if (user != null) {
+        if (user.role == 'CLIENT') {
+          context.go('/client/home');
+        } else {
+          context.go('/worker/home');
+        }
+      } else {
+        // Fallback to check-auth if role unknown
+        context.go('/check-auth');
+      }
     } else if (!success && mounted) {
       final error = ref.read(authProvider).error ?? 'Login failed';
       ScaffoldMessenger.of(context).showSnackBar(

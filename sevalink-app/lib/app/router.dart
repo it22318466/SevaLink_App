@@ -15,6 +15,7 @@ import '../features/worker/screens/worker_home_screen.dart';
 import '../features/worker/screens/job_details_screen.dart';
 import '../features/worker/screens/send_quote_screen.dart';
 import '../features/worker/screens/worker_profile_screen.dart';
+import '../features/profile/screens/client_profile_screen.dart';
 import '../data/models/job.dart';
 
 class RouterNotifier extends ChangeNotifier {
@@ -102,6 +103,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/client/home',
         builder: (context, state) => const ClientDashboardScreen(),
+      ),
+      GoRoute(
+        path: '/client/profile',
+        builder: (context, state) => const ClientProfileScreen(),
       ),
       GoRoute(
         path: '/worker/home',
