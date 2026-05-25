@@ -1,12 +1,13 @@
-import 'package:flutter/foundation.dart' show kIsWeb, TargetPlatform, defaultTargetPlatform;
+import 'dart:io' show Platform;
 
 class ApiEndpoints {
   static String get baseUrl {
-    if (kIsWeb) {
-      return 'http://localhost:8080/api';
-    }
-    if (defaultTargetPlatform == TargetPlatform.android) {
-      return 'http://10.126.126.148:8080/api';
+    try {
+      if (Platform.isAndroid) {
+        return 'http://10.126.126.148:8080/api';
+      }
+    } catch (e) {
+      // Web or other platforms
     }
     return 'http://10.126.126.148:8080/api';
   }
@@ -18,7 +19,6 @@ class ApiEndpoints {
   static String get refreshToken => '$baseUrl/auth/refresh';
   static String get logout => '$baseUrl/auth/logout';
   static String get me => '$baseUrl/auth/me';
-  
-  // Client Endpoints
-  static String get clientDashboard => '$baseUrl/client/dashboard';
+
+
 }
