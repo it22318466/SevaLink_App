@@ -16,6 +16,10 @@ import '../features/worker/screens/job_details_screen.dart';
 import '../features/worker/screens/send_quote_screen.dart';
 import '../features/worker/screens/worker_profile_screen.dart';
 import '../features/profile/screens/client_profile_screen.dart';
+import '../features/profile/screens/edit_client_profile_screen.dart';
+import '../features/jobs/screens/client_jobs_screen.dart';
+import '../features/chat/screens/chat_list_screen.dart';
+import '../features/chat/screens/chat_screen.dart';
 import '../data/models/job.dart';
 
 class RouterNotifier extends ChangeNotifier {
@@ -107,6 +111,34 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/client/profile',
         builder: (context, state) => const ClientProfileScreen(),
+      ),
+      GoRoute(
+        path: '/client/edit-profile',
+        builder: (context, state) => const EditClientProfileScreen(),
+      ),
+      GoRoute(
+        path: '/client/jobs',
+        builder: (context, state) => const ClientJobsScreen(),
+      ),
+      GoRoute(
+        path: '/client/chat',
+        builder: (context, state) => const ChatListScreen(),
+      ),
+      GoRoute(
+        path: '/client/chat/:userId',
+        builder: (context, state) {
+          final userId = int.tryParse(state.pathParameters['userId'] ?? '0') ?? 0;
+          final extra = state.extra as Map<String, dynamic>?;
+          final name = extra?['name'] as String? ?? 'User';
+          final jobTitle = extra?['jobTitle'] as String?;
+          final jobBudget = extra?['jobBudget'] as String?;
+          return ChatScreen(
+            otherUserId: userId,
+            otherUserName: name,
+            jobTitle: jobTitle,
+            jobBudget: jobBudget,
+          );
+        },
       ),
       GoRoute(
         path: '/worker/home',

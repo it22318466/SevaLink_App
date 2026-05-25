@@ -46,6 +46,9 @@ public class User {
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    private String profileImageUrl;
+    private String location;
+
     @Column(nullable = false)
     private LocalDateTime updatedAt;
 

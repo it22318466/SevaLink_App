@@ -57,6 +57,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/client/**").hasRole("CLIENT")
                         .requestMatchers("/api/worker/**").hasRole("WORKER")
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/chat/**").authenticated()
 
                         // All other requests need authentication
                         .anyRequest().authenticated()

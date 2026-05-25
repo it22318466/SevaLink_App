@@ -3,6 +3,8 @@ package com.sevalink.sevalinkbackend.controller;
 import com.sevalink.sevalinkbackend.model.JobPost;
 import com.sevalink.sevalinkbackend.model.JobTimeline;
 import com.sevalink.sevalinkbackend.service.JobPostService;
+import com.sevalink.sevalinkbackend.dto.ClientJobStatsDto;
+import com.sevalink.sevalinkbackend.dto.ClientJobDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -118,6 +120,32 @@ public class JobPostController {
         try {
             JobTimeline timeline = jobPostService.updateTimeline(id, status, note);
             return ResponseEntity.ok(timeline);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    // Client job stats
+    // GET http://localhost:8080/api/jobs/client/1/stats
+    @GetMapping("/client/{clientId}/stats")
+    public ResponseEntity<?> getClientJobStats(@PathVariable Long clientId) {
+        try {
+            ClientJobStatsDto stats = jobPostService.getClientJobStats(clientId);
+            return ResponseEntity.ok(stats);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    // Client jobs with quote counts
+    // GET http://localhost:8080/api/jobs/client/1/with-quotes?status=OPEN
+    @GetMapping("/client/{clientId}/with-quotes")
+    public ResponseEntity<?> getClientJobsWithQuotes(
+            @PathVariable Long clientId,
+            @RequestParam(required = false) String status) {
+        try {
+            List<ClientJobDto> jobs = jobPostService.getClientJobsWithQuotes(clientId, status);
+            return ResponseEntity.ok(jobs);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }

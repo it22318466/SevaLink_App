@@ -4,10 +4,14 @@ import com.sevalink.sevalinkbackend.model.JobPost;
 import com.sevalink.sevalinkbackend.model.JobTimeline;
 import com.sevalink.sevalinkbackend.repository.JobPostRepository;
 import com.sevalink.sevalinkbackend.repository.JobTimelineRepository;
+import com.sevalink.sevalinkbackend.repository.QuotationRepository;
+import com.sevalink.sevalinkbackend.dto.ClientJobStatsDto;
+import com.sevalink.sevalinkbackend.dto.ClientJobDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class JobPostService {
@@ -17,6 +21,9 @@ public class JobPostService {
 
     @Autowired
     private JobTimelineRepository jobTimelineRepository;
+
+    @Autowired
+    private QuotationRepository quotationRepository;
 
     // Client posts a new job
     public JobPost createJob(JobPost jobPost) {
@@ -82,5 +89,43 @@ public class JobPostService {
         timeline.setStatus(status);
         timeline.setNote(note);
         return jobTimelineRepository.save(timeline);
+    }
+
+    // Client job statistics
+    public ClientJobStatsDto getClientJobStats(Long clientId) {
+        return ClientJobStatsDto.builder()
+                .total(jobPostRepository.countByClientId(clientId))
+                .open(jobPostRepository.countByClientIdAndStatus(clientId, "OPEN"))
+                .active(jobPostRepository.countByClientIdAndStatus(clientId, "ASSIGNED"))
+                .done(jobPostRepository.countByClientIdAndStatus(clientId, "COMPLETED"))
+                .build();
+    }
+
+    // Client jobs with quote counts
+    public List<ClientJobDto> getClientJobsWithQuotes(Long clientId, String statusFilter) {
+        List<JobPost> jobs;
+        if (statusFilter != null && !statusFilter.equalsIgnoreCase("ALL")) {
+            jobs = jobPostRepository.findByClientIdAndStatusInOrderByCreatedAtDesc(
+                    clientId, List.of(statusFilter.toUpperCase()));
+        } else {
+            jobs = jobPostRepository.findByClientIdOrderByCreatedAtDesc(clientId);
+        }
+
+        return jobs.stream().map(job -> {
+            long quoteCount = quotationRepository.findByJobPostIdOrderByProposedPriceAsc(job.getId()).size();
+            return ClientJobDto.builder()
+                    .id(job.getId())
+                    .title(job.getTitle())
+                    .description(job.getDescription())
+                    .categoryName(job.getCategory() != null ? job.getCategory().getName() : "General")
+                    .locationName(job.getLocationName())
+                    .budgetMin(job.getBudgetMin())
+                    .budgetMax(job.getBudgetMax())
+                    .urgency(job.getUrgency())
+                    .status(job.getStatus())
+                    .createdAt(job.getCreatedAt())
+                    .quoteCount(quoteCount)
+                    .build();
+        }).collect(Collectors.toList());
     }
 }

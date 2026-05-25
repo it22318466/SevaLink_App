@@ -21,13 +21,11 @@ class _ClientProfileScreenState extends ConsumerState<ClientProfileScreen> {
         setState(() => _currentNavIndex = 0);
         break;
       case 1:
-        // TODO: Add client jobs route when available
-        // context.go('/client/jobs');
+        context.go('/client/jobs');
         setState(() => _currentNavIndex = 1);
         break;
       case 2:
-        // TODO: Add client chat route when available
-        // context.go('/client/chat');
+        context.go('/client/chat');
         setState(() => _currentNavIndex = 2);
         break;
       case 3:
@@ -94,7 +92,9 @@ class _ClientProfileScreenState extends ConsumerState<ClientProfileScreen> {
                     width: double.infinity,
                     height: 56,
                     child: ElevatedButton.icon(
-                      onPressed: () {},
+                      onPressed: () {
+                        context.push('/client/edit-profile');
+                      },
                       icon: const Icon(Icons.edit_outlined, color: Colors.white),
                       label: const Text(
                         'Edit Profile',
