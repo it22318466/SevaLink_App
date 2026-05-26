@@ -95,7 +95,7 @@ class _ClientJobsScreenState extends ConsumerState<ClientJobsScreen> {
                     IconButton(
                       icon: const Icon(Icons.add, color: Colors.white),
                       onPressed: () {
-                        // Navigate to create job if exists
+                        context.push('/client/jobs/post');
                       },
                     ),
                   ],

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../providers/auth_provider.dart';
+import '../../../providers/client_profile_provider.dart';
+import '../../../providers/client_jobs_provider.dart';
 
 class ClientProfileScreen extends ConsumerStatefulWidget {
   const ClientProfileScreen({super.key});
@@ -39,13 +41,28 @@ class _ClientProfileScreenState extends ConsumerState<ClientProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final user = ref.watch(authProvider).user;
-    final fullName = user?.fullName ?? 'Priya Desai';
-    final initials = _getInitials(fullName);
-    final email = user?.email ?? 'priya.desai@email.com';
-    final phone = '+91 98765 43210'; // Placeholder
-    final location = 'Andheri West, Mumbai'; // Placeholder
-    final memberSince = 'January 2025'; // Placeholder
+    final profileState = ref.watch(clientProfileProvider);
+    final clientId = ref.watch(authProvider).user?.id ?? 0;
+    final jobStatsAsync = ref.watch(clientJobStatsProvider(clientId));
+    
+    String fullName = 'Loading...';
+    String email = 'Loading...';
+    String phone = 'Loading...';
+    String location = 'Loading...';
+    String memberSince = 'Joined recently';
+    String initials = 'U';
+
+    if (profileState is AsyncData) {
+      final profile = profileState.value!;
+      fullName = profile.fullName.isNotEmpty ? profile.fullName : 'Priya Desai';
+      email = profile.email.isNotEmpty ? profile.email : 'priya.desai@email.com';
+      phone = profile.phoneNumber.isNotEmpty ? profile.phoneNumber : 'Not provided';
+      location = profile.location?.isNotEmpty == true ? profile.location! : 'Not provided';
+      initials = _getInitials(fullName);
+      // Can extract month/year from profile.createdAt if we want, but "Joined recently" or similar works.
+    } else if (profileState is AsyncError) {
+      fullName = 'Error loading profile';
+    }
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -115,7 +132,7 @@ class _ClientProfileScreenState extends ConsumerState<ClientProfileScreen> {
                   ),
                   
                   const SizedBox(height: 24),
-                  _buildActivityCard(),
+                  _buildActivityCard(jobStatsAsync),
                   
                   const SizedBox(height: 24),
                   _buildSettingsCard(),
@@ -278,7 +295,7 @@ class _ClientProfileScreenState extends ConsumerState<ClientProfileScreen> {
     );
   }
 
-  Widget _buildActivityCard() {
+  Widget _buildActivityCard(AsyncValue<Map<String, dynamic>> jobStatsAsync) {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -305,13 +322,22 @@ class _ClientProfileScreenState extends ConsumerState<ClientProfileScreen> {
             ),
           ),
           const SizedBox(height: 24),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _buildStatColumn('8', 'Jobs Posted'),
-              _buildStatColumn('12', 'Completed'),
-              _buildStatColumn('4.8', 'Avg Rating'),
-            ],
+          jobStatsAsync.when(
+            data: (stats) {
+              final jobsPosted = stats['totalJobs']?.toString() ?? stats['total_posted']?.toString() ?? '0';
+              final completed = stats['completedJobs']?.toString() ?? stats['completed']?.toString() ?? '0';
+              final avgRating = stats['averageRating']?.toString() ?? stats['average_rating']?.toString() ?? '0.0';
+              return Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _buildStatColumn(jobsPosted, 'Jobs Posted'),
+                  _buildStatColumn(completed, 'Completed'),
+                  _buildStatColumn(avgRating, 'Avg Rating'),
+                ],
+              );
+            },
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (err, stack) => const Center(child: Text('Error loading stats')),
           ),
         ],
       ),

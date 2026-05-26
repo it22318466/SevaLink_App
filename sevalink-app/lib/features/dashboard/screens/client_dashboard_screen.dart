@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+// Assuming this is the correct path based on the original codebase structure
 import '../../../providers/auth_provider.dart';
-import 'search_screen.dart';
+import '../../../providers/client_dashboard_provider.dart';
 
 // ============================================================================
 // DOMAIN MODELS (Mock Data Structures)
@@ -55,6 +57,35 @@ class ClientDashboardScreen extends ConsumerStatefulWidget {
 class _ClientDashboardScreenState extends ConsumerState<ClientDashboardScreen> {
   int _currentNavIndex = 0;
 
+    void _onNavTapped(int index) {
+      if (index == _currentNavIndex) return;
+
+      // Map index to routes
+      switch (index) {
+        case 0:
+          // Home is current, just update index
+          setState(() => _currentNavIndex = 0);
+          break;
+        case 1:
+          // Jobs screen placeholder
+          // context.go('/client/jobs'); // Uncomment when route exists
+          setState(() => _currentNavIndex = 1);
+          break;
+        case 2:
+          // Chat screen placeholder
+          // context.go('/client/chat'); // Uncomment when route exists
+          setState(() => _currentNavIndex = 2);
+          break;
+        case 3:
+          // Navigate to profile, replace current route for smoother UX
+          context.go('/client/profile');
+          // No need to update _currentNavIndex here as profile screen manages its own index
+          break;
+        default:
+          setState(() => _currentNavIndex = index);
+      }
+    }
+
   // --- Static Data Provisioning to Match Design Specifications ---
   final List<ServiceCategory> _categories = const [
     ServiceCategory(title: 'Electrician', icon: Icons.bolt_outlined, bgColor: Color(0xFFFEF5E5), iconColor: Color(0xFFD49A00)),
@@ -101,11 +132,11 @@ class _ClientDashboardScreenState extends ConsumerState<ClientDashboardScreen> {
   Widget build(BuildContext context) {
     // Graceful fallback for authentication state retrieval
     String displayFullName = "Dilini Rajapaksa";
-    
+
     try {
       final user = ref.watch(authProvider).user;
-      if (user != null && user.fullName.isNotEmpty) {
-        displayFullName = user.fullName;
+      if (user != null && user.fullName != null && user.fullName!.isNotEmpty) {
+        displayFullName = user.fullName!;
       }
     } catch (_) {
       // Catch exceptions to ensure UI layout stability if provider fails
@@ -120,8 +151,8 @@ class _ClientDashboardScreenState extends ConsumerState<ClientDashboardScreen> {
             Stack(
               clipBehavior: Clip.none,
               children: [
-                _buildHeader(displayFullName),
-                
+                _buildOrangeHeader(displayFullName),
+
                 // Positioned padding forces the quick action cards to straddle the header boundary
                 Padding(
                   padding: const EdgeInsets.only(top: 230.0), 
@@ -147,7 +178,7 @@ class _ClientDashboardScreenState extends ConsumerState<ClientDashboardScreen> {
   // COMPONENT BUILDERS
   // ==========================================================================
 
-  Widget _buildHeader(String userName) {
+  Widget _buildOrangeHeader(String userName) {
     return Container(
       height: 290,
       width: double.infinity,
@@ -219,58 +250,60 @@ class _ClientDashboardScreenState extends ConsumerState<ClientDashboardScreen> {
             ],
           ),
           const SizedBox(height: 28),
-          
-          // Custom Search Bar — taps open full search screen
-          GestureDetector(
-            onTap: () {
-              Navigator.of(context).push(
-                PageRouteBuilder(
-                  pageBuilder: (context, animation, secondaryAnimation) =>
-                      const SearchScreen(),
-                  transitionsBuilder:
-                      (context, animation, secondaryAnimation, child) {
-                    return FadeTransition(opacity: animation, child: child);
-                  },
-                  transitionDuration: const Duration(milliseconds: 280),
+
+          // Custom Search Bar Implementation
+          Container(
+            height: 55,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
                 ),
-              );
-            },
-            child: Container(
-              height: 55,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  )
-                ]
-              ),
-              child: Row(
-                children: [
-                  const SizedBox(width: 16),
-                  Icon(Icons.search_rounded, color: Colors.grey.shade400, size: 26),
-                  const SizedBox(width: 12),
-                  Text(
-                    'Search for services...',
-                    style: TextStyle(color: Colors.grey.shade400, fontSize: 16),
+              ],
+            ),
+            child: Row(
+              children: [
+                const SizedBox(width: 16),
+                Icon(
+                  Icons.search_rounded,
+                  color: Colors.grey.shade400,
+                  size: 26,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: TextField(
+                    decoration: InputDecoration(
+                      hintText: 'Search for services...',
+                      hintStyle: TextStyle(
+                        color: Colors.grey.shade400,
+                        fontSize: 16,
+                      ),
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 20),
           
           // Contextual Location Indicator
-          const Row(
+          Row(
             children: [
               Icon(Icons.location_on_outlined, color: Colors.white, size: 20),
               SizedBox(width: 6),
               Text(
                 'Dehiwala, Colombo',
-                style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w500),
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ],
           ),
@@ -282,77 +315,113 @@ class _ClientDashboardScreenState extends ConsumerState<ClientDashboardScreen> {
   Widget _buildQuickActionCards() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24.0),
-      child: Row(
-        children: [
-          // Primary Call-to-Action Card: Post a Job
-          Expanded(
-            child: Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: const Color(0xFFD84315), // Deep Orange for visual weight
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFFD84315).withValues(alpha: 0.3), // Colored shadow technique
-                    blurRadius: 15,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('📝', style: TextStyle(fontSize: 30)), 
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Post a Job',
-                    style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Get quotes from\nworkers',
-                    style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 13, height: 1.3),
-                  ),
-                ],
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            // Primary Call-to-Action Card: Post a Job
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: const Color(
+                    0xFFD84315,
+                  ), // Deep Orange for visual weight
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(
+                        0xFFD84315,
+                      ).withOpacity(0.3), // Colored shadow technique
+                      blurRadius: 15,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('📝', style: TextStyle(fontSize: 30)),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Post a Job',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Get quotes from\nworkers',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.85),
+                        fontSize: 13,
+                        height: 1.3,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-          const SizedBox(width: 16),
-          
-          // Secondary Call-to-Action Card: My Jobs
-          Expanded(
-            child: Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: const Color(0xFF2962FF), // High-contrast blue for separation of intent
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF2962FF).withValues(alpha: 0.3),
-                    blurRadius: 15,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('📋', style: TextStyle(fontSize: 30)), 
-                  const SizedBox(height: 16),
-                  const Text(
-                    'My Jobs',
-                    style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Track ongoing\nwork',
-                    style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 13, height: 1.3),
-                  ),
-                ],
+            const SizedBox(width: 16),
+
+            // Secondary Call-to-Action Card: My Jobs
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: const Color(
+                    0xFF2962FF,
+                  ), // High-contrast blue for separation of intent
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF2962FF).withOpacity(0.3),
+                      blurRadius: 15,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('📋', style: TextStyle(fontSize: 30)),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'My Jobs',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Track ongoing\nwork',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.85),
+                        fontSize: 13,
+                        height: 1.3,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
