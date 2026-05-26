@@ -3,13 +3,13 @@ import '../data/models/worker_search_result.dart';
 import '../data/repositories/search_repository.dart';
 import '../providers/auth_provider.dart';
 
-// ── Repository provider ────────────────────────────────────────────────────
+//  Repository provider
 final searchRepositoryProvider = Provider<SearchRepository>((ref) {
   final dioClient = ref.watch(dioClientProvider);
   return SearchRepository(dioClient);
 });
 
-// ── State ──────────────────────────────────────────────────────────────────
+//  State
 enum SearchStatus { initial, loading, success, error }
 
 class SearchState {
@@ -50,7 +50,7 @@ class SearchState {
       status == SearchStatus.success && results.isEmpty;
 }
 
-// ── Notifier ───────────────────────────────────────────────────────────────
+//  Notifier
 class SearchNotifier extends Notifier<SearchState> {
   late SearchRepository _repo;
 
@@ -133,6 +133,6 @@ class SearchNotifier extends Notifier<SearchState> {
   }
 }
 
-// ── Provider ──────────────────────────────────────────────────────────────
+//  Provider
 final searchProvider =
     NotifierProvider<SearchNotifier, SearchState>(SearchNotifier.new);
