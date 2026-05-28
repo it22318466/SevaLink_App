@@ -61,9 +61,9 @@ class _PostJobScreenState extends ConsumerState<PostJobScreen> {
       final jobData = {
         'title': _titleController.text.trim(),
         'description': _descriptionController.text.trim(),
-        'location': _locationController.text.trim(),
-        'categoryId': categoryId,
-        'clientId': user?.id,
+        'locationName': _locationController.text.trim(),
+        'category': {'id': categoryId},
+        'client': {'id': user?.id},
         'budgetMin': double.tryParse(_budgetMinController.text.trim()) ?? 0,
         'budgetMax': double.tryParse(_budgetMaxController.text.trim()) ?? 0,
         'status': 'OPEN',
