@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../providers/chat_provider.dart';
 import '../../../data/models/chat_message.dart';
+import '../../../core/themes/app_theme.dart';
 
 class ChatListScreen extends ConsumerStatefulWidget {
   const ChatListScreen({super.key});
@@ -62,7 +63,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
     final conversationsAsync = ref.watch(conversationsProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Column(
         children: [
           // Orange header
@@ -143,6 +144,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
   }
 
   Widget _buildConversationTile(ChatConversation conversation) {
+    final colors = Theme.of(context).extension<SevaLinkColors>() ?? SevaLinkColors.light;
     return InkWell(
       onTap: () {
         context.push('/client/chat/${conversation.partnerId}',
@@ -151,8 +153,8 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
         decoration: BoxDecoration(
-          color: Colors.white,
-          border: Border(bottom: BorderSide(color: Colors.grey.shade100)),
+          color: colors.cardBg,
+          border: Border(bottom: BorderSide(color: colors.divider)),
         ),
         child: Row(
           children: [
@@ -261,11 +263,15 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
   }
 
   Widget _buildBottomNavigationBar() {
+    final colors = Theme.of(context).extension<SevaLinkColors>() ?? SevaLinkColors.light;
+    final isDark  = Theme.of(context).brightness == Brightness.dark;
     return Container(
       decoration: BoxDecoration(
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: isDark
+                ? Colors.black.withValues(alpha: 0.3)
+                : Colors.black.withValues(alpha: 0.05),
             blurRadius: 20,
             offset: const Offset(0, -5),
           ),
@@ -275,10 +281,10 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
         currentIndex: _currentNavIndex,
         onTap: _onNavTapped,
         type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.white,
+        backgroundColor: colors.cardBg,
         elevation: 0,
         selectedItemColor: const Color(0xFFD3410A),
-        unselectedItemColor: Colors.grey.shade400,
+        unselectedItemColor: isDark ? const Color(0xFF64748B) : Colors.grey.shade400,
         selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, height: 1.5),
         unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 12, height: 1.5),
         items: const [

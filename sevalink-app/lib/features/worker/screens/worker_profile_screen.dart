@@ -6,6 +6,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 import '../../../providers/auth_provider.dart';
+import '../../../providers/theme_provider.dart';
+import '../../../core/themes/app_theme.dart';
 
 class WorkerProfileScreen extends ConsumerStatefulWidget {
   final bool showBackButton;
@@ -270,7 +272,7 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F6FB),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: CustomScrollView(
         slivers: [
           _buildSliverHeader(),
@@ -343,6 +345,8 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
                         const SizedBox(height: 12),
                         _buildCancelButton(),
                       ] else ...[
+                        _buildThemeToggleCard(),
+                        const SizedBox(height: 12),
                         _buildLogoutButton(),
                       ],
                       const SizedBox(height: 30),
@@ -428,12 +432,15 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
   //  AVATAR CARD
 
   Widget _buildAvatarCard() {
+    final colors = context.sevaColors;
+    final isDark  = context.isDark;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colors.cardBg,
         borderRadius: BorderRadius.circular(24),
-        boxShadow: [
+        border: isDark ? Border.all(color: colors.border, width: 1) : null,
+        boxShadow: isDark ? null : [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.07),
             blurRadius: 20,
@@ -513,10 +520,10 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
               children: [
                 Text(
                   _nameController.text,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF1F2937),
+                    color: colors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -554,16 +561,16 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
                 const SizedBox(height: 6),
                 Row(
                   children: [
-                    const Icon(Icons.location_on_outlined,
-                        size: 13, color: Color(0xFF9CA3AF)),
+                    Icon(Icons.location_on_outlined,
+                        size: 13, color: colors.textSecondary),
                     const SizedBox(width: 3),
                     Expanded(
                       child: Text(
                         _locationController.text.isNotEmpty
                             ? _locationController.text
                             : 'Colombo, Sri Lanka',
-                        style: const TextStyle(
-                            fontSize: 12, color: Color(0xFF6B7280)),
+                        style: TextStyle(
+                            fontSize: 12, color: colors.textSecondary),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
@@ -580,12 +587,15 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
   //  SECTION WRAPPER
 
   Widget _buildSection(String title, List<Widget> children) {
+    final colors = context.sevaColors;
+    final isDark  = context.isDark;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colors.cardBg,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
+        border: isDark ? Border.all(color: colors.border, width: 1) : null,
+        boxShadow: isDark ? null : [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 16,
@@ -598,10 +608,10 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
         children: [
           Text(
             title,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF1F2937),
+              color: colors.textPrimary,
             ),
           ),
           const SizedBox(height: 16),
@@ -623,35 +633,42 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
     String? Function(String?)? validator,
     String? prefix,
   }) {
+    final colors = context.sevaColors;
+    final isDark  = context.isDark;
+    final fillColor = isDark
+        ? (enabled ? colors.inputFill : colors.cardBg2)
+        : (enabled ? const Color(0xFFF9FAFB) : const Color(0xFFF3F4F6));
+    final borderColor = isDark ? colors.border : const Color(0xFFE5E7EB);
+    final disabledBorderColor = isDark ? colors.border : Colors.grey.shade200;
     return TextFormField(
       controller: controller,
       enabled: enabled,
       keyboardType: keyboardType,
       maxLines: maxLines,
       validator: validator,
-      style: const TextStyle(
+      style: TextStyle(
           fontSize: 14,
-          color: Color(0xFF1F2937),
+          color: colors.textPrimary,
           fontWeight: FontWeight.w500),
       decoration: InputDecoration(
         labelText: label,
         prefixIcon: Icon(icon,
             size: 18,
-            color: enabled ? const Color(0xFF006B5E) : Colors.grey.shade400),
+            color: enabled ? const Color(0xFF006B5E) : colors.textSecondary),
         prefixText: prefix,
         labelStyle: TextStyle(
           fontSize: 13,
-          color: enabled ? const Color(0xFF6B7280) : Colors.grey.shade400,
+          color: enabled ? colors.textSecondary : colors.textSecondary.withValues(alpha: 0.6),
         ),
         filled: true,
-        fillColor: enabled ? const Color(0xFFF9FAFB) : const Color(0xFFF3F4F6),
+        fillColor: fillColor,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey.shade200),
+          borderSide: BorderSide(color: disabledBorderColor),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+          borderSide: BorderSide(color: borderColor),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -660,7 +677,7 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
         ),
         disabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey.shade200),
+          borderSide: BorderSide(color: disabledBorderColor),
         ),
         contentPadding:
         const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
@@ -671,23 +688,28 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
   //  HOURLY RATE (custom — pure text prefix, no icon fallback issues)
 
   Widget _buildRateField() {
-    final color = _isEditing ? const Color(0xFF006B5E) : Colors.grey.shade400;
+    final colors = context.sevaColors;
+    final isDark  = context.isDark;
+    final color = _isEditing ? const Color(0xFF006B5E) : colors.textSecondary;
+    final fillColor = isDark
+        ? (_isEditing ? colors.inputFill : colors.cardBg2)
+        : (_isEditing ? const Color(0xFFF9FAFB) : const Color(0xFFF3F4F6));
+    final borderColor = isDark ? colors.border : const Color(0xFFE5E7EB);
+    final disabledBorderColor = isDark ? colors.border : Colors.grey.shade200;
     return TextFormField(
       controller: _rateController,
       enabled: _isEditing,
       keyboardType: TextInputType.number,
-      style: const TextStyle(
+      style: TextStyle(
           fontSize: 14,
-          color: Color(0xFF1F2937),
+          color: colors.textPrimary,
           fontWeight: FontWeight.w500),
       decoration: InputDecoration(
         labelText: 'Hourly Rate',
         labelStyle: TextStyle(
           fontSize: 13,
-          color: _isEditing ? const Color(0xFF6B7280) : Colors.grey.shade400,
+          color: _isEditing ? colors.textSecondary : colors.textSecondary.withValues(alpha: 0.6),
         ),
-        // prefixIcon with a Text shows in ALL states (enabled, disabled, focused)
-        // This avoids the $ fallback that icon codepoints can produce
         prefixIcon: Center(
           widthFactor: 1.0,
           child: Padding(
@@ -703,14 +725,14 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
           ),
         ),
         filled: true,
-        fillColor: _isEditing ? const Color(0xFFF9FAFB) : const Color(0xFFF3F4F6),
+        fillColor: fillColor,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey.shade200),
+          borderSide: BorderSide(color: disabledBorderColor),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+          borderSide: BorderSide(color: borderColor),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -718,7 +740,7 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
         ),
         disabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey.shade200),
+          borderSide: BorderSide(color: disabledBorderColor),
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       ),
@@ -728,12 +750,13 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
   //  SKILLS
 
   Widget _buildSkillsSection() {
+    final colors = context.sevaColors;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Skills / Specializations',
-          style: TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
+          style: TextStyle(fontSize: 13, color: colors.textSecondary),
         ),
         const SizedBox(height: 8),
         Wrap(
@@ -863,22 +886,23 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
   }
 
   Widget _buildStatItem(String value, String label, IconData icon) {
+    final colors = context.sevaColors;
     return Column(
       children: [
         Icon(icon, color: const Color(0xFF006B5E), size: 22),
         const SizedBox(height: 6),
         Text(
           value,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: Color(0xFF1F2937),
+            color: colors.textPrimary,
           ),
         ),
         const SizedBox(height: 2),
         Text(
           label,
-          style: const TextStyle(fontSize: 11, color: Color(0xFF9CA3AF)),
+          style: TextStyle(fontSize: 11, color: colors.textSecondary),
           textAlign: TextAlign.center,
         ),
       ],
@@ -886,7 +910,7 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
   }
 
   Widget _buildStatDivider() {
-    return Container(height: 50, width: 1, color: const Color(0xFFF3F4F6));
+    return Container(height: 50, width: 1, color: context.sevaColors.divider);
   }
 
   // BUTTONS
@@ -921,21 +945,101 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
   }
 
   Widget _buildCancelButton() {
+    final colors = context.sevaColors;
     return SizedBox(
       width: double.infinity,
       height: 48,
       child: OutlinedButton(
         onPressed: () => setState(() => _isEditing = false),
         style: OutlinedButton.styleFrom(
-          side: const BorderSide(color: Color(0xFFD1D5DB)),
+          side: BorderSide(color: colors.border),
           shape:
           RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         ),
-        child: const Text(
+        child: Text(
           'Cancel',
           style:
-          TextStyle(color: Color(0xFF374151), fontWeight: FontWeight.w600),
+          TextStyle(color: colors.textPrimary, fontWeight: FontWeight.w600),
         ),
+      ),
+    );
+  }
+
+  // THEME TOGGLE CARD
+  Widget _buildThemeToggleCard() {
+    final themeMode = ref.watch(themeProvider);
+    final isDark    = themeMode == ThemeMode.dark;
+    final colors    = Theme.of(context).extension<SevaLinkColors>() ?? SevaLinkColors.light;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      decoration: BoxDecoration(
+        color: colors.cardBg,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: colors.border, width: 1),
+        boxShadow: isDark
+            ? null
+            : [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 12,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+      ),
+      child: Row(
+        children: [
+          // Icon
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: isDark
+                  ? const Color(0xFF1A3FBB).withValues(alpha: 0.2)
+                  : const Color(0xFFEFF6FF),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
+              color: isDark ? const Color(0xFF93C5FD) : const Color(0xFF1A3FBB),
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 14),
+          // Label
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  isDark ? 'Dark Mode' : 'Light Mode',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: colors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  isDark ? 'Switch to light theme' : 'Switch to dark theme',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: colors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Toggle
+          Switch(
+            value: isDark,
+            onChanged: (_) =>
+                ref.read(themeProvider.notifier).toggleTheme(),
+            activeThumbColor: const Color(0xFF1A3FBB),
+            activeTrackColor: const Color(0xFF1A3FBB).withValues(alpha: 0.3),
+            inactiveThumbColor: Colors.white,
+            inactiveTrackColor: const Color(0xFFE5E7EB),
+          ),
+        ],
       ),
     );
   }

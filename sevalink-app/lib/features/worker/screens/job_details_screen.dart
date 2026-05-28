@@ -5,6 +5,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../data/models/job.dart';
+import '../../../core/themes/app_theme.dart';
 
 class JobDetailsScreen extends StatelessWidget {
   final Job job;
@@ -27,8 +28,9 @@ class JobDetailsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<SevaLinkColors>() ?? SevaLinkColors.light;
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F6FB),
+      backgroundColor: colors.bodyBg,
       body: CustomScrollView(
         slivers: [
           _buildSliverAppBar(context),
@@ -39,18 +41,19 @@ class JobDetailsScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 24),
-                  _buildStatusRow(),
+                  _buildStatusRow(context),
                   const SizedBox(height: 20),
                   _buildBudgetCard(),
                   const SizedBox(height: 20),
                   _buildSection(
+                    context: context,
                     title: 'Job Description',
                     icon: Icons.description_outlined,
                     child: Text(
                       job.description,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 15,
-                        color: Color(0xFF4B5563),
+                        color: (Theme.of(context).extension<SevaLinkColors>() ?? SevaLinkColors.light).textSecondary,
                         height: 1.7,
                       ),
                     ),
@@ -59,6 +62,7 @@ class JobDetailsScreen extends StatelessWidget {
                   GestureDetector(
                     onTap: () => _openMap(job.location, context),
                     child: _buildSection(
+                      context: context,
                       title: 'Location',
                       icon: Icons.location_on_outlined,
                       child: Column(
@@ -82,10 +86,10 @@ class JobDetailsScreen extends StatelessWidget {
                                   children: [
                                     Text(
                                       job.location,
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontSize: 15,
                                         fontWeight: FontWeight.w600,
-                                        color: Color(0xFF1F2937),
+                                        color: (Theme.of(context).extension<SevaLinkColors>() ?? SevaLinkColors.light).textPrimary,
                                       ),
                                     ),
                                     const SizedBox(height: 2),
@@ -109,17 +113,19 @@ class JobDetailsScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
                   _buildSection(
+                    context: context,
                     title: 'Job Details',
                     icon: Icons.info_outline_rounded,
                     child: Column(
                       children: [
-                        _buildDetailRow(
+                        _buildDetailRow(context,
                             Icons.category_outlined, 'Category', job.category),
                         const SizedBox(height: 12),
-                        _buildDetailRow(
+                        _buildDetailRow(context,
                             Icons.access_time_rounded, 'Posted', job.postedAt),
                         const SizedBox(height: 12),
                         _buildDetailRow(
+                            context,
                             Icons.new_releases_outlined,
                             'Status',
                             job.isNew ? 'Newly Posted' : 'Active'),
@@ -222,25 +228,28 @@ class JobDetailsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildStatusRow() {
+  Widget _buildStatusRow(BuildContext context) {
     return Row(
       children: [
-        _buildChip(
+        _buildChip(context,
             Icons.location_on_outlined, job.location, const Color(0xFF1A3FBB)),
         const SizedBox(width: 10),
-        _buildChip(Icons.access_time_rounded, job.postedAt,
+        _buildChip(context, Icons.access_time_rounded, job.postedAt,
             const Color(0xFF6B7280)),
       ],
     );
   }
 
-  Widget _buildChip(IconData icon, String label, Color color) {
+  Widget _buildChip(BuildContext context, IconData icon, String label, Color color) {
+    final colors = Theme.of(context).extension<SevaLinkColors>() ?? SevaLinkColors.light;
+    final isDark  = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colors.cardBg,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
+        border: isDark ? Border.all(color: colors.border) : null,
+        boxShadow: isDark ? null : [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 8,
@@ -317,16 +326,20 @@ class JobDetailsScreen extends StatelessWidget {
   }
 
   Widget _buildSection({
+    required BuildContext context,
     required String title,
     required IconData icon,
     required Widget child,
   }) {
+    final colors = Theme.of(context).extension<SevaLinkColors>() ?? SevaLinkColors.light;
+    final isDark  = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colors.cardBg,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
+        border: isDark ? Border.all(color: colors.border, width: 1) : null,
+        boxShadow: isDark ? null : [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 15,
@@ -343,16 +356,16 @@ class JobDetailsScreen extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 title,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF1F2937),
+                  color: colors.textPrimary,
                 ),
               ),
             ],
           ),
           const SizedBox(height: 16),
-          const Divider(height: 1, color: Color(0xFFF3F4F6)),
+          Divider(height: 1, color: colors.divider),
           const SizedBox(height: 16),
           child,
         ],
@@ -360,31 +373,33 @@ class JobDetailsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildDetailRow(IconData icon, String label, String value) {
+  Widget _buildDetailRow(BuildContext context, IconData icon, String label, String value) {
+    final colors = Theme.of(context).extension<SevaLinkColors>() ?? SevaLinkColors.light;
+    final isDark  = Theme.of(context).brightness == Brightness.dark;
     return Row(
       children: [
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: const Color(0xFFF3F4F6),
+            color: isDark ? colors.cardBg2 : const Color(0xFFF3F4F6),
             borderRadius: BorderRadius.circular(10),
           ),
-          child: Icon(icon, size: 16, color: const Color(0xFF6B7280)),
+          child: Icon(icon, size: 16, color: colors.textSecondary),
         ),
         const SizedBox(width: 12),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(label,
-                style: const TextStyle(
-                    fontSize: 12, color: Color(0xFF9CA3AF))),
+                style: TextStyle(
+                    fontSize: 12, color: colors.textSecondary)),
             const SizedBox(height: 2),
             Text(
               value,
-              style: const TextStyle(
+              style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF1F2937)),
+                  color: colors.textPrimary),
             ),
           ],
         ),
@@ -393,12 +408,15 @@ class JobDetailsScreen extends StatelessWidget {
   }
 
   Widget _buildClientCard(BuildContext context) {
+    final colors = Theme.of(context).extension<SevaLinkColors>() ?? SevaLinkColors.light;
+    final isDark  = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colors.cardBg,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
+        border: isDark ? Border.all(color: colors.border, width: 1) : null,
+        boxShadow: isDark ? null : [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 15,
@@ -492,13 +510,17 @@ class JobDetailsScreen extends StatelessWidget {
   }
 
   Widget _buildBottomBar(BuildContext context) {
+    final colors = Theme.of(context).extension<SevaLinkColors>() ?? SevaLinkColors.light;
+    final isDark  = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colors.cardBg,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
+            color: isDark
+                ? Colors.black.withValues(alpha: 0.3)
+                : Colors.black.withValues(alpha: 0.06),
             blurRadius: 20,
             offset: const Offset(0, -5),
           ),

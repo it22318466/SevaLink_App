@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../data/models/job.dart';
 import '../../worker/screens/job_details_screen.dart';
+import '../../../core/themes/app_theme.dart';
 
 
 // WORKER DASHBOARD SCREEN
@@ -87,7 +88,7 @@ class _WorkerDashboardScreenState
     } catch (_) {}
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F6FB),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: RefreshIndicator(
         color: const Color(0xFF006B5E),
         onRefresh: () async =>
@@ -277,21 +278,26 @@ class _WorkerDashboardScreenState
 
 
   Widget _buildQuickActionCards() {
+    final colors = Theme.of(context).extension<SevaLinkColors>() ?? SevaLinkColors.light;
+    final isDark  = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: colors.cardBg,
           borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.07),
-              blurRadius: 20,
-              spreadRadius: 2,
-              offset: const Offset(0, 6),
-            ),
-          ],
+          border: isDark ? Border.all(color: colors.border, width: 1) : null,
+          boxShadow: isDark
+              ? null
+              : [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.07),
+                    blurRadius: 20,
+                    spreadRadius: 2,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
         ),
         child: Row(
           children: [
@@ -490,6 +496,8 @@ class _WorkerDashboardScreenState
   }
 
   Widget _buildJobCard(Job job) {
+    final colors = Theme.of(context).extension<SevaLinkColors>() ?? SevaLinkColors.light;
+    final isDark  = Theme.of(context).brightness == Brightness.dark;
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -499,16 +507,19 @@ class _WorkerDashboardScreenState
       },
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: colors.cardBg,
           borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 16,
-              spreadRadius: 1,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          border: isDark ? Border.all(color: colors.border, width: 1) : null,
+          boxShadow: isDark
+              ? null
+              : [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 16,
+                    spreadRadius: 1,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -703,12 +714,16 @@ class _WorkerDashboardScreenState
 
 
   Widget _buildBottomNavigationBar() {
+    final colors = Theme.of(context).extension<SevaLinkColors>() ?? SevaLinkColors.light;
+    final isDark  = Theme.of(context).brightness == Brightness.dark;
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colors.cardBg,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
+            color: isDark
+                ? Colors.black.withValues(alpha: 0.3)
+                : Colors.black.withValues(alpha: 0.06),
             blurRadius: 20,
             offset: const Offset(0, -5),
           ),
@@ -718,10 +733,10 @@ class _WorkerDashboardScreenState
         currentIndex: _currentNavIndex,
         onTap: (index) => setState(() => _currentNavIndex = index),
         type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.white,
+        backgroundColor: colors.cardBg,
         elevation: 0,
         selectedItemColor: const Color(0xFF006B5E),
-        unselectedItemColor: Colors.grey.shade400,
+        unselectedItemColor: isDark ? const Color(0xFF64748B) : Colors.grey.shade400,
         selectedLabelStyle: const TextStyle(
             fontWeight: FontWeight.bold, fontSize: 12, height: 1.5),
         unselectedLabelStyle: const TextStyle(

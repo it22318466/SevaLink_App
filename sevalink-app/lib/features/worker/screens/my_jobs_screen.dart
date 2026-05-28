@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'job_details_screen.dart';
 import '../../../data/models/job.dart';
+import '../../../core/themes/app_theme.dart';
 
-//  Enums & Models
+// ─── Enums & Model ────────────────────────────────────────────────────────────
 
 enum JobStatus { active, pending, completed }
 
@@ -28,84 +29,114 @@ class WorkerJob {
     this.category,
   });
 
-
+  WorkerJob copyWith({JobStatus? status}) {
+    return WorkerJob(
+      id: id,
+      title: title,
+      clientName: clientName,
+      location: location,
+      date: date,
+      budget: budget,
+      status: status ?? this.status,
+      category: category,
+    );
+  }
 }
 
-//  Mock Data — replace with Riverpod + API
-const _mockWorkerJobs = [
-  WorkerJob(
-    id: '1',
-    title: 'Electrical Wiring for New Kitchen',
-    clientName: 'Sunil Perera',
-    location: 'Dehiwala, Colombo',
-    date: '2026-05-20',
-    budget: 'Rs. 30,000',
-    status: JobStatus.active,
-    category: 'Electrical',
-  ),
-  WorkerJob(
-    id: '2',
-    title: 'Office Rewiring Project',
-    clientName: 'Lanka Enterprises',
-    location: 'Maradana, Colombo',
-    date: '2026-05-23',
-    budget: 'Rs. 75,000',
-    status: JobStatus.active,
-    category: 'Electrical',
-  ),
-  WorkerJob(
-    id: '3',
-    title: 'Bathroom Pipe Leak Repair',
-    clientName: 'Kamala Silva',
-    location: 'Peradeniya, Kandy',
-    date: '2026-05-25',
-    budget: 'Rs. 10,000',
-    status: JobStatus.pending,
-    category: 'Plumbing',
-  ),
-  WorkerJob(
-    id: '4',
-    title: 'Garden Lighting Setup',
-    clientName: 'Priya Jayawardena',
-    location: 'Battaramulla, Colombo',
-    date: '2026-05-28',
-    budget: 'Rs. 15,000',
-    status: JobStatus.pending,
-    category: 'Electrical',
-  ),
-  WorkerJob(
-    id: '5',
-    title: 'AC Installation – Living Room',
-    clientName: 'Nimal Fernando',
-    location: 'Nugegoda, Colombo',
-    date: '2026-05-10',
-    budget: 'Rs. 6,500',
-    status: JobStatus.completed,
-    category: 'AC Repair',
-  ),
-  WorkerJob(
-    id: '6',
-    title: 'Ceiling Fan Installation × 3',
-    clientName: 'Roshan De Silva',
-    location: 'Kalutara',
-    date: '2026-05-05',
-    budget: 'Rs. 4,500',
-    status: JobStatus.completed,
-    category: 'Electrical',
-  ),
-  WorkerJob(
-    id: '7',
-    title: 'DB Box Upgrade',
-    clientName: 'Malini Wijesinghe',
-    location: 'Moratuwa, Colombo',
-    date: '2026-04-28',
-    budget: 'Rs. 12,000',
-    status: JobStatus.completed,
-    category: 'Electrical',
-  ),
-];
+// ─── Jobs State Notifier ──────────────────────────────────────────────────────
 
-//  Screen
+class _WorkerJobsNotifier extends Notifier<List<WorkerJob>> {
+  @override
+  List<WorkerJob> build() {
+    return const [
+      WorkerJob(
+        id: '1',
+        title: 'Electrical Wiring for New Kitchen',
+        clientName: 'Sunil Perera',
+        location: 'Dehiwala, Colombo',
+        date: '2026-05-20',
+        budget: 'Rs. 30,000',
+        status: JobStatus.active,
+        category: 'Electrical',
+      ),
+      WorkerJob(
+        id: '2',
+        title: 'Office Rewiring Project',
+        clientName: 'Lanka Enterprises',
+        location: 'Maradana, Colombo',
+        date: '2026-05-23',
+        budget: 'Rs. 75,000',
+        status: JobStatus.active,
+        category: 'Electrical',
+      ),
+      WorkerJob(
+        id: '3',
+        title: 'Bathroom Pipe Leak Repair',
+        clientName: 'Kamala Silva',
+        location: 'Peradeniya, Kandy',
+        date: '2026-05-25',
+        budget: 'Rs. 10,000',
+        status: JobStatus.pending,
+        category: 'Plumbing',
+      ),
+      WorkerJob(
+        id: '4',
+        title: 'Garden Lighting Setup',
+        clientName: 'Priya Jayawardena',
+        location: 'Battaramulla, Colombo',
+        date: '2026-05-28',
+        budget: 'Rs. 15,000',
+        status: JobStatus.pending,
+        category: 'Electrical',
+      ),
+      WorkerJob(
+        id: '5',
+        title: 'AC Installation – Living Room',
+        clientName: 'Nimal Fernando',
+        location: 'Nugegoda, Colombo',
+        date: '2026-05-10',
+        budget: 'Rs. 6,500',
+        status: JobStatus.completed,
+        category: 'AC Repair',
+      ),
+      WorkerJob(
+        id: '6',
+        title: 'Ceiling Fan Installation × 3',
+        clientName: 'Roshan De Silva',
+        location: 'Kalutara',
+        date: '2026-05-05',
+        budget: 'Rs. 4,500',
+        status: JobStatus.completed,
+        category: 'Electrical',
+      ),
+      WorkerJob(
+        id: '7',
+        title: 'DB Box Upgrade',
+        clientName: 'Malini Wijesinghe',
+        location: 'Moratuwa, Colombo',
+        date: '2026-04-28',
+        budget: 'Rs. 12,000',
+        status: JobStatus.completed,
+        category: 'Electrical',
+      ),
+    ];
+  }
+
+  /// Mark a job as completed (moves it to Done tab)
+  void markDone(String id) {
+    state = [
+      for (final job in state)
+        if (job.id == id) job.copyWith(status: JobStatus.completed) else job,
+    ];
+  }
+}
+
+final _workerJobsProvider =
+    NotifierProvider<_WorkerJobsNotifier, List<WorkerJob>>(
+  _WorkerJobsNotifier.new,
+);
+
+// ─── Screen ───────────────────────────────────────────────────────────────────
 
 class MyJobsScreen extends ConsumerStatefulWidget {
   final bool showBackButton;
@@ -119,9 +150,6 @@ class _MyJobsScreenState extends ConsumerState<MyJobsScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
-  List<WorkerJob> _byStatus(JobStatus s) =>
-      _mockWorkerJobs.where((j) => j.status == s).toList();
-
   @override
   void initState() {
     super.initState();
@@ -134,17 +162,49 @@ class _MyJobsScreenState extends ConsumerState<MyJobsScreen>
     super.dispose();
   }
 
+  List<WorkerJob> _byStatus(List<WorkerJob> all, JobStatus s) =>
+      all.where((j) => j.status == s).toList();
+
+  void _handleMarkDone(String id) {
+    ref.read(_workerJobsProvider.notifier).markDone(id);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Row(
+          children: [
+            Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
+            SizedBox(width: 8),
+            Text('Job marked as done!',
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+          ],
+        ),
+        backgroundColor: const Color(0xFF0F9B8E),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+
+    // Animate to Done tab after short delay
+    Future.delayed(const Duration(milliseconds: 600), () {
+      if (mounted) _tabController.animateTo(2);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    final active    = _byStatus(JobStatus.active);
-    final pending   = _byStatus(JobStatus.pending);
-    final completed = _byStatus(JobStatus.completed);
+    final jobs      = ref.watch(_workerJobsProvider);
+    final active    = _byStatus(jobs, JobStatus.active);
+    final pending   = _byStatus(jobs, JobStatus.pending);
+    final completed = _byStatus(jobs, JobStatus.completed);
+    final colors    = Theme.of(context).extension<SevaLinkColors>()!;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F6FB),
+      backgroundColor: colors.bodyBg,
       body: Column(
         children: [
-          //  Header
+          // Header
           _buildHeader(active.length, pending.length, completed.length),
 
           // Tab content
@@ -152,16 +212,13 @@ class _MyJobsScreenState extends ConsumerState<MyJobsScreen>
             child: TabBarView(
               controller: _tabController,
               children: [
+                // Active tab
                 _JobList(
                   jobs: active,
                   emptyLabel: 'No active jobs right now',
-                  onMarkDone: (_) => ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Job marked as done!'),
-                      backgroundColor: Color(0xFF0F9B8E),
-                    ),
-                  ),
+                  onMarkDone: (id) => _handleMarkDone(id),
                 ),
+                // Pending tab
                 _JobList(
                   jobs: pending,
                   emptyLabel: 'No upcoming jobs scheduled',
@@ -184,6 +241,7 @@ class _MyJobsScreenState extends ConsumerState<MyJobsScreen>
                     ),
                   ),
                 ),
+                // Done tab
                 _JobList(jobs: completed, emptyLabel: 'No completed jobs yet'),
               ],
             ),
@@ -221,7 +279,7 @@ class _MyJobsScreenState extends ConsumerState<MyJobsScreen>
                       child: Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.15),
+                          color: Colors.white.withValues(alpha: 0.15),
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(Icons.arrow_back_rounded,
@@ -248,11 +306,11 @@ class _MyJobsScreenState extends ConsumerState<MyJobsScreen>
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
               child: Row(
                 children: [
-                  _summaryChip('$active', 'Active', const Color(0xFF0F9B8E)),
+                  _summaryChip('$active',    'Active', const Color(0xFF0F9B8E)),
                   const SizedBox(width: 10),
-                  _summaryChip('$pending', 'To-Do', const Color(0xFFF59E0B)),
+                  _summaryChip('$pending',   'To-Do',  const Color(0xFFF59E0B)),
                   const SizedBox(width: 10),
-                  _summaryChip('$completed', 'Done', Colors.white54),
+                  _summaryChip('$completed', 'Done',   Colors.white54),
                 ],
               ),
             ),
@@ -267,8 +325,8 @@ class _MyJobsScreenState extends ConsumerState<MyJobsScreen>
               indicatorSize: TabBarIndicatorSize.label,
               labelColor: Colors.white,
               unselectedLabelColor: Colors.white54,
-              labelStyle: const TextStyle(
-                  fontWeight: FontWeight.w700, fontSize: 14),
+              labelStyle:
+                  const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
               unselectedLabelStyle: const TextStyle(fontSize: 13),
               tabs: [
                 Tab(text: 'Active ($active)'),
@@ -287,7 +345,7 @@ class _MyJobsScreenState extends ConsumerState<MyJobsScreen>
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 10),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha:0.12),
+          color: Colors.white.withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(14),
         ),
         child: Column(
@@ -299,8 +357,7 @@ class _MyJobsScreenState extends ConsumerState<MyJobsScreen>
                     fontWeight: FontWeight.bold)),
             const SizedBox(height: 2),
             Text(label,
-                style: const TextStyle(
-                    color: Colors.white70, fontSize: 11)),
+                style: const TextStyle(color: Colors.white70, fontSize: 11)),
           ],
         ),
       ),
@@ -308,7 +365,7 @@ class _MyJobsScreenState extends ConsumerState<MyJobsScreen>
   }
 }
 
-//  Job List
+// ─── Job List ─────────────────────────────────────────────────────────────────
 
 class _JobList extends StatelessWidget {
   final List<WorkerJob> jobs;
@@ -325,17 +382,18 @@ class _JobList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<SevaLinkColors>()!;
+
     if (jobs.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(Icons.work_off_outlined,
-                size: 64, color: Colors.grey.shade300),
+                size: 64, color: colors.textSecondary.withValues(alpha: 0.4)),
             const SizedBox(height: 12),
             Text(emptyLabel,
-                style: TextStyle(
-                    color: Colors.grey.shade400, fontSize: 15)),
+                style: TextStyle(color: colors.textSecondary, fontSize: 15)),
           ],
         ),
       );
@@ -345,14 +403,17 @@ class _JobList extends StatelessWidget {
       itemCount: jobs.length,
       itemBuilder: (_, i) => _JobCard(
         job: jobs[i],
-        onMarkDone: onMarkDone == null ? null : () => onMarkDone!(jobs[i].id),
-        onViewDetails: onViewDetails == null ? null : () => onViewDetails!(jobs[i]),
+        onMarkDone:
+            onMarkDone == null ? null : () => onMarkDone!(jobs[i].id),
+        onViewDetails:
+            onViewDetails == null ? null : () => onViewDetails!(jobs[i]),
       ),
     );
   }
 }
 
-// Job Card
+// ─── Job Card ─────────────────────────────────────────────────────────────────
+
 class _JobCard extends StatelessWidget {
   final WorkerJob job;
   final VoidCallback? onMarkDone;
@@ -385,25 +446,33 @@ class _JobCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<SevaLinkColors>()!;
+    final isDark  = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colors.cardBg,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha:0.05),
-            blurRadius: 14,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        border: isDark
+            ? Border.all(color: colors.border, width: 1)
+            : null,
+        boxShadow: isDark
+            ? null
+            : [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 14,
+                  offset: const Offset(0, 4),
+                ),
+              ],
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            //  Title + status
+            // Title + status
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -412,7 +481,7 @@ class _JobCard extends StatelessWidget {
                   width: 42,
                   height: 42,
                   decoration: BoxDecoration(
-                    color: _statusColor.withValues(alpha:0.1),
+                    color: _statusColor.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(_statusIcon, color: _statusColor, size: 22),
@@ -423,16 +492,16 @@ class _JobCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(job.title,
-                          style: const TextStyle(
+                          style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
-                              color: Color(0xFF1F2937))),
+                              color: colors.textPrimary)),
                       if (job.category != null) ...[
                         const SizedBox(height: 2),
                         Text(job.category!,
-                            style: const TextStyle(
+                            style: TextStyle(
                                 fontSize: 12,
-                                color: Color(0xFF9CA3AF))),
+                                color: colors.textSecondary)),
                       ],
                     ],
                   ),
@@ -443,7 +512,7 @@ class _JobCard extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(
                       horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: _statusColor.withValues(alpha:0.1),
+                    color: _statusColor.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
@@ -458,26 +527,28 @@ class _JobCard extends StatelessWidget {
             ),
 
             const SizedBox(height: 14),
-            const Divider(height: 1, color: Color(0xFFF3F4F6)),
+            Divider(height: 1, color: colors.divider),
             const SizedBox(height: 12),
 
-            //  Details
-            _infoRow(Icons.person_outline_rounded, job.clientName),
+            // Details
+            _infoRow(Icons.person_outline_rounded, job.clientName, colors),
             const SizedBox(height: 6),
-            _infoRow(Icons.location_on_outlined, job.location),
+            _infoRow(Icons.location_on_outlined, job.location, colors),
             const SizedBox(height: 6),
-            _infoRow(Icons.calendar_today_outlined, job.date),
+            _infoRow(Icons.calendar_today_outlined, job.date, colors),
 
             const SizedBox(height: 14),
 
-            //  Budget + action button
+            // Budget + action button
             Row(
               children: [
                 Container(
                   padding: const EdgeInsets.symmetric(
                       horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFE8F5F2),
+                    color: isDark
+                        ? const Color(0xFF006B5E).withValues(alpha: 0.2)
+                        : const Color(0xFFE8F5F2),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text(
@@ -489,7 +560,7 @@ class _JobCard extends StatelessWidget {
                   ),
                 ),
                 const Spacer(),
-                _actionButton(),
+                _actionButton(context),
               ],
             ),
           ],
@@ -498,41 +569,39 @@ class _JobCard extends StatelessWidget {
     );
   }
 
-  Widget _infoRow(IconData icon, String text) {
+  Widget _infoRow(IconData icon, String text, SevaLinkColors colors) {
     return Row(
       children: [
-        Icon(icon, size: 14, color: const Color(0xFF9CA3AF)),
+        Icon(icon, size: 14, color: colors.textSecondary),
         const SizedBox(width: 6),
         Expanded(
           child: Text(text,
-              style: const TextStyle(
-                  color: Color(0xFF6B7280), fontSize: 13)),
+              style: TextStyle(color: colors.textSecondary, fontSize: 13)),
         ),
       ],
     );
   }
 
-  Widget _actionButton() {
+  Widget _actionButton(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     switch (job.status) {
       case JobStatus.active:
         return ElevatedButton.icon(
           onPressed: onMarkDone,
-          icon: const Icon(Icons.check_rounded,
-              size: 15, color: Colors.white),
+          icon: const Icon(Icons.check_rounded, size: 15, color: Colors.white),
           label: const Text('Mark Done',
               style: TextStyle(color: Colors.white, fontSize: 13)),
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFF0F9B8E),
-            padding: const EdgeInsets.symmetric(
-                horizontal: 14, vertical: 8),
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12)),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             elevation: 0,
             minimumSize: Size.zero,
             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
         );
-
 
       case JobStatus.pending:
         return OutlinedButton.icon(
@@ -540,11 +609,9 @@ class _JobCard extends StatelessWidget {
           icon: const Icon(Icons.visibility_outlined,
               size: 15, color: Color(0xFFF59E0B)),
           label: const Text('View',
-              style: TextStyle(
-                  color: Color(0xFFF59E0B), fontSize: 13)),
+              style: TextStyle(color: Color(0xFFF59E0B), fontSize: 13)),
           style: OutlinedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(
-                horizontal: 14, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             side: const BorderSide(color: Color(0xFFF59E0B)),
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12)),
@@ -555,20 +622,26 @@ class _JobCard extends StatelessWidget {
 
       case JobStatus.completed:
         return Container(
-          padding: const EdgeInsets.symmetric(
-              horizontal: 12, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: const Color(0xFFF3F4F6),
+            color: isDark
+                ? const Color(0xFF2E3347)
+                : const Color(0xFFF3F4F6),
             borderRadius: BorderRadius.circular(12),
           ),
-          child: const Row(
+          child: Row(
             children: [
               Icon(Icons.check_circle_rounded,
-                  size: 14, color: Color(0xFF6B7280)),
-              SizedBox(width: 4),
+                  size: 14,
+                  color: isDark
+                      ? const Color(0xFF94A3B8)
+                      : const Color(0xFF6B7280)),
+              const SizedBox(width: 4),
               Text('Completed',
                   style: TextStyle(
-                      color: Color(0xFF6B7280),
+                      color: isDark
+                          ? const Color(0xFF94A3B8)
+                          : const Color(0xFF6B7280),
                       fontSize: 12,
                       fontWeight: FontWeight.w600)),
             ],
