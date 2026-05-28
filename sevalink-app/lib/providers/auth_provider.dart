@@ -102,31 +102,7 @@ class AuthNotifier extends Notifier<AuthState> {
       if (token != null) {
         final user = await _repository.getCurrentUser();
 
-        // Restore saved profile overrides from SharedPreferences
-        final prefs = await SharedPreferences.getInstance();
-        final savedName  = prefs.getString(_kName);
-        final savedPhone = prefs.getString(_kPhone);
-        final extra = ProfileExtra(
-          location:         prefs.getString(_kLocation)  ?? 'Colombo, Sri Lanka',
-          bio:              prefs.getString(_kBio)        ?? 'Experienced electrician with 8+ years working on residential and commercial projects.',
-          hourlyRate:       prefs.getString(_kRate)       ?? '2,500',
-          profileImagePath: prefs.getString(_kImagePath),
-        );
-
-        // Apply local name/phone overrides if user previously edited them
-        final effectiveUser = User(
-          id:          user.id,
-          fullName:    savedName  ?? user.fullName,
-          email:       user.email,
-          phoneNumber: savedPhone ?? user.phoneNumber,
-          role:        user.role,
-        );
-
-        state = state.copyWith(
-          user: effectiveUser,
-          profileExtra: extra,
-          isLoading: false,
-        );
+        await _restoreLocalProfileData(user);
       } else {
         state = state.copyWith(isLoading: false);
       }
@@ -134,6 +110,32 @@ class AuthNotifier extends Notifier<AuthState> {
       await logout();
       state = state.copyWith(isLoading: false, error: e.toString());
     }
+  }
+
+  Future<void> _restoreLocalProfileData(User apiUser) async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedName  = prefs.getString(_kName);
+    final savedPhone = prefs.getString(_kPhone);
+    final extra = ProfileExtra(
+      location:         prefs.getString(_kLocation)  ?? 'Colombo, Sri Lanka',
+      bio:              prefs.getString(_kBio)        ?? 'Experienced electrician with 8+ years working on residential and commercial projects.',
+      hourlyRate:       prefs.getString(_kRate)       ?? '2,500',
+      profileImagePath: prefs.getString(_kImagePath),
+    );
+
+    final effectiveUser = User(
+      id:          apiUser.id,
+      fullName:    savedName  ?? apiUser.fullName,
+      email:       apiUser.email,
+      phoneNumber: savedPhone ?? apiUser.phoneNumber,
+      role:        apiUser.role,
+    );
+
+    state = state.copyWith(
+      user: effectiveUser,
+      profileExtra: extra,
+      isLoading: false,
+    );
   }
 
   //  Save all profile fields to disk
@@ -169,7 +171,7 @@ class AuthNotifier extends Notifier<AuthState> {
       await _secureStorage.write(key: 'access_token',  value: data['accessToken']);
       await _secureStorage.write(key: 'refresh_token', value: data['refreshToken']);
       final user = User.fromJson(data['user']);
-      state = state.copyWith(user: user, isLoading: false);
+      await _restoreLocalProfileData(user);
       return true;
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
@@ -185,7 +187,7 @@ class AuthNotifier extends Notifier<AuthState> {
       await _secureStorage.write(key: 'access_token',  value: data['accessToken']);
       await _secureStorage.write(key: 'refresh_token', value: data['refreshToken']);
       final user = User.fromJson(data['user']);
-      state = state.copyWith(user: user, isLoading: false);
+      await _restoreLocalProfileData(user);
       return true;
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());

@@ -4,12 +4,12 @@ class ApiEndpoints {
   static String get baseUrl {
     try {
       if (Platform.isAndroid) {
-        return 'http://10.126.126.148:8080/api';
+        return 'http://192.168.1.38:8080/api';
       }
     } catch (e) {
       // Web or other platforms
     }
-    return 'http://10.126.126.148:8080/api';
+    return 'http://192.168.1.38:8080/api';
   }
 
   static String get login => '$baseUrl/auth/login';
@@ -19,6 +19,5 @@ class ApiEndpoints {
   static String get refreshToken => '$baseUrl/auth/refresh';
   static String get logout => '$baseUrl/auth/logout';
   static String get me => '$baseUrl/auth/me';
-
-
+  static String get clientDashboard => '$baseUrl/client/dashboard';
 }

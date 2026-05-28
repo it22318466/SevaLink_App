@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as path;
 import '../../../providers/auth_provider.dart';
 
 class WorkerProfileScreen extends ConsumerStatefulWidget {
@@ -49,7 +51,10 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
     _rateController = TextEditingController(text: extra.hourlyRate);
     // Restore profile image from Riverpod state
     if (extra.profileImagePath != null) {
-      _profileImage = File(extra.profileImagePath!);
+      final file = File(extra.profileImagePath!);
+      if (file.existsSync()) {
+        _profileImage = file;
+      }
     }
   }
 
@@ -63,6 +68,21 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
     _skillsController.dispose();
     _rateController.dispose();
     super.dispose();
+  }
+
+  Future<void> _saveProfileImagePermanently(String tempPath) async {
+    try {
+      final appDir = await getApplicationDocumentsDirectory();
+      final fileName = path.basename(tempPath);
+      final savedImage = await File(tempPath).copy('${appDir.path}/$fileName');
+      
+      if (mounted) {
+        setState(() => _profileImage = savedImage);
+        ref.read(authProvider.notifier).updateProfileImage(savedImage.path);
+      }
+    } catch (e) {
+      debugPrint('Error saving profile image: $e');
+    }
   }
 
   Future<void> _pickProfileImage() async {
@@ -132,8 +152,7 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
                     imageQuality: 85,
                   );
                   if (picked != null && mounted) {
-                    setState(() => _profileImage = File(picked.path));
-                    ref.read(authProvider.notifier).updateProfileImage(picked.path);
+                    await _saveProfileImagePermanently(picked.path);
                   }
                 },
               ),
@@ -157,8 +176,7 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
                     imageQuality: 85,
                   );
                   if (picked != null && mounted) {
-                    setState(() => _profileImage = File(picked.path));
-                    ref.read(authProvider.notifier).updateProfileImage(picked.path);
+                    await _saveProfileImagePermanently(picked.path);
                   }
                 },
               ),

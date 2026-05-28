@@ -19,7 +19,7 @@ class DioClient {
     );
     _dio.interceptors.add(TokenInterceptor(_dio, _secureStorage));
     // For debugging
-    _dio.interceptors.add(LogInterceptor(responseBody: true, requestBody: true));
+    _dio.interceptors.add(LogInterceptor(responseBody: true, requestBody: false));
   }
   Dio get dio => _dio;
 }

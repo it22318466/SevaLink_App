@@ -570,6 +570,7 @@ class _WorkerDashboardScreenState
                   ),
                   const SizedBox(height: 12),
                   // Location + Time
+
                   Row(
                     children: [
                       const Icon(Icons.location_on_outlined,

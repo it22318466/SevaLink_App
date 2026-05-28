@@ -374,7 +374,7 @@ class _ClientDashboardScreenState extends ConsumerState<ClientDashboardScreen> {
             shrinkWrap: true, // Forces layout engine to compute explicit height
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 4,
-              childAspectRatio: 0.8, // Configured to accommodate icon and text label vertically
+              childAspectRatio: 0.72, // Configured to accommodate icon and text label vertically
               crossAxisSpacing: 16,
               mainAxisSpacing: 24,
             ),

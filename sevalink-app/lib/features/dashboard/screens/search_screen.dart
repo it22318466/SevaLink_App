@@ -354,10 +354,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen>
 
   Widget _buildInitialHint() {
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(40),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(40),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
           children: [
             Container(
               padding: const EdgeInsets.all(24),
@@ -385,6 +386,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen>
             ),
           ],
         ),
+      ),
       ),
     );
   }
@@ -451,10 +453,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen>
         ? 'No $category workers found'
         : 'No results for "$query"';
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(40),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(40),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
           children: [
             const Text('🔍', style: TextStyle(fontSize: 52)),
             const SizedBox(height: 16),
@@ -474,15 +477,17 @@ class _SearchScreenState extends ConsumerState<SearchScreen>
           ],
         ),
       ),
+      ),
     );
   }
 
   Widget _buildError(String message) {
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(40),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(40),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
           children: [
             const Text('⚠️', style: TextStyle(fontSize: 48)),
             const SizedBox(height: 16),
@@ -514,6 +519,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen>
             ),
           ],
         ),
+      ),
       ),
     );
   }

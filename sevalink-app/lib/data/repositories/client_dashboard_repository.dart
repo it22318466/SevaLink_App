@@ -15,7 +15,6 @@ class ClientDashboardRepository {
       if (response.statusCode == 200) {
         final List<dynamic> topWorkersJson = response.data['topWorkers'];
         return topWorkersJson.map((json) => WorkerProfile(
-          id: json['id'],
           name: json['name'],
           profession: json['profession'],
           hourlyRate: (json['hourlyRate'] as num).toInt(),

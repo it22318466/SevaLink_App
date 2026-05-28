@@ -20,15 +20,18 @@ class WorkerSearchResult {
   });
 
   factory WorkerSearchResult.fromJson(Map<String, dynamic> json) {
+    final user = json['user'] as Map<String, dynamic>? ?? {};
+    final category = json['category'] as Map<String, dynamic>? ?? {};
+
     return WorkerSearchResult(
       id: (json['id'] as num?)?.toInt() ?? 0,
-      name: json['name'] as String? ?? json['fullName'] as String? ?? '',
-      profession: json['profession'] as String? ?? json['category'] as String? ?? '',
+      name: user['fullName'] as String? ?? 'Unknown',
+      profession: category['name'] as String? ?? 'Unknown',
       rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
       hourlyRate: (json['hourlyRate'] as num?)?.toInt() ?? 0,
-      location: json['location'] as String? ?? '',
-      isVerified: json['isVerified'] as bool? ?? json['verified'] as bool? ?? false,
-      imageUrl: json['imageUrl'] as String? ?? json['profileImageUrl'] as String?,
+      location: user['location'] as String? ?? 'Unknown Location',
+      isVerified: user['isPhoneVerified'] as bool? ?? false,
+      imageUrl: user['profileImageUrl'] as String?,
     );
   }
 }
