@@ -131,7 +131,8 @@ class _WorkerJobsNotifier extends Notifier<List<WorkerJob>> {
   }
 }
 
-final _workerJobsProvider =
+// Public so the home screen can watch the live active count
+final workerJobsListProvider =
     NotifierProvider<_WorkerJobsNotifier, List<WorkerJob>>(
   _WorkerJobsNotifier.new,
 );
@@ -166,7 +167,7 @@ class _MyJobsScreenState extends ConsumerState<MyJobsScreen>
       all.where((j) => j.status == s).toList();
 
   void _handleMarkDone(String id) {
-    ref.read(_workerJobsProvider.notifier).markDone(id);
+    ref.read(workerJobsListProvider.notifier).markDone(id);
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -194,7 +195,7 @@ class _MyJobsScreenState extends ConsumerState<MyJobsScreen>
 
   @override
   Widget build(BuildContext context) {
-    final jobs      = ref.watch(_workerJobsProvider);
+    final jobs      = ref.watch(workerJobsListProvider);
     final active    = _byStatus(jobs, JobStatus.active);
     final pending   = _byStatus(jobs, JobStatus.pending);
     final completed = _byStatus(jobs, JobStatus.completed);

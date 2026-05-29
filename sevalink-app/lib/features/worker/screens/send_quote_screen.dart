@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import '../../../data/models/job.dart';
+import '../../../core/themes/app_theme.dart';
 
 class SendQuoteScreen extends StatefulWidget {
   final Job job;
@@ -71,7 +72,7 @@ class _SendQuoteScreenState extends State<SendQuoteScreen>
     if (_submitted) return _buildSuccessScreen(context);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F6FB),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: FadeTransition(
         opacity: _fadeAnimation,
         child: SlideTransition(
@@ -241,29 +242,29 @@ class _SendQuoteScreenState extends State<SendQuoteScreen>
   Widget _buildSectionLabel(String text) {
     return Text(
       text,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 14,
         fontWeight: FontWeight.w700,
-        color: Color(0xFF1F2937),
+        color: context.sevaColors.textPrimary,
         letterSpacing: 0.2,
       ),
     );
   }
 
   InputDecoration _fieldDecoration(String hint) {
+    final colors = context.sevaColors;
     return InputDecoration(
       hintText: hint,
-      hintStyle: const TextStyle(
-          color: Color(0xFF9CA3AF), fontWeight: FontWeight.normal),
+      hintStyle: TextStyle(
+          color: colors.textSecondary, fontWeight: FontWeight.normal),
       filled: true,
-      fillColor: Colors.white,
+      fillColor: colors.inputFill,
       border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide.none),
       enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide:
-              const BorderSide(color: Color(0xFFE5E7EB), width: 1)),
+          borderSide: BorderSide(color: colors.border, width: 1)),
       focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide:
@@ -286,10 +287,10 @@ class _SendQuoteScreenState extends State<SendQuoteScreen>
       controller: _amountController,
       keyboardType: TextInputType.number,
       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-      style: const TextStyle(
+      style: TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.w600,
-          color: Color(0xFF1F2937)),
+          color: context.sevaColors.textPrimary),
       decoration: _fieldDecoration('Enter your quote amount').copyWith(
         prefixText: 'Rs. ',
         prefixStyle: const TextStyle(
@@ -332,10 +333,10 @@ class _SendQuoteScreenState extends State<SendQuoteScreen>
             controller: _timelineController,
             keyboardType: TextInputType.number,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            style: const TextStyle(
+            style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF1F2937)),
+                color: context.sevaColors.textPrimary),
             decoration: _fieldDecoration('e.g. 3'),
             validator: (val) {
               if (val == null || val.isEmpty) return 'Required';
@@ -348,9 +349,9 @@ class _SendQuoteScreenState extends State<SendQuoteScreen>
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: context.sevaColors.cardBg,
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
+            border: Border.all(color: context.sevaColors.border, width: 1),
           ),
           child: Row(
             children: List.generate(_timelineUnits.length, (i) {
@@ -374,7 +375,7 @@ class _SendQuoteScreenState extends State<SendQuoteScreen>
                       fontWeight: FontWeight.w600,
                       color: selected
                           ? Colors.white
-                          : const Color(0xFF6B7280),
+                          : context.sevaColors.textSecondary,
                     ),
                   ),
                 ),
@@ -390,8 +391,8 @@ class _SendQuoteScreenState extends State<SendQuoteScreen>
     return TextFormField(
       controller: _messageController,
       maxLines: 5,
-      style: const TextStyle(
-          fontSize: 15, color: Color(0xFF1F2937), height: 1.5),
+      style: TextStyle(
+          fontSize: 15, color: context.sevaColors.textPrimary, height: 1.5),
       decoration: _fieldDecoration(
           'Introduce yourself and explain why you\'re the best fit for this job. Mention your experience, tools you\'ll use, and any questions you have...'),
       validator: (val) {
@@ -407,12 +408,15 @@ class _SendQuoteScreenState extends State<SendQuoteScreen>
   }
 
   Widget _buildTipsCard() {
+    final isDark = context.isDark;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFF0FDF4),
+        color: isDark ? const Color(0xFF0D2218) : const Color(0xFFF0FDF4),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF86EFAC), width: 1),
+        border: Border.all(
+            color: isDark ? const Color(0xFF166534) : const Color(0xFF86EFAC),
+            width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -454,9 +458,9 @@ class _SendQuoteScreenState extends State<SendQuoteScreen>
           const SizedBox(width: 8),
           Expanded(
             child: Text(text,
-                style: const TextStyle(
+                style: TextStyle(
                     fontSize: 13,
-                    color: Color(0xFF374151),
+                    color: context.sevaColors.textPrimary,
                     height: 1.4)),
           ),
         ],
@@ -465,13 +469,17 @@ class _SendQuoteScreenState extends State<SendQuoteScreen>
   }
 
   Widget _buildSubmitBar(BuildContext context) {
+    final colors = context.sevaColors;
+    final isDark  = context.isDark;
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colors.cardBg,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
+            color: isDark
+                ? Colors.black.withValues(alpha: 0.3)
+                : Colors.black.withValues(alpha: 0.06),
             blurRadius: 20,
             offset: const Offset(0, -5),
           ),
@@ -515,8 +523,9 @@ class _SendQuoteScreenState extends State<SendQuoteScreen>
   }
 
   Widget _buildSuccessScreen(BuildContext context) {
+    final colors = context.sevaColors;
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: colors.bodyBg,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(32),
@@ -549,16 +558,16 @@ class _SendQuoteScreenState extends State<SendQuoteScreen>
                 style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF1F2937),
+                  color: Color(0xFF006B5E),
                 ),
               ),
               const SizedBox(height: 12),
               Text(
                 'Your quote for "${widget.job.title}" has been sent successfully. The client will review it and get back to you.',
                 textAlign: TextAlign.center,
-                style: const TextStyle(
+                style: TextStyle(
                     fontSize: 15,
-                    color: Color(0xFF6B7280),
+                    color: colors.textSecondary,
                     height: 1.6),
               ),
               const SizedBox(height: 40),
@@ -609,11 +618,12 @@ class _SendQuoteScreenState extends State<SendQuoteScreen>
   }
 
   Widget _buildSuccessStat(String label, String value, IconData icon) {
+    final colors = context.sevaColors;
     return Container(
       padding:
           const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
       decoration: BoxDecoration(
-        color: const Color(0xFFF4F6FB),
+        color: colors.cardBg2,
         borderRadius: BorderRadius.circular(14),
       ),
       child: Row(
@@ -624,15 +634,15 @@ class _SendQuoteScreenState extends State<SendQuoteScreen>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(label,
-                  style: const TextStyle(
-                      fontSize: 12, color: Color(0xFF9CA3AF))),
+                  style: TextStyle(
+                      fontSize: 12, color: colors.textSecondary)),
               const SizedBox(height: 2),
               Text(
                 value,
-                style: const TextStyle(
+                style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF1F2937)),
+                    color: colors.textPrimary),
               ),
             ],
           ),

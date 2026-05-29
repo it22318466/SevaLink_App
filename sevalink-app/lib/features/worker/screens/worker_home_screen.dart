@@ -5,6 +5,7 @@ import 'job_details_screen.dart';
 import 'my_jobs_screen.dart';
 import '../../../data/models/job.dart';
 import '../../../providers/auth_provider.dart';
+import '../../../core/themes/app_theme.dart';
 
 //  Local UI model
 class JobListing {
@@ -84,7 +85,7 @@ class _WorkerHomeScreenState extends ConsumerState<WorkerHomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F4F8),
+      backgroundColor: context.sevaColors.bodyBg,
       endDrawer: const _NotificationsDrawer(),
       body: _buildBody(),
       bottomNavigationBar: _BottomNav(
@@ -173,12 +174,12 @@ class _HomeContent extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
+                Text(
                   'Available Jobs',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF1A1A2E),
+                    color: context.sevaColors.textPrimary,
                   ),
                 ),
                 Container(
@@ -353,21 +354,28 @@ class _StatChip extends StatelessWidget {
 }
 
 //  Quick Access
-class _QuickAccessSection extends StatelessWidget {
+class _QuickAccessSection extends ConsumerWidget {
   final VoidCallback? onMyJobsTap;
   final VoidCallback? onProfileTap;
   const _QuickAccessSection({this.onMyJobsTap, this.onProfileTap});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colors = context.sevaColors;
+    final isDark  = context.isDark;
+    // Watch the live jobs list to get real active count
+    final jobs = ref.watch(workerJobsListProvider);
+    final activeCount = jobs.where((j) => j.status == JobStatus.active).length;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: colors.cardBg,
           borderRadius: BorderRadius.circular(20),
-          boxShadow: [
+          border: isDark ? Border.all(color: colors.border, width: 1) : null,
+          boxShadow: isDark ? null : [
             BoxShadow(
               color: Colors.black.withValues(alpha:0.07),
               blurRadius: 16,
@@ -380,7 +388,7 @@ class _QuickAccessSection extends StatelessWidget {
             Expanded(
               child: _QuickCard(
                 label: 'My Jobs',
-                sublabel: '3 active jobs',
+                sublabel: '$activeCount active ${activeCount == 1 ? 'job' : 'jobs'}',
                 color: const Color(0xFF27AE60),
                 icon: Icons.assignment_outlined,
                 onTap: onMyJobsTap ?? () {},
@@ -516,11 +524,14 @@ class _JobCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.sevaColors;
+    final isDark  = context.isDark;
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colors.cardBg,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
+        border: isDark ? Border.all(color: colors.border, width: 1) : null,
+        boxShadow: isDark ? null : [
           BoxShadow(
             color: Colors.black.withValues(alpha:0.05),
             blurRadius: 12,
@@ -539,10 +550,10 @@ class _JobCard extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(job.title,
-                      style: const TextStyle(
+                      style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF1A1A2E))),
+                          color: colors.textPrimary)),
                 ),
                 if (job.isNew) ...[
                   const SizedBox(width: 8),
@@ -565,13 +576,13 @@ class _JobCard extends StatelessWidget {
 
             const SizedBox(height: 6),
             Text(job.description,
-                style: const TextStyle(
-                    color: Color(0xFF6B7280),
+                style: TextStyle(
+                    color: colors.textSecondary,
                     fontSize: 13,
                     height: 1.4)),
 
             const SizedBox(height: 12),
-            const Divider(height: 1, color: Color(0xFFF0F0F0)),
+            Divider(height: 1, color: colors.divider),
             const SizedBox(height: 12),
 
             // Location + time
@@ -582,17 +593,17 @@ class _JobCard extends StatelessWidget {
                 const SizedBox(width: 4),
                 Expanded(
                   child: Text(job.location,
-                      style: const TextStyle(
-                          color: Color(0xFF6B7280), fontSize: 12),
+                      style: TextStyle(
+                          color: colors.textSecondary, fontSize: 12),
                       overflow: TextOverflow.ellipsis),
                 ),
                 const SizedBox(width: 8),
-                const Icon(Icons.access_time,
-                    size: 14, color: Color(0xFF9CA3AF)),
+                Icon(Icons.access_time,
+                    size: 14, color: colors.textSecondary),
                 const SizedBox(width: 4),
                 Text(job.postedAgo,
-                    style: const TextStyle(
-                        color: Color(0xFF6B7280), fontSize: 12)),
+                    style: TextStyle(
+                        color: colors.textSecondary, fontSize: 12)),
               ],
             ),
 
@@ -642,11 +653,10 @@ class _JobCard extends StatelessWidget {
                     style: OutlinedButton.styleFrom(
                       padding:
                       const EdgeInsets.symmetric(vertical: 10),
-                      side: const BorderSide(
-                          color: Color(0xFFD1D5DB)),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10)),
-                      foregroundColor: const Color(0xFF374151),
+                    side: BorderSide(color: colors.border),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10)),
+                    foregroundColor: colors.textPrimary,
                       textStyle: const TextStyle(fontSize: 13),
                     ),
                     child: const Text('View Details'),
@@ -688,6 +698,8 @@ class _BottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.sevaColors;
+    final isDark  = context.isDark;
     final items = [
       {'icon': Icons.home_outlined, 'active': Icons.home, 'label': 'Home'},
       {'icon': Icons.work_outline, 'active': Icons.work, 'label': 'Jobs'},
@@ -705,10 +717,12 @@ class _BottomNav extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colors.cardBg,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha:0.08),
+            color: isDark
+                ? Colors.black.withValues(alpha: 0.3)
+                : Colors.black.withValues(alpha:0.08),
             blurRadius: 12,
             offset: const Offset(0, -2),
           ),
@@ -771,17 +785,16 @@ class _ChatPage extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(Icons.chat_bubble_outline_rounded,
-              size: 64, color: Colors.grey.shade300),
+              size: 64, color: context.sevaColors.textSecondary),
           const SizedBox(height: 16),
-          const Text('Chat',
+          Text('Chat',
               style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF1A1A2E))),
+                  color: context.sevaColors.textPrimary)),
           const SizedBox(height: 8),
           Text('Coming soon',
-              style:
-              TextStyle(fontSize: 14, color: Colors.grey.shade500)),
+              style: TextStyle(fontSize: 14, color: context.sevaColors.textSecondary)),
         ],
       ),
     );
@@ -802,25 +815,26 @@ class _NotificationsDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.sevaColors;
     return Drawer(
-      backgroundColor: Colors.white,
+      backgroundColor: colors.cardBg,
       surfaceTintColor: Colors.transparent,
       child: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Padding(
-              padding: EdgeInsets.fromLTRB(20, 24, 20, 16),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
               child: Text(
                 'Notifications',
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF1A1A2E),
+                  color: colors.textPrimary,
                 ),
               ),
             ),
-            const Divider(height: 1, color: Color(0xFFF3F4F6)),
+            Divider(height: 1, color: colors.divider),
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.symmetric(vertical: 8),
