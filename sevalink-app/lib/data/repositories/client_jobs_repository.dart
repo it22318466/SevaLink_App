@@ -36,4 +36,19 @@ class ClientJobsRepository {
       throw Exception('Error fetching jobs: $e');
     }
   }
+
+  Future<Map<String, dynamic>> createJob(Map<String, dynamic> jobData) async {
+    try {
+      final response = await _dioClient.dio.post(
+        '/jobs',
+        data: jobData,
+      );
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return response.data as Map<String, dynamic>;
+      }
+      throw Exception('Failed to create job');
+    } catch (e) {
+      throw Exception('Error creating job: $e');
+    }
+  }
 }

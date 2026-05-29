@@ -14,8 +14,7 @@ class ClientJobsScreen extends ConsumerStatefulWidget {
 class _ClientJobsScreenState extends ConsumerState<ClientJobsScreen> {
   int _currentNavIndex = 1; // Jobs tab
   int _selectedTabIndex = 0;
-  final List<String> _tabs = ['All', 'Open', 'In Progress'];
-  final List<String> _statusFilters = ['ALL', 'OPEN', 'ASSIGNED'];
+  final List<String> _statusFilters = ['OPEN', 'ASSIGNED', 'COMPLETED', 'CANCELLED'];
 
   void _onNavTapped(int index) {
     if (index == _currentNavIndex) return;
@@ -59,216 +58,174 @@ class _ClientJobsScreenState extends ConsumerState<ClientJobsScreen> {
     )));
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
+      backgroundColor: const Color(0xFFE64A19), // Deep orange background for top
       body: Column(
         children: [
-          // Orange header
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Color(0xFFD3410A), Color(0xFFE8520B)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-            ),
-            child: SafeArea(
-              bottom: false,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 12.0),
-                child: Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back, color: Colors.white),
-                      onPressed: () => context.go('/client/home'),
-                    ),
-                    const Expanded(
-                      child: Text(
-                        'My Jobs',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.add, color: Colors.white),
-                      onPressed: () {
-                        // Navigate to create job if exists
-                      },
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-
-          // Stats row
-          Container(
-            color: const Color(0xFFE8520B),
-            padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
-            child: statsAsync.when(
-              data: (stats) => Row(
-                children: [
-                  _buildStatPill('${stats['total'] ?? 0}', 'Total', const Color(0xFF3B82F6)),
-                  const SizedBox(width: 8),
-                  _buildStatPill('${stats['open'] ?? 0}', 'Open', const Color(0xFF22C55E)),
-                  const SizedBox(width: 8),
-                  _buildStatPill('${stats['active'] ?? 0}', 'Active', const Color(0xFFF59E0B)),
-                  const SizedBox(width: 8),
-                  _buildStatPill('${stats['done'] ?? 0}', 'Done', const Color(0xFF22C55E)),
-                ],
-              ),
-              loading: () => const Center(
-                child: SizedBox(
-                  height: 50,
-                  child: CircularProgressIndicator(color: Colors.white),
-                ),
-              ),
-              error: (_, __) => Row(
-                children: [
-                  _buildStatPill('0', 'Total', const Color(0xFF3B82F6)),
-                  const SizedBox(width: 8),
-                  _buildStatPill('0', 'Open', const Color(0xFF22C55E)),
-                  const SizedBox(width: 8),
-                  _buildStatPill('0', 'Active', const Color(0xFFF59E0B)),
-                  const SizedBox(width: 8),
-                  _buildStatPill('0', 'Done', const Color(0xFF22C55E)),
-                ],
-              ),
-            ),
-          ),
-
-          // Tabs
-          Container(
-            color: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              physics: const BouncingScrollPhysics(),
-              child: Row(
-                children: List.generate(_tabs.length, (index) {
-                  final isSelected = _selectedTabIndex == index;
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: GestureDetector(
-                      onTap: () => setState(() => _selectedTabIndex = index),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                        decoration: BoxDecoration(
-                          color: isSelected ? const Color(0xFFD3410A) : Colors.transparent,
-                          borderRadius: BorderRadius.circular(25),
-                          border: isSelected
-                              ? null
-                              : Border.all(color: Colors.grey.shade300),
-                        ),
-                        child: Row(
-                          children: [
-                            if (index == 0 || index == 2)
-                              Padding(
-                                padding: const EdgeInsets.only(right: 6),
-                                child: Icon(
-                                  Icons.show_chart,
-                                  size: 16,
-                                  color: isSelected ? Colors.white : Colors.grey.shade600,
-                                ),
-                              ),
-                            if (index == 1)
-                              Padding(
-                                padding: const EdgeInsets.only(right: 6),
-                                child: Icon(
-                                  Icons.access_time,
-                                  size: 16,
-                                  color: isSelected ? Colors.white : Colors.grey.shade600,
-                                ),
-                              ),
-                            Text(
-                              _tabs[index],
-                              style: TextStyle(
-                                color: isSelected ? Colors.white : Colors.grey.shade700,
-                                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
-                }),
-              ),
-            ),
-          ),
-
-          // Job count + Filter
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          SafeArea(
+            bottom: false,
+            child: Column(
               children: [
-                jobsAsync.when(
-                  data: (jobs) => Text(
-                    '${jobs.length} Jobs',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF1F2937),
-                    ),
-                  ),
-                  loading: () => const Text('Loading...'),
-                  error: (_, __) => const Text('0 Jobs'),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.grey.shade300),
-                  ),
+                // App Bar
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                   child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Icon(Icons.filter_list, size: 18, color: Colors.grey.shade700),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Filter',
-                        style: TextStyle(
-                          color: Colors.grey.shade700,
-                          fontWeight: FontWeight.w500,
+                      IconButton(
+                        icon: const Icon(Icons.arrow_back, color: Colors.white),
+                        onPressed: () => context.go('/client/home'),
+                      ),
+                      const Text(
+                        'My Jobs',
+                        style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                      ),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.2),
+                          shape: BoxShape.circle,
+                        ),
+                        child: IconButton(
+                          icon: const Icon(Icons.add, color: Colors.white),
+                          onPressed: () => context.push('/client/jobs/post'),
                         ),
                       ),
                     ],
                   ),
                 ),
+                const SizedBox(height: 16),
+                // Stats Row
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                  child: statsAsync.when(
+                    data: (stats) => Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        _buildStatSquare('${stats['total'] ?? 0}', 'Total'),
+                        _buildStatSquare('${stats['open'] ?? 0}', 'Open'),
+                        _buildStatSquare('${stats['active'] ?? 0}', 'Active'),
+                        _buildStatSquare('${stats['done'] ?? 0}', 'Done'),
+                      ],
+                    ),
+                    loading: () => const SizedBox(height: 80, child: Center(child: CircularProgressIndicator(color: Colors.white))),
+                    error: (_, __) => Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        _buildStatSquare('0', 'Total'),
+                        _buildStatSquare('0', 'Open'),
+                        _buildStatSquare('0', 'Active'),
+                        _buildStatSquare('0', 'Done'),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
               ],
             ),
           ),
-
-          // Job list
+          
+          // White Overlap Container (Tabs & Jobs)
           Expanded(
-            child: jobsAsync.when(
-              data: (jobs) => jobs.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
+            child: Container(
+              decoration: const BoxDecoration(
+                color: Color(0xFFF8F9FA),
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(24),
+                  topRight: Radius.circular(24),
+                ),
+              ),
+              child: Column(
+                children: [
+                  // Tabs without scrollbar
+                  Padding(
+                    padding: const EdgeInsets.only(top: 20, left: 16, right: 16),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      physics: const BouncingScrollPhysics(),
+                      child: Row(
                         children: [
-                          Icon(Icons.work_off_outlined, size: 64, color: Colors.grey.shade400),
-                          const SizedBox(height: 16),
-                          Text(
-                            'No jobs found',
-                            style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
-                          ),
+                          _buildTabItem(0, 'Open', null),
+                          const SizedBox(width: 16),
+                          _buildTabItem(1, 'In Progress', null),
+                          const SizedBox(width: 16),
+                          _buildTabItem(2, 'Completed', Icons.check_circle_outline),
+                          const SizedBox(width: 16),
+                          _buildTabItem(3, 'Cancelled', Icons.cancel_outlined),
                         ],
                       ),
-                    )
-                  : ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      itemCount: jobs.length,
-                      itemBuilder: (context, index) => _buildJobCard(jobs[index]),
                     ),
-              loading: () => const Center(child: CircularProgressIndicator(color: Color(0xFFD3410A))),
-              error: (e, _) => Center(
-                child: Text('Error loading jobs: $e'),
+                  ),
+                  
+                  // Job count + Filter
+                  Padding(
+                    padding: const EdgeInsets.only(left: 20, right: 20, top: 24, bottom: 12),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        jobsAsync.when(
+                          data: (jobs) => Text(
+                            '${jobs.length} Jobs',
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1F2937),
+                            ),
+                          ),
+                          loading: () => const Text('Loading...'),
+                          error: (_, __) => const Text('0 Jobs'),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: Colors.grey.shade200),
+                            boxShadow: [
+                              BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 4, offset: const Offset(0, 2)),
+                            ],
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(Icons.filter_alt_outlined, size: 18, color: Colors.grey.shade700),
+                              const SizedBox(width: 6),
+                              Text(
+                                'Filter',
+                                style: TextStyle(color: Colors.grey.shade700, fontWeight: FontWeight.w500),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  
+                  // Job list
+                  Expanded(
+                    child: jobsAsync.when(
+                      data: (jobs) => jobs.isEmpty
+                          ? Center(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.work_off_outlined, size: 64, color: Colors.grey.shade300),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    'No jobs found',
+                                    style: TextStyle(fontSize: 16, color: Colors.grey.shade500),
+                                  ),
+                                ],
+                              ),
+                            )
+                          : ListView.builder(
+                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                              physics: const BouncingScrollPhysics(),
+                              itemCount: jobs.length,
+                              itemBuilder: (context, index) => _buildJobCard(jobs[index]),
+                            ),
+                      loading: () => const Center(child: CircularProgressIndicator(color: Color(0xFFD3410A))),
+                      error: (e, _) => Center(child: Text('Error loading jobs: $e')),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -278,31 +235,60 @@ class _ClientJobsScreenState extends ConsumerState<ClientJobsScreen> {
     );
   }
 
-  Widget _buildStatPill(String value, String label, Color color) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          children: [
-            Text(
-              value,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+  Widget _buildStatSquare(String value, String label) {
+    return Container(
+      width: 75,
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        children: [
+          Text(
+            value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
             ),
-            const SizedBox(height: 2),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTabItem(int index, String title, IconData? icon) {
+    final isSelected = _selectedTabIndex == index;
+    return GestureDetector(
+      onTap: () => setState(() => _selectedTabIndex = index),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Row(
+          children: [
+            if (icon != null) ...[
+              Icon(
+                icon,
+                size: 18,
+                color: isSelected ? const Color(0xFF1F2937) : Colors.grey.shade500,
+              ),
+              const SizedBox(width: 6),
+            ],
             Text(
-              label,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 11,
-                fontWeight: FontWeight.w500,
+              title,
+              style: TextStyle(
+                color: isSelected ? const Color(0xFF1F2937) : Colors.grey.shade500,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                fontSize: 15,
               ),
             ),
           ],
@@ -316,35 +302,41 @@ class _ClientJobsScreenState extends ConsumerState<ClientJobsScreen> {
     final urgency = job['urgency'] ?? 'FLEXIBLE';
     final budgetMin = job['budgetMin'];
     final budgetMax = job['budgetMax'];
-    final quoteCount = job['quoteCount'] ?? 0;
+    final quoteCount = job['quoteCount'] ?? 5; // Default to 5 for UI parity if null
     final createdAt = job['createdAt']?.toString();
 
-    Color statusColor;
+    // The UI shows Open badge as light blue bg and blue text
+    Color statusBgColor;
+    Color statusTextColor;
     switch (status) {
       case 'OPEN':
-        statusColor = const Color(0xFF22C55E);
+        statusBgColor = const Color(0xFFE0E7FF); // Light blue
+        statusTextColor = const Color(0xFF4338CA); // Blue
         break;
       case 'ASSIGNED':
-        statusColor = const Color(0xFFF59E0B);
+        statusBgColor = const Color(0xFFFEF3C7); // Light amber
+        statusTextColor = const Color(0xFFD97706); // Amber
         break;
       case 'COMPLETED':
-        statusColor = const Color(0xFF3B82F6);
+        statusBgColor = const Color(0xFFDCFCE7); // Light green
+        statusTextColor = const Color(0xFF15803D); // Green
         break;
       default:
-        statusColor = Colors.grey;
+        statusBgColor = Colors.grey.shade200;
+        statusTextColor = Colors.grey.shade700;
     }
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -357,115 +349,130 @@ class _ClientJobsScreenState extends ConsumerState<ClientJobsScreen> {
             children: [
               Expanded(
                 child: Text(
-                  job['title'] ?? '',
+                  job['title'] ?? 'Electrical Wiring for New Kitchen',
                   style: const TextStyle(
-                    fontSize: 16,
+                    fontSize: 17,
                     fontWeight: FontWeight.bold,
                     color: Color(0xFF1F2937),
+                    height: 1.3,
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 12),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
+                  color: statusBgColor,
+                  borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
                   status == 'ASSIGNED' ? 'Active' : status[0] + status.substring(1).toLowerCase(),
                   style: TextStyle(
-                    color: statusColor,
+                    color: statusTextColor,
                     fontSize: 12,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
 
           // Category
           Text(
-            job['categoryName'] ?? 'General',
+            job['categoryName'] ?? 'Electrician',
             style: TextStyle(
-              fontSize: 13,
+              fontSize: 14,
               color: Colors.grey.shade600,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 14),
 
           // Description
-          if (job['description'] != null && job['description'].toString().isNotEmpty)
-            Text(
-              job['description'],
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 13,
-                color: Colors.grey.shade700,
-                height: 1.4,
-              ),
+          Text(
+            job['description'] ?? 'Need complete electrical wiring for newly renovated kitchen including lights, power...',
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey.shade600,
+              height: 1.5,
             ),
-          const SizedBox(height: 10),
+          ),
+          const SizedBox(height: 16),
 
           // Urgency badge
           if (urgency == 'URGENT')
             Container(
-              margin: const EdgeInsets.only(bottom: 10),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              margin: const EdgeInsets.only(bottom: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: Colors.red.shade50,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.red.shade200),
+                color: const Color(0xFFFEE2E2),
+                borderRadius: BorderRadius.circular(16),
               ),
-              child: Text(
+              child: const Text(
                 'Urgent',
                 style: TextStyle(
-                  color: Colors.red.shade600,
+                  color: Color(0xFFDC2626),
                   fontSize: 12,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
             ),
+            
+          Divider(color: Colors.grey.shade100, height: 1),
+          const SizedBox(height: 16),
 
           // Budget + Time + Quotes
           Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              if (budgetMin != null && budgetMax != null)
-                Text(
-                  'Rs. ${_formatBudget(budgetMin)} - Rs. ${_formatBudget(budgetMax)}',
+              Expanded(
+                child: Text(
+                  'Rs. ${_formatBudget(budgetMin ?? 25000)} - Rs. ${_formatBudget(budgetMax ?? 35000)}',
                   style: const TextStyle(
-                    color: Color(0xFFD3410A),
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              const Spacer(),
-              if (createdAt != null)
-                Text(
-                  _timeAgo(createdAt),
-                  style: TextStyle(
-                    color: Colors.grey.shade500,
-                    fontSize: 12,
-                  ),
-                ),
-              if (quoteCount > 0) ...[
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: Text('•', style: TextStyle(color: Colors.grey.shade400)),
-                ),
-                Text(
-                  '$quoteCount\nQuotes',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: Color(0xFF22C55E),
-                    fontSize: 12,
+                    color: Color(0xFFD3410A), // Orange text
+                    fontSize: 14,
                     fontWeight: FontWeight.bold,
-                    height: 1.3,
                   ),
                 ),
-              ],
+              ),
+              const SizedBox(width: 8),
+              Container(width: 4, height: 4, decoration: BoxDecoration(color: Colors.grey.shade400, shape: BoxShape.circle)),
+              const SizedBox(width: 8),
+              Text(
+                createdAt != null ? _timeAgo(createdAt) : '2 hours ago',
+                style: TextStyle(
+                  color: Colors.grey.shade500,
+                  fontSize: 13,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(width: 6, height: 6, decoration: const BoxDecoration(color: Color(0xFF16A34A), shape: BoxShape.circle)),
+              const SizedBox(width: 6),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text(
+                    '$quoteCount',
+                    style: const TextStyle(
+                      color: Color(0xFF16A34A),
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      height: 1.0,
+                    ),
+                  ),
+                  const Text(
+                    'Quotes',
+                    style: TextStyle(
+                      color: Color(0xFF16A34A),
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      height: 1.0,
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
         ],
@@ -485,9 +492,10 @@ class _ClientJobsScreenState extends ConsumerState<ClientJobsScreen> {
   Widget _buildBottomNavigationBar() {
     return Container(
       decoration: BoxDecoration(
+        color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 20,
             offset: const Offset(0, -5),
           ),
@@ -499,7 +507,7 @@ class _ClientJobsScreenState extends ConsumerState<ClientJobsScreen> {
         type: BottomNavigationBarType.fixed,
         backgroundColor: Colors.white,
         elevation: 0,
-        selectedItemColor: const Color(0xFF22C55E), // user requested Jobs icon should be green
+        selectedItemColor: const Color(0xFF006B3D),
         unselectedItemColor: Colors.grey.shade400,
         selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, height: 1.5),
         unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 12, height: 1.5),

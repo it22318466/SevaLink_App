@@ -19,8 +19,10 @@ public class CorsConfig {
         // (Flutter web, Vite, etc. use different/random ports)
         config.setAllowedOriginPatterns(List.of(
                 "http://localhost:*",
-                "http://10.0.2.2:*",   // Android emulator
-                "http://192.168.*:*"   // Real devices on local network
+                "http://127.0.0.1:*",
+                "http://10.*:*",
+                "http://172.*:*",
+                "http://192.168.*:*"
         ));
 
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));

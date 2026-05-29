@@ -18,6 +18,7 @@ import '../features/worker/screens/worker_profile_screen.dart';
 import '../features/profile/screens/client_profile_screen.dart';
 import '../features/profile/screens/edit_client_profile_screen.dart';
 import '../features/jobs/screens/client_jobs_screen.dart';
+import '../features/jobs/screens/post_job_screen.dart';
 import '../features/chat/screens/chat_list_screen.dart';
 import '../features/chat/screens/chat_screen.dart';
 import '../data/models/job.dart';
@@ -119,6 +120,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/client/jobs',
         builder: (context, state) => const ClientJobsScreen(),
+      ),
+      GoRoute(
+        path: '/client/jobs/post',
+        builder: (context, state) => const PostJobScreen(),
       ),
       GoRoute(
         path: '/client/chat',

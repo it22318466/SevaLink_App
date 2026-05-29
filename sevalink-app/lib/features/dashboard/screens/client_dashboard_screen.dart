@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../providers/auth_provider.dart';
-import '../../../core/themes/app_theme.dart';
 import 'search_screen.dart';
 
 // ============================================================================
@@ -113,7 +112,7 @@ class _ClientDashboardScreenState extends ConsumerState<ClientDashboardScreen> {
     }
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: const Color(0xFFF8F9FA), // Neutral background to enhance contrast
       body: SingleChildScrollView(
         child: Column(
           children: [
@@ -364,13 +363,9 @@ class _ClientDashboardScreenState extends ConsumerState<ClientDashboardScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
+          const Text(
             'Service Categories',
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: Theme.of(context).extension<SevaLinkColors>()?.textPrimary ?? const Color(0xFF1F2937),
-            ),
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black87),
           ),
           const SizedBox(height: 24),
           GridView.builder(
@@ -379,7 +374,7 @@ class _ClientDashboardScreenState extends ConsumerState<ClientDashboardScreen> {
             shrinkWrap: true, // Forces layout engine to compute explicit height
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 4,
-              childAspectRatio: 0.72, // Configured to accommodate icon and text label vertically
+              childAspectRatio: 0.8, // Configured to accommodate icon and text label vertically
               crossAxisSpacing: 16,
               mainAxisSpacing: 24,
             ),
@@ -443,13 +438,9 @@ class _ClientDashboardScreenState extends ConsumerState<ClientDashboardScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(
+              const Text(
                 'Top Rated Workers',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).extension<SevaLinkColors>()?.textPrimary ?? const Color(0xFF1F2937),
-                ),
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black87),
               ),
               InkWell(
                 onTap: () {
@@ -471,142 +462,137 @@ class _ClientDashboardScreenState extends ConsumerState<ClientDashboardScreen> {
             separatorBuilder: (context, index) => const SizedBox(height: 16),
             itemBuilder: (context, index) {
               final worker = _topWorkers[index];
-              return _buildWorkerCard(context, worker);
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildWorkerCard(BuildContext context, WorkerProfile worker) {
-    final colors = Theme.of(context).extension<SevaLinkColors>() ?? SevaLinkColors.light;
-    final isDark  = Theme.of(context).brightness == Brightness.dark;
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: colors.cardBg,
-        borderRadius: BorderRadius.circular(24),
-        border: isDark ? Border.all(color: colors.border, width: 1) : null,
-        boxShadow: isDark ? null : [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 20,
-            spreadRadius: 2,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Hardware-accelerated image clipping for profile aesthetic
-          ClipRRect(
-            borderRadius: BorderRadius.circular(16),
-            child: Image.network(
-              worker.imageUrl,
-              width: 90,
-              height: 90,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return Container(
-                  width: 90, height: 90,
-                  color: Colors.grey.shade100,
-                  child: Icon(Icons.person, color: Colors.grey.shade300, size: 40),
-                );
-              },
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              return Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.04),
+                      blurRadius: 20,
+                      spreadRadius: 2,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: Text(
-                        worker.name,
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: colors.textPrimary),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                    // Hardware-accelerated image clipping for profile aesthetic
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: Image.network(
+                        worker.imageUrl,
+                        width: 90,
+                        height: 90,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            width: 90, height: 90,
+                            color: Colors.grey.shade100,
+                            child: Icon(Icons.person, color: Colors.grey.shade300, size: 40),
+                          );
+                        },
                       ),
                     ),
-                    Text(
-                      'Rs. ${worker.hourlyRate}',
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF2B4EEF)),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      worker.profession,
-                      style: TextStyle(fontSize: 14, color: colors.textSecondary, fontWeight: FontWeight.w500),
-                    ),
-                    Text(
-                      'per hour',
-                      style: TextStyle(fontSize: 13, color: colors.textSecondary),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Row(
-                      children: List.generate(5, (starIndex) {
-                        IconData iconData;
-                        if (starIndex < worker.rating.floor()) {
-                          iconData = Icons.star_rounded;
-                        } else if (starIndex < worker.rating) {
-                          iconData = Icons.star_half_rounded;
-                        } else {
-                          iconData = Icons.star_outline_rounded;
-                        }
-                        return Icon(iconData, color: const Color(0xFFFFC107), size: 18);
-                      }),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      '${worker.rating}',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: colors.textPrimary),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      '(${worker.reviewCount})',
-                      style: TextStyle(color: colors.textSecondary, fontSize: 14),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                if (worker.isVerified)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF1E2A4A) : const Color(0xFFFFF0E5),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.verified_outlined, color: Color(0xFF2B4EEF), size: 16),
-                        SizedBox(width: 6),
-                        Text(
-                          'Seva Verified',
-                          style: TextStyle(
-                            color: Color(0xFF2B4EEF),
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  worker.name,
+                                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              Text(
+                                'Rs. ${worker.hourlyRate}',
+                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF2B4EEF)),
+                              ),
+                            ],
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 4),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                worker.profession,
+                                style: TextStyle(fontSize: 14, color: Colors.grey.shade700, fontWeight: FontWeight.w500),
+                              ),
+                              Text(
+                                'per hour',
+                                style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          // Programmatic star rating generation
+                          Row(
+                            children: [
+                              Row(
+                                children: List.generate(5, (starIndex) {
+                                  IconData iconData;
+                                  if (starIndex < worker.rating.floor()) {
+                                    iconData = Icons.star_rounded;
+                                  } else if (starIndex < worker.rating) {
+                                    iconData = Icons.star_half_rounded;
+                                  } else {
+                                    iconData = Icons.star_outline_rounded;
+                                  }
+                                  return Icon(iconData, color: const Color(0xFFFFC107), size: 18);
+                                }),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                '${worker.rating}',
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.black87),
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                '(${worker.reviewCount})',
+                                style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          // Conditional rendering of trust signal
+                          if (worker.isVerified)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFFF0E5), // Subtle tint of brand primary
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.verified_outlined, color: Color(0xFF2B4EEF), size: 16),
+                                  SizedBox(width: 6),
+                                  Text(
+                                    'Seva Verified',
+                                    style: TextStyle(
+                                      color: Color(0xFF2B4EEF),
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                        ],
+                      ),
                     ),
-                  ),
-              ],
-            ),
+                  ],
+                ),
+              );
+            },
           ),
         ],
       ),
@@ -669,16 +655,12 @@ class _ClientDashboardScreenState extends ConsumerState<ClientDashboardScreen> {
   }
 
   Widget _buildBottomNavigationBar() {
-    final colors = Theme.of(context).extension<SevaLinkColors>() ?? SevaLinkColors.light;
-    final isDark  = Theme.of(context).brightness == Brightness.dark;
     return Container(
       decoration: BoxDecoration(
-        color: colors.cardBg,
+        color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: isDark
-                ? Colors.black.withValues(alpha: 0.3)
-                : Colors.black.withValues(alpha: 0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 20,
             offset: const Offset(0, -5),
           ),
@@ -692,10 +674,10 @@ class _ClientDashboardScreenState extends ConsumerState<ClientDashboardScreen> {
           });
         },
         type: BottomNavigationBarType.fixed,
-        backgroundColor: colors.cardBg,
+        backgroundColor: Colors.white,
         elevation: 0,
-        selectedItemColor: const Color(0xFF006B3D),
-        unselectedItemColor: isDark ? const Color(0xFF64748B) : Colors.grey.shade400,
+        selectedItemColor: const Color(0xFF006B3D), // Distinctive active state coloring
+        unselectedItemColor: Colors.grey.shade400,
         selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, height: 1.5),
         unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 12, height: 1.5),
         items: const [
