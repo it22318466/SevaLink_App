@@ -5,6 +5,10 @@ import com.sevalink.sevalinkbackend.model.JobTimeline;
 import com.sevalink.sevalinkbackend.repository.JobPostRepository;
 import com.sevalink.sevalinkbackend.repository.JobTimelineRepository;
 import com.sevalink.sevalinkbackend.repository.QuotationRepository;
+import com.sevalink.sevalinkbackend.repository.WorkerRepository;
+import com.sevalink.sevalinkbackend.repository.NotificationRepository;
+import com.sevalink.sevalinkbackend.model.Notification;
+import com.sevalink.sevalinkbackend.model.Worker;
 import com.sevalink.sevalinkbackend.dto.ClientJobStatsDto;
 import com.sevalink.sevalinkbackend.dto.ClientJobDto;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +29,12 @@ public class JobPostService {
     @Autowired
     private QuotationRepository quotationRepository;
 
+    @Autowired
+    private WorkerRepository workerRepository;
+
+    @Autowired
+    private NotificationRepository notificationRepository;
+
     // Client posts a new job
     public JobPost createJob(JobPost jobPost) {
         JobPost saved = jobPostRepository.save(jobPost);
@@ -35,6 +45,21 @@ public class JobPostService {
         timeline.setStatus("JOB_POSTED");
         timeline.setNote("Job posted by client");
         jobTimelineRepository.save(timeline);
+
+        // Notify nearby workers (within 15km radius)
+        if (saved.getLatitude() != null && saved.getLongitude() != null) {
+            List<Worker> nearbyWorkers = workerRepository.findNearbyWorkers(saved.getLatitude(), saved.getLongitude(), 15.0);
+            for (Worker worker : nearbyWorkers) {
+                if (worker.getUser() != null) {
+                    Notification notification = new Notification();
+                    notification.setUser(worker.getUser());
+                    notification.setJobPost(saved);
+                    notification.setTitle("New Job Nearby");
+                    notification.setMessage("A new job '" + saved.getTitle() + "' was posted near you.");
+                    notificationRepository.save(notification);
+                }
+            }
+        }
 
         return saved;
     }

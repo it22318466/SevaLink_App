@@ -324,8 +324,8 @@ class _ClientProfileScreenState extends ConsumerState<ClientProfileScreen> {
           const SizedBox(height: 24),
           jobStatsAsync.when(
             data: (stats) {
-              final jobsPosted = stats['totalJobs']?.toString() ?? stats['total_posted']?.toString() ?? '0';
-              final completed = stats['completedJobs']?.toString() ?? stats['completed']?.toString() ?? '0';
+              final jobsPosted = stats['total']?.toString() ?? '0';
+              final completed = stats['done']?.toString() ?? '0';
               final avgRating = stats['averageRating']?.toString() ?? stats['average_rating']?.toString() ?? '0.0';
               return Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,

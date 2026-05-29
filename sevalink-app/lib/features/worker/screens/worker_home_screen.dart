@@ -5,7 +5,6 @@ import 'job_details_screen.dart';
 import 'my_jobs_screen.dart';
 import '../../../data/models/job.dart';
 import '../../../providers/auth_provider.dart';
-import '../../../core/themes/app_theme.dart';
 
 //  Local UI model
 class JobListing {
@@ -85,7 +84,7 @@ class _WorkerHomeScreenState extends ConsumerState<WorkerHomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: const Color(0xFFF2F4F8),
       endDrawer: const _NotificationsDrawer(),
       body: _buildBody(),
       bottomNavigationBar: _BottomNav(
@@ -361,17 +360,14 @@ class _QuickAccessSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).extension<SevaLinkColors>() ?? SevaLinkColors.light;
-    final isDark  = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: colors.cardBg,
+          color: Colors.white,
           borderRadius: BorderRadius.circular(20),
-          border: isDark ? Border.all(color: colors.border, width: 1) : null,
-          boxShadow: isDark ? null : [
+          boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha:0.07),
               blurRadius: 16,
@@ -520,14 +516,11 @@ class _JobCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).extension<SevaLinkColors>() ?? SevaLinkColors.light;
-    final isDark  = Theme.of(context).brightness == Brightness.dark;
     return Container(
       decoration: BoxDecoration(
-        color: colors.cardBg,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: isDark ? Border.all(color: colors.border, width: 1) : null,
-        boxShadow: isDark ? null : [
+        boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha:0.05),
             blurRadius: 12,
@@ -546,10 +539,10 @@ class _JobCard extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(job.title,
-                      style: TextStyle(
+                      style: const TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.bold,
-                          color: colors.textPrimary)),
+                          color: Color(0xFF1A1A2E))),
                 ),
                 if (job.isNew) ...[
                   const SizedBox(width: 8),
@@ -572,13 +565,13 @@ class _JobCard extends StatelessWidget {
 
             const SizedBox(height: 6),
             Text(job.description,
-                style: TextStyle(
-                    color: colors.textSecondary,
+                style: const TextStyle(
+                    color: Color(0xFF6B7280),
                     fontSize: 13,
                     height: 1.4)),
 
             const SizedBox(height: 12),
-            Divider(height: 1, color: colors.divider),
+            const Divider(height: 1, color: Color(0xFFF0F0F0)),
             const SizedBox(height: 12),
 
             // Location + time
@@ -695,8 +688,6 @@ class _BottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).extension<SevaLinkColors>() ?? SevaLinkColors.light;
-    final isDark  = Theme.of(context).brightness == Brightness.dark;
     final items = [
       {'icon': Icons.home_outlined, 'active': Icons.home, 'label': 'Home'},
       {'icon': Icons.work_outline, 'active': Icons.work, 'label': 'Jobs'},
@@ -714,12 +705,10 @@ class _BottomNav extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: colors.cardBg,
+        color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: isDark
-                ? Colors.black.withValues(alpha: 0.3)
-                : Colors.black.withValues(alpha:0.08),
+            color: Colors.black.withValues(alpha:0.08),
             blurRadius: 12,
             offset: const Offset(0, -2),
           ),

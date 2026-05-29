@@ -25,16 +25,34 @@ class Job extends Equatable {
   });
 
   factory Job.fromJson(Map<String, dynamic> json) {
+    // Compute a relative "posted ago" string from createdAt if available
+    String postedAt = json['postedAt'] ?? '';
+    if (postedAt.isEmpty && json['createdAt'] != null) {
+      try {
+        final created = DateTime.parse(json['createdAt']);
+        final diff = DateTime.now().difference(created);
+        if (diff.inDays > 0) {
+          postedAt = '${diff.inDays}d ago';
+        } else if (diff.inHours > 0) {
+          postedAt = '${diff.inHours}h ago';
+        } else {
+          postedAt = '${diff.inMinutes}m ago';
+        }
+      } catch (_) {
+        postedAt = '';
+      }
+    }
+
     return Job(
       id: json['id'] ?? 0,
       title: json['title'] ?? '',
       description: json['description'] ?? '',
-      location: json['location'] ?? '',
-      postedAt: json['postedAt'] ?? '',
-      minBudget: json['minBudget'] ?? 0,
-      maxBudget: json['maxBudget'] ?? 0,
-      isNew: json['isNew'] ?? false,
-      category: json['category'] ?? '',
+      location: json['locationName'] ?? json['location'] ?? '',
+      postedAt: postedAt,
+      minBudget: (json['budgetMin'] ?? json['minBudget'] ?? 0).toInt(),
+      maxBudget: (json['budgetMax'] ?? json['maxBudget'] ?? 0).toInt(),
+      isNew: json['isNew'] ?? (json['status'] == 'OPEN'),
+      category: json['category'] is Map ? (json['category']['name'] ?? '') : (json['category'] ?? ''),
     );
   }
 

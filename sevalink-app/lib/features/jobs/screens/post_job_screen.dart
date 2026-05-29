@@ -74,6 +74,7 @@ class _PostJobScreenState extends ConsumerState<PostJobScreen> {
       
       // Invalidate the jobs list to show the new job
       ref.invalidate(clientJobsProvider);
+      ref.invalidate(clientJobStatsProvider);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

@@ -49,6 +49,10 @@ public class SearchService {
         String kw = (keyword == null || keyword.trim().isEmpty()) ? "" : keyword.trim();
         double radius = (radiusKm != null) ? radiusKm : 10.0;
 
+        if (lat == null || lng == null) {
+            return searchRepository.searchWithoutLocation(kw, categoryName, available);
+        }
+
         return searchRepository.fullSearch(kw, categoryName, available, lat, lng, radius);
     }
 }
