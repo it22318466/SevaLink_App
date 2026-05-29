@@ -5,7 +5,9 @@ import 'job_details_screen.dart';
 import 'my_jobs_screen.dart';
 import '../../../data/models/job.dart';
 import '../../../providers/auth_provider.dart';
-
+import '../../../providers/notification_provider.dart';
+import '../../../providers/worker_jobs_provider.dart';
+import '../../../data/models/notification_model.dart';
 //  Local UI model
 class JobListing {
   final String id;
@@ -76,10 +78,16 @@ class WorkerHomeScreen extends ConsumerStatefulWidget {
 
 class _WorkerHomeScreenState extends ConsumerState<WorkerHomeScreen> {
   int _selectedIndex = 0;
-  bool _hasNewNotifications = true;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(workerJobsProvider.notifier).fetchNearbyJobs(6.9271, 79.8612);
+    });
+  }
 
   void _goToTab(int index) => setState(() => _selectedIndex = index);
-  void _clearNotifications() => setState(() => _hasNewNotifications = false);
 
   @override
   Widget build(BuildContext context) {
@@ -98,13 +106,14 @@ class _WorkerHomeScreenState extends ConsumerState<WorkerHomeScreen> {
     //  Read real user name from auth provider
     final user = ref.watch(authProvider).user;
     final workerName = user?.fullName ?? 'Worker';
+    final hasNewNotifications = ref.watch(notificationProvider).unreadCount > 0;
 
     switch (_selectedIndex) {
       case 0:
         return _HomeContent(
           workerName: workerName,
-          hasNewNotifications: _hasNewNotifications,
-          onNotificationTap: _clearNotifications,
+          hasNewNotifications: hasNewNotifications,
+          onNotificationTap: () {},
           onGoToJobs: () => _goToTab(1),
           onGoToProfile: () => _goToTab(3),
         );
@@ -117,8 +126,8 @@ class _WorkerHomeScreenState extends ConsumerState<WorkerHomeScreen> {
       default:
         return _HomeContent(
           workerName: workerName,
-          hasNewNotifications: _hasNewNotifications,
-          onNotificationTap: _clearNotifications,
+          hasNewNotifications: hasNewNotifications,
+          onNotificationTap: () {},
           onGoToJobs: () => _goToTab(1),
           onGoToProfile: () => _goToTab(3),
         );
@@ -127,7 +136,7 @@ class _WorkerHomeScreenState extends ConsumerState<WorkerHomeScreen> {
 }
 
 //  Home Content
-class _HomeContent extends StatelessWidget {
+class _HomeContent extends ConsumerWidget {
   final VoidCallback? onGoToJobs;
   final VoidCallback? onGoToProfile;
   final VoidCallback? onNotificationTap;
@@ -143,7 +152,21 @@ class _HomeContent extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final jobsState = ref.watch(workerJobsProvider);
+    
+    // Map backend Job to JobListing for UI compatibility
+    final uiJobs = jobsState.nearbyJobs.map((j) => JobListing(
+      id: j.id.toString(),
+      title: j.title,
+      description: j.description,
+      location: j.location,
+      postedAgo: j.postedAt,
+      minBudget: j.minBudget.toString(),
+      maxBudget: j.maxBudget.toString(),
+      isNew: j.isNew,
+    )).toList();
+
     return CustomScrollView(
       slivers: [
         SliverToBoxAdapter(
@@ -188,8 +211,8 @@ class _HomeContent extends StatelessWidget {
                     color: const Color(0xFF0F9B8E).withValues(alpha:0.12),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Text(
-                    '3 new',
+                  child: Text(
+                    '${uiJobs.length} new',
                     style: TextStyle(
                       color: Color(0xFF0F9B8E),
                       fontWeight: FontWeight.w600,
@@ -205,9 +228,9 @@ class _HomeContent extends StatelessWidget {
           delegate: SliverChildBuilderDelegate(
                 (context, index) => Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
-              child: _JobCard(job: _mockJobs[index]),
+              child: _JobCard(job: uiJobs[index]),
             ),
-            childCount: _mockJobs.length,
+            childCount: uiJobs.length,
           ),
         ),
         const SliverToBoxAdapter(child: SizedBox(height: 20)),
@@ -789,19 +812,33 @@ class _ChatPage extends StatelessWidget {
 }
 
 //  Notifications Drawer
-class _NotificationsDrawer extends StatelessWidget {
+class _NotificationsDrawer extends ConsumerWidget {
   const _NotificationsDrawer();
 
-  void _navigateToJob(BuildContext context, Job job) {
+  void _navigateToJob(BuildContext context, WidgetRef ref, int? jobId) {
     Navigator.pop(context); // close drawer
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => JobDetailsScreen(job: job)),
-    );
+    // Since we only have the jobId, in a real app we'd fetch the job details here
+    // or navigate to a job screen passing the ID.
+    // For now we will just show a snackbar if jobId is missing.
+    if (jobId != null) {
+      // Find the job from workerJobsProvider
+      final jobsState = ref.read(workerJobsProvider);
+      try {
+        final job = jobsState.nearbyJobs.firstWhere((j) => j.id == jobId);
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => JobDetailsScreen(job: job)),
+        );
+      } catch (e) {
+        // Job not found in current feed
+      }
+    }
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final notificationState = ref.watch(notificationProvider);
+
     return Drawer(
       backgroundColor: Colors.white,
       surfaceTintColor: Colors.transparent,
@@ -822,41 +859,22 @@ class _NotificationsDrawer extends StatelessWidget {
             ),
             const Divider(height: 1, color: Color(0xFFF3F4F6)),
             Expanded(
-              child: ListView(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                children: [
-                  _buildNotificationItem(
-                    context,
-                    title: 'Quote Sent Successfully',
-                    subtitle: 'Your quote for "Electrical Wiring for New Kitchen" has been sent.',
-                    time: '2h',
-                    icon: Icons.check_circle_outline_rounded,
-                    iconColor: const Color(0xFF006B5E),
-                    bgColor: const Color(0xFFE8F5F2),
-                    job: _mockJobs[0],
-                  ),
-                  _buildNotificationItem(
-                    context,
-                    title: 'New Job Match',
-                    subtitle: 'A new plumbing job in Peradeniya matches your skills.',
-                    time: '5h',
-                    icon: Icons.work_outline_rounded,
-                    iconColor: const Color(0xFF1A3FBB),
-                    bgColor: const Color(0xFFEFF6FF),
-                    job: _mockJobs[1],
-                  ),
-                  _buildNotificationItem(
-                    context,
-                    title: 'New Job Match',
-                    subtitle: 'A new AC Installation job in Nugegoda.',
-                    time: '1d',
-                    icon: Icons.star_outline_rounded,
-                    iconColor: const Color(0xFFE65100),
-                    bgColor: const Color(0xFFFFF3E0),
-                    job: _mockJobs[2],
-                  ),
-                ],
-              ),
+              child: notificationState.isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : notificationState.notifications.isEmpty
+                      ? const Center(child: Text("No notifications yet"))
+                      : ListView.builder(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          itemCount: notificationState.notifications.length,
+                          itemBuilder: (context, index) {
+                            final notif = notificationState.notifications[index];
+                            return _buildNotificationItem(
+                              context,
+                              ref,
+                              notif: notif,
+                            );
+                          },
+                        ),
             ),
           ],
         ),
@@ -865,45 +883,33 @@ class _NotificationsDrawer extends StatelessWidget {
   }
 
   Widget _buildNotificationItem(
-    BuildContext context, {
-    required String title,
-    required String subtitle,
-    required String time,
-    required IconData icon,
-    required Color iconColor,
-    required Color bgColor,
-    required JobListing job,
+    BuildContext context,
+    WidgetRef ref, {
+    required NotificationModel notif,
   }) {
+    final bgColor = notif.isRead ? Colors.transparent : const Color(0xFFEFF6FF);
+    final iconColor = const Color(0xFF1A3FBB);
+
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+      tileColor: bgColor,
       leading: Container(
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: bgColor,
+          color: notif.isRead ? const Color(0xFFF3F4F6) : const Color(0xFFDDE7FF),
           shape: BoxShape.circle,
         ),
-        child: Icon(icon, color: iconColor, size: 22),
+        child: Icon(Icons.work_outline_rounded, color: iconColor, size: 22),
       ),
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+      title: Text(notif.title, style: TextStyle(fontWeight: notif.isRead ? FontWeight.normal : FontWeight.w600, fontSize: 14)),
       subtitle: Padding(
         padding: const EdgeInsets.only(top: 4),
-        child: Text(subtitle, style: const TextStyle(fontSize: 13, color: Colors.black54)),
+        child: Text(notif.message, style: const TextStyle(fontSize: 13, color: Colors.black54)),
       ),
-      trailing: Text(time, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+      trailing: notif.isRead ? null : Container(width: 8, height: 8, decoration: const BoxDecoration(color: Colors.redAccent, shape: BoxShape.circle)),
       onTap: () {
-        // Map JobListing to Job
-        final detailedJob = Job(
-          id: int.tryParse(job.id) ?? 0,
-          title: job.title,
-          description: job.description,
-          location: job.location,
-          postedAt: job.postedAgo,
-          minBudget: int.tryParse(job.minBudget.replaceAll(',', '')) ?? 0,
-          maxBudget: int.tryParse(job.maxBudget.replaceAll(',', '')) ?? 0,
-          isNew: job.isNew,
-          category: 'General',
-        );
-        _navigateToJob(context, detailedJob);
+        ref.read(notificationProvider.notifier).markAsRead(notif.id);
+        _navigateToJob(context, ref, notif.relatedJobId);
       },
     );
   }
