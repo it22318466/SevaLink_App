@@ -31,7 +31,6 @@ class _ClientProfileScreenState extends ConsumerState<ClientProfileScreen> {
         setState(() => _currentNavIndex = 2);
         break;
       case 3:
-        // Already on profile screen; just update index
         setState(() => _currentNavIndex = 3);
         break;
       default:

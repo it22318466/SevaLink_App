@@ -1,4 +1,4 @@
-// lib/data/models/job.dart
+
 import 'package:equatable/equatable.dart';
 
 class Job extends Equatable {

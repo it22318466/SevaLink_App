@@ -1,71 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'worker_profile_screen.dart';
 import 'job_details_screen.dart';
 import 'my_jobs_screen.dart';
 import '../../../data/models/job.dart';
 import '../../../providers/auth_provider.dart';
+import '../../../providers/worker_feed_provider.dart';
 import '../../../core/themes/app_theme.dart';
 
-//  Local UI model
-class JobListing {
-  final String id;
-  final String title;
-  final String description;
-  final String location;
-  final String postedAgo;
-  final String minBudget;
-  final String maxBudget;
-  final bool isNew;
-
-  const JobListing({
-    required this.id,
-    required this.title,
-    required this.description,
-    required this.location,
-    required this.postedAgo,
-    required this.minBudget,
-    required this.maxBudget,
-    this.isNew = false,
-  });
-}
-
-//  Mock data
-const _mockJobs = [
-  JobListing(
-    id: '1',
-    title: 'Electrical Wiring for New Kitchen',
-    description:
-    'Need complete electrical wiring for newly renovated kitchen including lights, power...',
-    location: 'Dehiwala, Colombo',
-    postedAgo: '2 hours ago',
-    minBudget: '25,000',
-    maxBudget: '35,000',
-    isNew: true,
-  ),
-  JobListing(
-    id: '2',
-    title: 'Bathroom Pipe Leak Repair',
-    description:
-    'Urgent leak in bathroom sink pipe. Water dripping continuously. Need immediate fix.',
-    location: 'Peradeniya, Kandy',
-    postedAgo: '5 hours ago',
-    minBudget: '8,000',
-    maxBudget: '12,000',
-    isNew: true,
-  ),
-  JobListing(
-    id: '3',
-    title: 'AC Installation – Living Room',
-    description:
-    'Install a 1.5 ton split AC unit. Bracket and pipe work included. Brand new unit.',
-    location: 'Nugegoda, Colombo',
-    postedAgo: '8 hours ago',
-    minBudget: '5,000',
-    maxBudget: '8,000',
-    isNew: false,
-  ),
-];
+// (Mock data removed — now using real backend feed)
 
 //  Worker Home Screen
 class WorkerHomeScreen extends ConsumerStatefulWidget {
@@ -96,9 +40,9 @@ class _WorkerHomeScreenState extends ConsumerState<WorkerHomeScreen> {
   }
 
   Widget _buildBody() {
-    //  Read real user name from auth provider
     final user = ref.watch(authProvider).user;
-    final workerName = user?.fullName ?? 'Worker';
+    final stats = ref.watch(workerFeedProvider).stats;
+    final workerName = stats.fullName.isNotEmpty ? stats.fullName : (user?.fullName ?? 'Worker');
 
     switch (_selectedIndex) {
       case 0:
@@ -127,8 +71,8 @@ class _WorkerHomeScreenState extends ConsumerState<WorkerHomeScreen> {
   }
 }
 
-//  Home Content
-class _HomeContent extends StatelessWidget {
+// ─── Home Content (connected to real backend) ─────────────────────────────────
+class _HomeContent extends ConsumerWidget {
   final VoidCallback? onGoToJobs;
   final VoidCallback? onGoToProfile;
   final VoidCallback? onNotificationTap;
@@ -144,75 +88,184 @@ class _HomeContent extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    return CustomScrollView(
-      slivers: [
-        SliverToBoxAdapter(
+  Widget build(BuildContext context, WidgetRef ref) {
+    final feedState = ref.watch(workerFeedProvider);
+    final jobs = feedState.jobs;
+    final isLoading = feedState.isLoading;
+    final error = feedState.error;
+    final newCount = jobs.where((j) => j.isNew).length;
+
+    return RefreshIndicator(
+      color: const Color(0xFF0F9B8E),
+      onRefresh: () => ref.read(workerFeedProvider.notifier).refresh(),
+      child: CustomScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        slivers: [
+          SliverToBoxAdapter(
             child: _Header(
               workerName: workerName,
               hasNewNotifications: hasNewNotifications,
               onNotificationTap: onNotificationTap,
-            )),
-        SliverToBoxAdapter(
-          child: Transform.translate(
-            offset: const Offset(0, -24),
-            child: _QuickAccessSection(
-              onMyJobsTap: onGoToJobs,
-              onProfileTap: onGoToProfile,
+              stats: feedState.stats,
             ),
           ),
-        ),
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
-            child: const _EarningsCard(),
+          SliverToBoxAdapter(
+            child: Transform.translate(
+              offset: const Offset(0, -24),
+              child: _QuickAccessSection(
+                onMyJobsTap: onGoToJobs,
+                onProfileTap: onGoToProfile,
+              ),
+            ),
           ),
-        ),
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Available Jobs',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: context.sevaColors.textPrimary,
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF0F9B8E).withValues(alpha:0.12),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Text(
-                    '3 new',
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
+              child: const _EarningsCard(),
+            ),
+          ),
+          // ── Section header ────────────────────────────────────────────────
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Available Jobs',
                     style: TextStyle(
-                      color: Color(0xFF0F9B8E),
-                      fontWeight: FontWeight.w600,
-                      fontSize: 13,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: context.sevaColors.textPrimary,
                     ),
                   ),
+                  if (!isLoading && newCount > 0)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0F9B8E).withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        '$newCount new',
+                        style: const TextStyle(
+                          color: Color(0xFF0F9B8E),
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+          // ── Loading state ─────────────────────────────────────────────────
+          if (isLoading)
+            const SliverFillRemaining(
+              child: Center(
+                child: CircularProgressIndicator(color: Color(0xFF0F9B8E)),
+              ),
+            )
+          // ── Error state ───────────────────────────────────────────────────
+          else if (error != null)
+            SliverFillRemaining(
+              child: _ErrorView(
+                onRetry: () =>
+                    ref.read(workerFeedProvider.notifier).refresh(),
+              ),
+            )
+          // ── Empty state ───────────────────────────────────────────────────
+          else if (jobs.isEmpty)
+            SliverFillRemaining(
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.work_off_outlined,
+                        size: 64,
+                        color: context.sevaColors.textSecondary
+                            .withValues(alpha: 0.4)),
+                    const SizedBox(height: 12),
+                    Text(
+                      'No open jobs right now',
+                      style: TextStyle(
+                          color: context.sevaColors.textSecondary,
+                          fontSize: 15),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Pull down to refresh',
+                      style: TextStyle(
+                          color: context.sevaColors.textSecondary
+                              .withValues(alpha: 0.6),
+                          fontSize: 13),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
-        ),
-        SliverList(
-          delegate: SliverChildBuilderDelegate(
+              ),
+            )
+          // ── Jobs list ─────────────────────────────────────────────────────
+          else
+            SliverList(
+              delegate: SliverChildBuilderDelegate(
                 (context, index) => Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
-              child: _JobCard(job: _mockJobs[index]),
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+                  child: _JobCard(job: jobs[index]),
+                ),
+                childCount: jobs.length,
+              ),
             ),
-            childCount: _mockJobs.length,
+          const SliverToBoxAdapter(child: SizedBox(height: 20)),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Error View ───────────────────────────────────────────────────────────────
+class _ErrorView extends StatelessWidget {
+  final VoidCallback onRetry;
+  const _ErrorView({required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.wifi_off_rounded,
+              size: 64,
+              color: context.sevaColors.textSecondary.withValues(alpha: 0.4)),
+          const SizedBox(height: 12),
+          Text(
+            'Could not load jobs',
+            style: TextStyle(
+                color: context.sevaColors.textPrimary,
+                fontSize: 16,
+                fontWeight: FontWeight.w600),
           ),
-        ),
-        const SliverToBoxAdapter(child: SizedBox(height: 20)),
-      ],
+          const SizedBox(height: 6),
+          Text(
+            'Check your connection and try again',
+            style: TextStyle(
+                color: context.sevaColors.textSecondary, fontSize: 13),
+          ),
+          const SizedBox(height: 20),
+          ElevatedButton.icon(
+            onPressed: onRetry,
+            icon: const Icon(Icons.refresh_rounded, size: 18),
+            label: const Text('Retry'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF0F9B8E),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+              elevation: 0,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -223,11 +276,13 @@ class _Header extends StatelessWidget {
   final String workerName;
   final bool hasNewNotifications;
   final VoidCallback? onNotificationTap;
+  final WorkerStats stats;
 
   const _Header({
     required this.workerName,
     this.hasNewNotifications = false,
     this.onNotificationTap,
+    this.stats = const WorkerStats(),
   });
 
   @override
@@ -308,12 +363,26 @@ class _Header extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           Row(
-            children: const [
-              Expanded(child: _StatChip(value: '156', label: 'Total Jobs')),
-              SizedBox(width: 10),
-              Expanded(child: _StatChip(value: '4.8', label: 'Rating')),
-              SizedBox(width: 10),
-              Expanded(child: _StatChip(value: 'Rs. 45k', label: 'This Month')),
+            children: [
+              Expanded(
+                child: _StatChip(
+                  value: '${stats.totalJobs}',
+                  label: 'Total Jobs',
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _StatChip(
+                  value: stats.rating > 0
+                      ? stats.rating.toStringAsFixed(1)
+                      : '—',
+                  label: 'Rating',
+                ),
+              ),
+              const SizedBox(width: 10),
+              const Expanded(
+                child: _StatChip(value: 'Active', label: 'Status'),
+              ),
             ],
           ),
         ],
@@ -364,7 +433,7 @@ class _QuickAccessSection extends ConsumerWidget {
     final colors = context.sevaColors;
     final isDark  = context.isDark;
     // Watch the live jobs list to get real active count
-    final jobs = ref.watch(workerJobsListProvider);
+    final jobs = ref.watch(workerJobsListProvider).jobs;
     final activeCount = jobs.where((j) => j.status == JobStatus.active).length;
 
     return Padding(
@@ -455,11 +524,29 @@ class _QuickCard extends StatelessWidget {
 }
 
 // Earnings Card
-class _EarningsCard extends StatelessWidget {
+class _EarningsCard extends ConsumerWidget {
   const _EarningsCard();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final jobsState = ref.watch(workerJobsListProvider);
+    final jobs = jobsState.jobs;
+
+    final todayStr = DateTime.now().toString().split(' ').first;
+    final todayEarnings = jobs
+        .where((j) => j.status == JobStatus.completed && j.date == todayStr)
+        .fold<int>(0, (sum, j) {
+      final cleanStr = j.budget.replaceAll('Rs. ', '').replaceAll(',', '');
+      return sum + (int.tryParse(cleanStr) ?? 0);
+    });
+
+    final totalEarnings = jobs
+        .where((j) => j.status == JobStatus.completed)
+        .fold<int>(0, (sum, j) {
+      final cleanStr = j.budget.replaceAll('Rs. ', '').replaceAll(',', '');
+      return sum + (int.tryParse(cleanStr) ?? 0);
+    });
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -475,20 +562,18 @@ class _EarningsCard extends StatelessWidget {
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
-                Text("Today's Earnings",
-                    style:
-                    TextStyle(color: Colors.white70, fontSize: 13)),
-                SizedBox(height: 6),
-                Text('Rs.2,450',
-                    style: TextStyle(
+              children: [
+                const Text("Today's Earnings",
+                    style: TextStyle(color: Colors.white70, fontSize: 13)),
+                const SizedBox(height: 6),
+                Text('Rs. ${todayEarnings.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}',
+                    style: const TextStyle(
                         color: Colors.white,
                         fontSize: 30,
                         fontWeight: FontWeight.bold)),
-                SizedBox(height: 4),
-                Text('+15% from yesterday',
-                    style:
-                    TextStyle(color: Colors.white70, fontSize: 12)),
+                const SizedBox(height: 4),
+                Text('Total Earnings: Rs. ${totalEarnings.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}',
+                    style: const TextStyle(color: Colors.white70, fontSize: 12)),
               ],
             ),
           ),
@@ -500,27 +585,10 @@ class _EarningsCard extends StatelessWidget {
   }
 }
 
-//  Job Card — FIXED overflow
+// ─── Job Card (real backend Job model) ───────────────────────────────────────
 class _JobCard extends StatelessWidget {
-  final JobListing job;
+  final Job job;
   const _JobCard({required this.job});
-
-  // Convert local JobListing → your data-layer Job model
-  Job _toDataJob() => Job(
-    id: int.tryParse(job.id) ?? 0,
-    title: job.title,
-    description: job.description,
-    location: job.location,
-    postedAt: job.postedAgo,
-    minBudget: int.tryParse(
-        job.minBudget.replaceAll(RegExp(r'[^0-9]'), '')) ??
-        0,
-    maxBudget: int.tryParse(
-        job.maxBudget.replaceAll(RegExp(r'[^0-9]'), '')) ??
-        0,
-    isNew: job.isNew,
-    category: 'General',
-  );
 
   @override
   Widget build(BuildContext context) {
@@ -601,7 +669,7 @@ class _JobCard extends StatelessWidget {
                 Icon(Icons.access_time,
                     size: 14, color: colors.textSecondary),
                 const SizedBox(width: 4),
-                Text(job.postedAgo,
+                Text(job.postedAt,
                     style: TextStyle(
                         color: colors.textSecondary, fontSize: 12)),
               ],
@@ -636,7 +704,7 @@ class _JobCard extends StatelessWidget {
 
             const SizedBox(height: 10),
 
-            //  Buttons — each Expanded, NO overflow ever
+            // ── Action buttons ─────────────────────────────────────────────
             Row(
               children: [
                 Expanded(
@@ -645,18 +713,16 @@ class _JobCard extends StatelessWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) =>
-                              JobDetailsScreen(job: _toDataJob()),
+                          builder: (_) => JobDetailsScreen(job: job),
                         ),
                       );
                     },
                     style: OutlinedButton.styleFrom(
-                      padding:
-                      const EdgeInsets.symmetric(vertical: 10),
-                    side: BorderSide(color: colors.border),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10)),
-                    foregroundColor: colors.textPrimary,
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      side: BorderSide(color: colors.border),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10)),
+                      foregroundColor: colors.textPrimary,
                       textStyle: const TextStyle(fontSize: 13),
                     ),
                     child: const Text('View Details'),
@@ -666,12 +732,11 @@ class _JobCard extends StatelessWidget {
                 Expanded(
                   child: ElevatedButton(
                     onPressed: () {
-                      // TODO: navigate to send_quote_screen.dart
+                      context.push('/worker/send-quote', extra: job);
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF0F4C3A),
-                      padding:
-                      const EdgeInsets.symmetric(vertical: 10),
+                      padding: const EdgeInsets.symmetric(vertical: 10),
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10)),
                       elevation: 0,
@@ -801,7 +866,7 @@ class _ChatPage extends StatelessWidget {
   }
 }
 
-//  Notifications Drawer
+// ─── Notifications Drawer ─────────────────────────────────────────────────────
 class _NotificationsDrawer extends StatelessWidget {
   const _NotificationsDrawer();
 
@@ -836,40 +901,18 @@ class _NotificationsDrawer extends StatelessWidget {
             ),
             Divider(height: 1, color: colors.divider),
             Expanded(
-              child: ListView(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                children: [
-                  _buildNotificationItem(
-                    context,
-                    title: 'Quote Sent Successfully',
-                    subtitle: 'Your quote for "Electrical Wiring for New Kitchen" has been sent.',
-                    time: '2h',
-                    icon: Icons.check_circle_outline_rounded,
-                    iconColor: const Color(0xFF006B5E),
-                    bgColor: const Color(0xFFE8F5F2),
-                    job: _mockJobs[0],
-                  ),
-                  _buildNotificationItem(
-                    context,
-                    title: 'New Job Match',
-                    subtitle: 'A new plumbing job in Peradeniya matches your skills.',
-                    time: '5h',
-                    icon: Icons.work_outline_rounded,
-                    iconColor: const Color(0xFF1A3FBB),
-                    bgColor: const Color(0xFFEFF6FF),
-                    job: _mockJobs[1],
-                  ),
-                  _buildNotificationItem(
-                    context,
-                    title: 'New Job Match',
-                    subtitle: 'A new AC Installation job in Nugegoda.',
-                    time: '1d',
-                    icon: Icons.star_outline_rounded,
-                    iconColor: const Color(0xFFE65100),
-                    bgColor: const Color(0xFFFFF3E0),
-                    job: _mockJobs[2],
-                  ),
-                ],
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.notifications_none_rounded,
+                        size: 52, color: Colors.grey.shade300),
+                    const SizedBox(height: 12),
+                    const Text('No notifications yet',
+                        style: TextStyle(
+                            color: Colors.grey, fontSize: 15)),
+                  ],
+                ),
               ),
             ),
           ],
@@ -878,47 +921,4 @@ class _NotificationsDrawer extends StatelessWidget {
     );
   }
 
-  Widget _buildNotificationItem(
-    BuildContext context, {
-    required String title,
-    required String subtitle,
-    required String time,
-    required IconData icon,
-    required Color iconColor,
-    required Color bgColor,
-    required JobListing job,
-  }) {
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-      leading: Container(
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          color: bgColor,
-          shape: BoxShape.circle,
-        ),
-        child: Icon(icon, color: iconColor, size: 22),
-      ),
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-      subtitle: Padding(
-        padding: const EdgeInsets.only(top: 4),
-        child: Text(subtitle, style: const TextStyle(fontSize: 13, color: Colors.black54)),
-      ),
-      trailing: Text(time, style: const TextStyle(color: Colors.grey, fontSize: 12)),
-      onTap: () {
-        // Map JobListing to Job
-        final detailedJob = Job(
-          id: int.tryParse(job.id) ?? 0,
-          title: job.title,
-          description: job.description,
-          location: job.location,
-          postedAt: job.postedAgo,
-          minBudget: int.tryParse(job.minBudget.replaceAll(',', '')) ?? 0,
-          maxBudget: int.tryParse(job.maxBudget.replaceAll(',', '')) ?? 0,
-          isNew: job.isNew,
-          category: 'General',
-        );
-        _navigateToJob(context, detailedJob);
-      },
-    );
-  }
 }

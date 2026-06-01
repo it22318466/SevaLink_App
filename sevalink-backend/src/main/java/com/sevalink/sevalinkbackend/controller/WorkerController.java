@@ -2,9 +2,11 @@ package com.sevalink.sevalinkbackend.controller;
 
 import com.sevalink.sevalinkbackend.model.Worker;
 import com.sevalink.sevalinkbackend.service.WorkerService;
+import com.sevalink.sevalinkbackend.dto.UpdateWorkerProfileRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
 @RestController
@@ -55,6 +57,32 @@ public class WorkerController {
             return ResponseEntity.ok(updated);
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
+        }
+    }
+
+    // Update profile
+    // PUT http://localhost:8080/api/workers/1/profile
+    @PutMapping("/{id}/profile")
+    public ResponseEntity<?> updateWorkerProfile(@PathVariable Long id,
+                                                 @RequestBody UpdateWorkerProfileRequest request) {
+        try {
+            Worker updated = workerService.updateWorkerProfile(id, request);
+            return ResponseEntity.ok(updated);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    // Upload profile image
+    // POST http://localhost:8080/api/workers/1/profile/image
+    @PostMapping("/{id}/profile/image")
+    public ResponseEntity<?> uploadProfileImage(@PathVariable Long id,
+                                                @RequestParam("file") MultipartFile file) {
+        try {
+            Worker updated = workerService.uploadProfileImage(id, file);
+            return ResponseEntity.ok(updated);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 }

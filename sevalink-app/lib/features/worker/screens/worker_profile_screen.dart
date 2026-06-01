@@ -8,6 +8,8 @@ import 'package:path/path.dart' as path;
 import '../../../providers/auth_provider.dart';
 import '../../../providers/theme_provider.dart';
 import '../../../core/themes/app_theme.dart';
+import '../../../providers/worker_feed_provider.dart';
+import 'my_jobs_screen.dart';
 
 class WorkerProfileScreen extends ConsumerStatefulWidget {
   final bool showBackButton;
@@ -33,31 +35,47 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
   late TextEditingController _skillsController;
   late TextEditingController _rateController;
 
-  // Mock skill tags
-  final List<String> _skillTags = ['Electrician', 'AC Repair', 'Wiring'];
+  // Skill tags state
+  List<String> _skillTags = [];
 
   @override
   void initState() {
     super.initState();
     final authState = ref.read(authProvider);
     final user = authState.user;
-    final extra = authState.profileExtra;
-    _nameController = TextEditingController(text: user?.fullName ?? 'Worker');
+    final stats = ref.read(workerFeedProvider).stats;
+
+    _nameController = TextEditingController(
+        text: stats.fullName.isNotEmpty ? stats.fullName : (user?.fullName ?? 'Worker'));
     _emailController =
         TextEditingController(text: user?.email ?? 'worker@sevalink.lk');
-    _phoneController =
-        TextEditingController(text: user?.phoneNumber ?? '+94 77 123 4567');
-    _locationController = TextEditingController(text: extra.location);
-    _bioController = TextEditingController(text: extra.bio);
+    _phoneController = TextEditingController(
+        text: stats.phoneNumber.isNotEmpty ? stats.phoneNumber : (user?.phoneNumber ?? '+94 77 123 4567'));
+    _locationController = TextEditingController(
+        text: stats.location.isNotEmpty ? stats.location : 'Colombo, Sri Lanka');
+    _bioController = TextEditingController(
+        text: stats.bio.isNotEmpty ? stats.bio : 'Experienced electrician with 8+ years working on residential and commercial projects.');
     _skillsController = TextEditingController();
-    _rateController = TextEditingController(text: extra.hourlyRate);
+    _rateController = TextEditingController(
+        text: stats.hourlyRate.isNotEmpty ? stats.hourlyRate : '2,500');
+
+    _skillTags = stats.skills.isNotEmpty
+        ? List.from(stats.skills)
+        : ['Electrician', 'AC Repair', 'Wiring'];
+
     // Restore profile image from Riverpod state
+    final extra = authState.profileExtra;
     if (extra.profileImagePath != null) {
       final file = File(extra.profileImagePath!);
       if (file.existsSync()) {
         _profileImage = file;
       }
     }
+
+    // Force refresh worker profile from backend on screen initialization
+    Future.microtask(() {
+      ref.read(workerFeedProvider.notifier).refresh();
+    });
   }
 
   @override
@@ -80,6 +98,14 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
       
       if (mounted) {
         setState(() => _profileImage = savedImage);
+        
+        final bytes = await savedImage.readAsBytes();
+        await ref.read(workerFeedProvider.notifier).uploadWorkerProfileImage(
+          savedImage.path,
+          fileName,
+          bytes,
+        );
+
         ref.read(authProvider.notifier).updateProfileImage(savedImage.path);
       }
     } catch (e) {
@@ -227,37 +253,61 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
   Future<void> _saveProfile() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isSaving = true);
-    // Simulate API call delay
-    await Future.delayed(const Duration(milliseconds: 900));
-    // Persist changes to Riverpod state so all screens see the update
-    ref.read(authProvider.notifier).updateProfile(
-      fullName: _nameController.text.trim(),
-      phoneNumber: _phoneController.text.trim(),
-      location: _locationController.text.trim(),
-      bio: _bioController.text.trim(),
-      hourlyRate: _rateController.text.trim(),
-    );
-    setState(() {
-      _isSaving = false;
-      _isEditing = false;
-    });
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Row(
-            children: [
-              Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
-              SizedBox(width: 8),
-              Text('Profile updated successfully'),
-            ],
-          ),
-          backgroundColor: const Color(0xFF006B5E),
-          behavior: SnackBarBehavior.floating,
-          shape:
-          RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          margin: const EdgeInsets.all(16),
-        ),
+    try {
+      // Sync changes to the backend database
+      await ref.read(workerFeedProvider.notifier).updateWorkerProfile(
+        fullName: _nameController.text.trim(),
+        phoneNumber: _phoneController.text.trim(),
+        location: _locationController.text.trim(),
+        bio: _bioController.text.trim(),
+        skills: _skillTags,
+        hourlyRate: _rateController.text.trim(),
       );
+
+      // Keep Auth provider state updated for name/phone changes
+      ref.read(authProvider.notifier).updateProfile(
+        fullName: _nameController.text.trim(),
+        phoneNumber: _phoneController.text.trim(),
+        location: _locationController.text.trim(),
+        bio: _bioController.text.trim(),
+        hourlyRate: _rateController.text.trim(),
+      );
+
+      setState(() {
+        _isEditing = false;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Row(
+              children: [
+                Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
+                SizedBox(width: 8),
+                Text('Profile updated successfully'),
+              ],
+            ),
+            backgroundColor: const Color(0xFF006B5E),
+            behavior: SnackBarBehavior.floating,
+            shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            margin: const EdgeInsets.all(16),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to update profile: $e'),
+            backgroundColor: Colors.red.shade600,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
     }
   }
 
@@ -271,6 +321,25 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<WorkerFeedState>(workerFeedProvider, (previous, next) {
+      if (!_isEditing) {
+        final stats = next.stats;
+        if (stats.fullName.isNotEmpty) _nameController.text = stats.fullName;
+        if (stats.phoneNumber.isNotEmpty) _phoneController.text = stats.phoneNumber;
+        if (stats.location.isNotEmpty) _locationController.text = stats.location;
+        if (stats.bio.isNotEmpty) _bioController.text = stats.bio;
+        if (stats.hourlyRate.isNotEmpty) _rateController.text = stats.hourlyRate;
+        setState(() {
+          _skillTags = stats.skills.isNotEmpty
+              ? List.from(stats.skills)
+              : ['Electrician', 'AC Repair', 'Wiring'];
+        });
+      }
+    });
+
+    final stats = ref.watch(workerFeedProvider).stats;
+    final jobsState = ref.watch(workerJobsListProvider);
+
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: CustomScrollView(
@@ -286,7 +355,7 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildAvatarCard(),
+                      _buildAvatarCard(stats),
                       const SizedBox(height: 20),
                       _buildSection('Personal Information', [
                         _buildField(
@@ -338,7 +407,7 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
                         _buildSkillsSection(),
                       ]),
                       const SizedBox(height: 20),
-                      _buildSection('Stats', [_buildStatsRow()]),
+                      _buildSection('Stats', [_buildStatsRow(stats, jobsState)]),
                       const SizedBox(height: 20),
                       if (_isEditing) ...[
                         _buildSaveButton(),
@@ -431,7 +500,7 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
 
   //  AVATAR CARD
 
-  Widget _buildAvatarCard() {
+  Widget _buildAvatarCard(WorkerStats stats) {
     final colors = context.sevaColors;
     final isDark  = context.isDark;
     return Container(
@@ -458,7 +527,7 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
                   width: 76,
                   height: 76,
                   decoration: BoxDecoration(
-                    gradient: _profileImage == null
+                    gradient: (_profileImage == null && (stats.profileImageUrl == null || stats.profileImageUrl!.isEmpty))
                         ? const LinearGradient(
                             colors: [Color(0xFF1A3FBB), Color(0xFF006B5E)],
                             begin: Alignment.topLeft,
@@ -483,16 +552,37 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
                             fit: BoxFit.cover,
                           ),
                         )
-                      : Center(
-                          child: Text(
-                            _getInitials(_nameController.text),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 26,
-                              fontWeight: FontWeight.bold,
+                      : (stats.profileImageUrl != null && stats.profileImageUrl!.isNotEmpty)
+                          ? ClipOval(
+                              child: Image.network(
+                                stats.profileImageUrl!,
+                                width: 76,
+                                height: 76,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Center(
+                                    child: Text(
+                                      _getInitials(_nameController.text),
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 26,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            )
+                          : Center(
+                              child: Text(
+                                _getInitials(_nameController.text),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 26,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                             ),
-                          ),
-                        ),
                 ),
                 Positioned(
                   bottom: 0,
@@ -548,10 +638,10 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
                     const SizedBox(width: 8),
                     const Icon(Icons.star_rounded,
                         color: Color(0xFFF59E0B), size: 15),
-                    const Text(
-                      ' 4.8',
+                    Text(
+                      stats.rating > 0 ? ' ${stats.rating.toStringAsFixed(1)}' : ' —',
                       style: TextStyle(
-                        color: Color(0xFF374151),
+                        color: colors.textPrimary,
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                       ),
@@ -867,20 +957,28 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
     );
   }
 
-  //  STATS ROW
+  Widget _buildStatsRow(WorkerStats stats, WorkerJobsListState jobsState) {
+    final jobs = jobsState.jobs;
+    final completedCount = jobs.where((j) => j.status == JobStatus.completed).length;
+    final totalJobsCount = jobs.length;
+    final completionRate = totalJobsCount > 0
+        ? '${((completedCount / totalJobsCount) * 100).toInt()}%'
+        : '100%';
 
-  Widget _buildStatsRow() {
+    final ratingStr = stats.rating > 0 ? stats.rating.toStringAsFixed(1) : '—';
+    final totalJobsStr = stats.totalJobs.toString();
+
     return Row(
       children: [
-        Expanded(child: _buildStatItem('156', 'Total Jobs', Icons.work_rounded)),
+        Expanded(child: _buildStatItem(totalJobsStr, 'Total Jobs', Icons.work_rounded)),
         _buildStatDivider(),
         Expanded(
             child: _buildStatItem(
-                '4.8', 'Avg Rating', Icons.star_rounded)),
+                ratingStr, 'Avg Rating', Icons.star_rounded)),
         _buildStatDivider(),
         Expanded(
             child: _buildStatItem(
-                '98%', 'Completion', Icons.check_circle_rounded)),
+                completionRate, 'Completion', Icons.check_circle_rounded)),
       ],
     );
   }

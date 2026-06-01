@@ -1,20 +1,23 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../data/models/job.dart';
 import '../../../core/themes/app_theme.dart';
+import '../../../providers/auth_provider.dart';
+import '../../../providers/worker_feed_provider.dart';
 
-class SendQuoteScreen extends StatefulWidget {
+class SendQuoteScreen extends ConsumerStatefulWidget {
   final Job job;
 
   const SendQuoteScreen({super.key, required this.job});
 
   @override
-  State<SendQuoteScreen> createState() => _SendQuoteScreenState();
+  ConsumerState<SendQuoteScreen> createState() => _SendQuoteScreenState();
 }
 
-class _SendQuoteScreenState extends State<SendQuoteScreen>
+class _SendQuoteScreenState extends ConsumerState<SendQuoteScreen>
     with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _amountController = TextEditingController();
@@ -60,11 +63,67 @@ class _SendQuoteScreenState extends State<SendQuoteScreen>
   Future<void> _submitQuote() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isSubmitting = true);
-    await Future.delayed(const Duration(seconds: 2)); // Simulate API call
-    setState(() {
-      _isSubmitting = false;
-      _submitted = true;
-    });
+
+    try {
+      final dioClient = ref.read(dioClientProvider);
+      final user = ref.read(authProvider).user;
+
+      if (user == null) throw Exception('Not logged in');
+
+      // Find this worker's backend Worker ID (different from User ID)
+      int workerId = 0;
+      try {
+        final workersRes = await dioClient.dio.get('/workers');
+        final List<dynamic> workers = workersRes.data;
+        final found = workers.firstWhere(
+          (w) => w['user'] != null && w['user']['id'] == user.id,
+          orElse: () => null,
+        );
+        if (found != null) workerId = found['id'] ?? 0;
+      } catch (_) {}
+
+      if (workerId == 0) throw Exception('Worker profile not found');
+
+      // Build ETA string e.g. "3 Days"
+      final eta =
+          '${_timelineController.text} ${_timelineUnits[_selectedTimeline]}';
+
+      // POST /api/quotations
+      await dioClient.dio.post(
+        '/quotations',
+        data: {
+          'jobPost': {'id': widget.job.id},
+          'worker': {'id': workerId},
+          'proposedPrice': double.tryParse(_amountController.text) ?? 0,
+          'message': _messageController.text.trim(),
+          'eta': eta,
+        },
+      );
+
+      // Refresh the feed so the job count updates
+      ref.read(workerFeedProvider.notifier).refresh();
+
+      setState(() {
+        _isSubmitting = false;
+        _submitted = true;
+      });
+    } catch (e) {
+      setState(() => _isSubmitting = false);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            e.toString().replaceAll('Exception: ', ''),
+            style: const TextStyle(color: Colors.white),
+          ),
+          backgroundColor: const Color(0xFFDC2626),
+          behavior: SnackBarBehavior.floating,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          margin: const EdgeInsets.all(16),
+        ),
+      );
+    }
   }
 
   @override

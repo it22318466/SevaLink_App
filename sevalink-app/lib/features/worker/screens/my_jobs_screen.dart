@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'job_details_screen.dart';
 import '../../../data/models/job.dart';
 import '../../../core/themes/app_theme.dart';
+import '../../../providers/auth_provider.dart';
+import '../../../providers/worker_feed_provider.dart';
 
 // ─── Enums & Model ────────────────────────────────────────────────────────────
 
@@ -45,95 +47,151 @@ class WorkerJob {
 
 // ─── Jobs State Notifier ──────────────────────────────────────────────────────
 
-class _WorkerJobsNotifier extends Notifier<List<WorkerJob>> {
+class WorkerJobsListState {
+  final List<WorkerJob> jobs;
+  final bool isLoading;
+  final String? error;
+
+  const WorkerJobsListState({
+    this.jobs = const [],
+    this.isLoading = false,
+    this.error,
+  });
+
+  WorkerJobsListState copyWith({
+    List<WorkerJob>? jobs,
+    bool? isLoading,
+    String? error,
+  }) {
+    return WorkerJobsListState(
+      jobs: jobs ?? this.jobs,
+      isLoading: isLoading ?? this.isLoading,
+      error: error,
+    );
+  }
+}
+
+class _WorkerJobsNotifier extends Notifier<WorkerJobsListState> {
   @override
-  List<WorkerJob> build() {
-    return const [
-      WorkerJob(
-        id: '1',
-        title: 'Electrical Wiring for New Kitchen',
-        clientName: 'Sunil Perera',
-        location: 'Dehiwala, Colombo',
-        date: '2026-05-20',
-        budget: 'Rs. 30,000',
-        status: JobStatus.active,
-        category: 'Electrical',
-      ),
-      WorkerJob(
-        id: '2',
-        title: 'Office Rewiring Project',
-        clientName: 'Lanka Enterprises',
-        location: 'Maradana, Colombo',
-        date: '2026-05-23',
-        budget: 'Rs. 75,000',
-        status: JobStatus.active,
-        category: 'Electrical',
-      ),
-      WorkerJob(
-        id: '3',
-        title: 'Bathroom Pipe Leak Repair',
-        clientName: 'Kamala Silva',
-        location: 'Peradeniya, Kandy',
-        date: '2026-05-25',
-        budget: 'Rs. 10,000',
-        status: JobStatus.pending,
-        category: 'Plumbing',
-      ),
-      WorkerJob(
-        id: '4',
-        title: 'Garden Lighting Setup',
-        clientName: 'Priya Jayawardena',
-        location: 'Battaramulla, Colombo',
-        date: '2026-05-28',
-        budget: 'Rs. 15,000',
-        status: JobStatus.pending,
-        category: 'Electrical',
-      ),
-      WorkerJob(
-        id: '5',
-        title: 'AC Installation – Living Room',
-        clientName: 'Nimal Fernando',
-        location: 'Nugegoda, Colombo',
-        date: '2026-05-10',
-        budget: 'Rs. 6,500',
-        status: JobStatus.completed,
-        category: 'AC Repair',
-      ),
-      WorkerJob(
-        id: '6',
-        title: 'Ceiling Fan Installation × 3',
-        clientName: 'Roshan De Silva',
-        location: 'Kalutara',
-        date: '2026-05-05',
-        budget: 'Rs. 4,500',
-        status: JobStatus.completed,
-        category: 'Electrical',
-      ),
-      WorkerJob(
-        id: '7',
-        title: 'DB Box Upgrade',
-        clientName: 'Malini Wijesinghe',
-        location: 'Moratuwa, Colombo',
-        date: '2026-04-28',
-        budget: 'Rs. 12,000',
-        status: JobStatus.completed,
-        category: 'Electrical',
-      ),
-    ];
+  WorkerJobsListState build() {
+    // Load jobs automatically when provider is read
+    Future.microtask(() => loadJobs());
+    return const WorkerJobsListState(isLoading: true);
+  }
+
+  Future<void> loadJobs() async {
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      final dioClient = ref.read(dioClientProvider);
+      final user = ref.read(authProvider).user;
+
+      if (user == null) throw Exception('Not logged in');
+
+      // Find worker profile by user id (from workerFeedProvider stats or workers API)
+      int? workerId = ref.read(workerFeedProvider).stats.workerId;
+      if (workerId == null || workerId == 0) {
+        final workersResponse = await dioClient.dio.get('/workers');
+        final List<dynamic> workersData = workersResponse.data;
+        final workerEntry = workersData.firstWhere(
+          (w) => w['user'] != null && w['user']['id'] == user.id,
+          orElse: () => null,
+        );
+        if (workerEntry != null) {
+          workerId = workerEntry['id'];
+        }
+      }
+
+      if (workerId == null || workerId == 0) {
+        throw Exception('Worker profile not found');
+      }
+
+      // Fetch worker quotations
+      final response = await dioClient.dio.get('/quotations/worker/$workerId');
+      final List<dynamic> data = response.data;
+
+      final List<WorkerJob> jobsList = [];
+      for (final item in data) {
+        final statusStr = item['status'] ?? 'PENDING';
+        if (statusStr == 'REJECTED') continue; // Skip rejected ones
+
+        final jobPost = item['jobPost'];
+        if (jobPost == null) continue;
+
+        final jobPostId = jobPost['id']?.toString() ?? '0';
+        final title = jobPost['title'] ?? '';
+        final location = jobPost['locationName'] ?? jobPost['location'] ?? '';
+
+        // Safely extract client name
+        final clientMap = jobPost['client'];
+        final clientName = clientMap != null ? (clientMap['fullName'] ?? 'Client') : 'Client';
+
+        // Proposed price or budget
+        final proposedPrice = item['proposedPrice'] ?? 0.0;
+        final budgetStr = 'Rs. ${proposedPrice.toInt()}';
+
+        final date = jobPost['createdAt'] != null
+            ? jobPost['createdAt'].toString().split('T').first
+            : '';
+
+        final jobStatusStr = jobPost['status'] ?? 'OPEN';
+        JobStatus status;
+        if (statusStr == 'ACCEPTED') {
+          if (jobStatusStr == 'COMPLETED') {
+            status = JobStatus.completed;
+          } else {
+            status = JobStatus.active;
+          }
+        } else {
+          status = JobStatus.pending;
+        }
+
+        final categoryMap = jobPost['category'];
+        final categoryName = categoryMap is Map ? (categoryMap['name'] ?? '') : (categoryMap ?? '');
+
+        jobsList.add(WorkerJob(
+          id: jobPostId,
+          title: title,
+          clientName: clientName,
+          location: location,
+          date: date,
+          budget: budgetStr,
+          status: status,
+          category: categoryName.isNotEmpty ? categoryName : null,
+        ));
+      }
+
+      state = state.copyWith(jobs: jobsList, isLoading: false);
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
+    }
   }
 
   /// Mark a job as completed (moves it to Done tab)
-  void markDone(String id) {
-    state = [
-      for (final job in state)
-        if (job.id == id) job.copyWith(status: JobStatus.completed) else job,
-    ];
+  Future<void> markDone(String id) async {
+    try {
+      final dioClient = ref.read(dioClientProvider);
+      
+      // Update job timeline to COMPLETED
+      await dioClient.dio.put(
+        '/jobs/detail/$id/timeline',
+        queryParameters: {
+          'status': 'COMPLETED',
+          'note': 'Job completed by worker',
+        },
+      );
+
+      // Refresh the local job list and the worker home feed stats
+      await loadJobs();
+      ref.read(workerFeedProvider.notifier).refresh();
+    } catch (e) {
+      // Propagation of error can be handled in UI or log
+    }
   }
 }
 
 // Public so the home screen can watch the live active count
 final workerJobsListProvider =
-    NotifierProvider<_WorkerJobsNotifier, List<WorkerJob>>(
+    NotifierProvider<_WorkerJobsNotifier, WorkerJobsListState>(
   _WorkerJobsNotifier.new,
 );
 
@@ -193,9 +251,54 @@ class _MyJobsScreenState extends ConsumerState<MyJobsScreen>
     });
   }
 
+  Widget _buildErrorView(String errorMsg) {
+    final colors = Theme.of(context).extension<SevaLinkColors>()!;
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline_rounded, size: 54, color: Colors.redAccent.shade200),
+            const SizedBox(height: 16),
+            Text(
+              'Failed to load jobs',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: colors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              errorMsg.replaceAll('Exception: ', ''),
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 14, color: colors.textSecondary),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: () => ref.read(workerJobsListProvider.notifier).loadJobs(),
+              icon: const Icon(Icons.refresh_rounded, color: Colors.white),
+              label: const Text('Try Again', style: TextStyle(color: Colors.white)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF0F9B8E),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final jobs      = ref.watch(workerJobsListProvider);
+    final jobsState = ref.watch(workerJobsListProvider);
+    final jobs      = jobsState.jobs;
+    final isLoading = jobsState.isLoading;
+    final error     = jobsState.error;
+
     final active    = _byStatus(jobs, JobStatus.active);
     final pending   = _byStatus(jobs, JobStatus.pending);
     final completed = _byStatus(jobs, JobStatus.completed);
@@ -210,42 +313,48 @@ class _MyJobsScreenState extends ConsumerState<MyJobsScreen>
 
           // Tab content
           Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                // Active tab
-                _JobList(
-                  jobs: active,
-                  emptyLabel: 'No active jobs right now',
-                  onMarkDone: (id) => _handleMarkDone(id),
-                ),
-                // Pending tab
-                _JobList(
-                  jobs: pending,
-                  emptyLabel: 'No upcoming jobs scheduled',
-                  onViewDetails: (job) => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => JobDetailsScreen(
-                        job: Job(
-                          id: int.tryParse(job.id) ?? 0,
-                          title: job.title,
-                          description: 'No description available.',
-                          location: job.location,
-                          postedAt: job.date,
-                          minBudget: 0,
-                          maxBudget: 0,
-                          isNew: false,
-                          category: job.category ?? '',
-                        ),
+            child: isLoading
+                ? const Center(
+                    child: CircularProgressIndicator(color: Color(0xFF0F9B8E)),
+                  )
+                : error != null
+                    ? _buildErrorView(error)
+                    : TabBarView(
+                        controller: _tabController,
+                        children: [
+                          // Active tab
+                          _JobList(
+                            jobs: active,
+                            emptyLabel: 'No active jobs right now',
+                            onMarkDone: (id) => _handleMarkDone(id),
+                          ),
+                          // Pending tab
+                          _JobList(
+                            jobs: pending,
+                            emptyLabel: 'No upcoming jobs scheduled',
+                            onViewDetails: (job) => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => JobDetailsScreen(
+                                  job: Job(
+                                    id: int.tryParse(job.id) ?? 0,
+                                    title: job.title,
+                                    description: 'No description available.',
+                                    location: job.location,
+                                    postedAt: job.date,
+                                    minBudget: 0,
+                                    maxBudget: 0,
+                                    isNew: false,
+                                    category: job.category ?? '',
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          // Done tab
+                          _JobList(jobs: completed, emptyLabel: 'No completed jobs yet'),
+                        ],
                       ),
-                    ),
-                  ),
-                ),
-                // Done tab
-                _JobList(jobs: completed, emptyLabel: 'No completed jobs yet'),
-              ],
-            ),
           ),
         ],
       ),

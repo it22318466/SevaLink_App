@@ -109,6 +109,10 @@ public class JobPostService {
     public JobTimeline updateTimeline(Long jobId, String status, String note) {
         JobPost job = jobPostRepository.findById(jobId)
                 .orElseThrow(() -> new RuntimeException("Job not found"));
+        if ("COMPLETED".equals(status)) {
+            job.setStatus("COMPLETED");
+            jobPostRepository.save(job);
+        }
         JobTimeline timeline = new JobTimeline();
         timeline.setJobPost(job);
         timeline.setStatus(status);

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../providers/auth_provider.dart';
 import 'search_screen.dart';
 
@@ -54,6 +55,23 @@ class ClientDashboardScreen extends ConsumerStatefulWidget {
 
 class _ClientDashboardScreenState extends ConsumerState<ClientDashboardScreen> {
   int _currentNavIndex = 0;
+
+  void _onNavTapped(int index) {
+    if (index == _currentNavIndex) return;
+    switch (index) {
+      case 0:
+        break; // Already on Home
+      case 1:
+        context.go('/client/jobs');
+        break;
+      case 2:
+        context.go('/client/chat');
+        break;
+      case 3:
+        context.go('/client/profile');
+        break;
+    }
+  }
 
   // --- Static Data Provisioning to Match Design Specifications ---
   final List<ServiceCategory> _categories = const [
@@ -286,34 +304,37 @@ class _ClientDashboardScreenState extends ConsumerState<ClientDashboardScreen> {
         children: [
           // Primary Call-to-Action Card: Post a Job
           Expanded(
-            child: Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: const Color(0xFFD84315), // Deep Orange for visual weight
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFFD84315).withValues(alpha: 0.3), // Colored shadow technique
-                    blurRadius: 15,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('📝', style: TextStyle(fontSize: 30)), 
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Post a Job',
-                    style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Get quotes from\nworkers',
-                    style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 13, height: 1.3),
-                  ),
-                ],
+            child: GestureDetector(
+              onTap: () => context.push('/client/jobs/post'),
+              child: Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFD84315), // Deep Orange for visual weight
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFD84315).withValues(alpha: 0.3), // Colored shadow technique
+                      blurRadius: 15,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('📝', style: TextStyle(fontSize: 30)), 
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Post a Job',
+                      style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Get quotes from\nworkers',
+                      style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 13, height: 1.3),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -321,34 +342,37 @@ class _ClientDashboardScreenState extends ConsumerState<ClientDashboardScreen> {
           
           // Secondary Call-to-Action Card: My Jobs
           Expanded(
-            child: Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: const Color(0xFF2962FF), // High-contrast blue for separation of intent
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF2962FF).withValues(alpha: 0.3),
-                    blurRadius: 15,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('📋', style: TextStyle(fontSize: 30)), 
-                  const SizedBox(height: 16),
-                  const Text(
-                    'My Jobs',
-                    style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Track ongoing\nwork',
-                    style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 13, height: 1.3),
-                  ),
-                ],
+            child: GestureDetector(
+              onTap: () => context.go('/client/jobs'),
+              child: Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF2962FF), // High-contrast blue for separation of intent
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF2962FF).withValues(alpha: 0.3),
+                      blurRadius: 15,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('📋', style: TextStyle(fontSize: 30)), 
+                    const SizedBox(height: 16),
+                    const Text(
+                      'My Jobs',
+                      style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Track ongoing\nwork',
+                      style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 13, height: 1.3),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -443,9 +467,7 @@ class _ClientDashboardScreenState extends ConsumerState<ClientDashboardScreen> {
                 style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black87),
               ),
               InkWell(
-                onTap: () {
-                  // Execution point for full list navigation
-                },
+                onTap: () => context.go('/client/jobs'),
                 child: const Text(
                   'View All',
                   style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF2B4EEF)),
@@ -668,11 +690,7 @@ class _ClientDashboardScreenState extends ConsumerState<ClientDashboardScreen> {
       ),
       child: BottomNavigationBar(
         currentIndex: _currentNavIndex,
-        onTap: (index) {
-          setState(() {
-            _currentNavIndex = index;
-          });
-        },
+        onTap: _onNavTapped,
         type: BottomNavigationBarType.fixed,
         backgroundColor: Colors.white,
         elevation: 0,

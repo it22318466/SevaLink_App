@@ -19,6 +19,7 @@ class ApiEndpoints {
   static String get refreshToken => '$baseUrl/auth/refresh';
   static String get logout => '$baseUrl/auth/logout';
   static String get me => '$baseUrl/auth/me';
+  static String get clientDashboard => '$baseUrl/client/dashboard';
 
 
 }
