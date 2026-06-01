@@ -117,43 +117,48 @@ class _ClientDashboardScreenState extends ConsumerState<ClientDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Graceful fallback for authentication state retrieval
+    // Reactively read name and location from authProvider for real-time updates
     String displayFullName = "Dilini Rajapaksa";
-    
+    String displayLocation = "Dehiwala, Colombo";
+
     try {
-      final user = ref.watch(authProvider).user;
+      final authState = ref.watch(authProvider);
+      final user = authState.user;
       if (user != null && user.fullName.isNotEmpty) {
         displayFullName = user.fullName;
+      }
+      final location = authState.profileExtra.location;
+      if (location.isNotEmpty) {
+        displayLocation = location;
       }
     } catch (_) {
       // Catch exceptions to ensure UI layout stability if provider fails
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA), // Neutral background to enhance contrast
+      backgroundColor: const Color(0xFFF8F9FA),
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // Implementation of the overlapping Z-axis header design
             Stack(
               clipBehavior: Clip.none,
               children: [
-                _buildHeader(displayFullName),
-                
-                // Positioned padding forces the quick action cards to straddle the header boundary
+                _buildHeader(displayFullName, displayLocation),
+
+                // Cards overlap the header boundary
                 Padding(
-                  padding: const EdgeInsets.only(top: 230.0), 
+                  padding: const EdgeInsets.only(top: 270.0),
                   child: _buildQuickActionCards(),
                 ),
               ],
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 24),
             _buildServiceCategories(),
             const SizedBox(height: 32),
             _buildTopRatedWorkers(),
             const SizedBox(height: 32),
             _buildTrustBanner(),
-            const SizedBox(height: 40), // Ensures scroll clearance above the bottom navigation
+            const SizedBox(height: 40),
           ],
         ),
       ),
@@ -165,9 +170,9 @@ class _ClientDashboardScreenState extends ConsumerState<ClientDashboardScreen> {
   // COMPONENT BUILDERS
   // ==========================================================================
 
-  Widget _buildHeader(String userName) {
+  Widget _buildHeader(String userName, String userLocation) {
     return Container(
-      height: 290,
+      height: 335,
       width: double.infinity,
       padding: const EdgeInsets.only(top: 65, left: 24, right: 24),
       decoration: const BoxDecoration(
@@ -184,7 +189,6 @@ class _ClientDashboardScreenState extends ConsumerState<ClientDashboardScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Row containing the dynamic greeting and notification systems
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -207,7 +211,6 @@ class _ClientDashboardScreenState extends ConsumerState<ClientDashboardScreen> {
                   ),
                 ],
               ),
-              // Custom implementation of a notification badge using Stack
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
@@ -225,9 +228,9 @@ class _ClientDashboardScreenState extends ConsumerState<ClientDashboardScreen> {
                         width: 10,
                         height: 10,
                         decoration: BoxDecoration(
-                          color: const Color(0xFFE53935), // High-urgency red indicator
+                          color: const Color(0xFFE53935),
                           shape: BoxShape.circle,
-                          border: Border.all(color: const Color(0xFF2B4EEF), width: 2), // Matches header background
+                          border: Border.all(color: const Color(0xFF2B4EEF), width: 2),
                         ),
                       ),
                     ),
@@ -236,9 +239,9 @@ class _ClientDashboardScreenState extends ConsumerState<ClientDashboardScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 28),
-          
-          // Custom Search Bar — taps open full search screen
+          const SizedBox(height: 20),
+
+          // Search bar — taps open full search screen
           GestureDetector(
             onTap: () {
               Navigator.of(context).push(
@@ -263,8 +266,8 @@ class _ClientDashboardScreenState extends ConsumerState<ClientDashboardScreen> {
                     color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
-                  )
-                ]
+                  ),
+                ],
               ),
               child: Row(
                 children: [
@@ -280,15 +283,23 @@ class _ClientDashboardScreenState extends ConsumerState<ClientDashboardScreen> {
             ),
           ),
           const SizedBox(height: 20),
-          
-          // Contextual Location Indicator
-          const Row(
+
+          // Dynamic location from profile — updates in real-time
+          Row(
             children: [
-              Icon(Icons.location_on_outlined, color: Colors.white, size: 20),
-              SizedBox(width: 6),
-              Text(
-                'Dehiwala, Colombo',
-                style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w500),
+              const Icon(Icons.location_on_outlined, color: Colors.white, size: 20),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  userLocation,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ],
           ),
@@ -398,7 +409,7 @@ class _ClientDashboardScreenState extends ConsumerState<ClientDashboardScreen> {
             shrinkWrap: true, // Forces layout engine to compute explicit height
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 4,
-              childAspectRatio: 0.8, // Configured to accommodate icon and text label vertically
+              childAspectRatio: 0.68, // Enough height for 68px icon + spacing + label text
               crossAxisSpacing: 16,
               mainAxisSpacing: 24,
             ),

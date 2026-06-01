@@ -3,9 +3,13 @@ package com.sevalink.sevalinkbackend.service;
 import com.sevalink.sevalinkbackend.model.JobPost;
 import com.sevalink.sevalinkbackend.model.JobTimeline;
 import com.sevalink.sevalinkbackend.model.Quotation;
+import com.sevalink.sevalinkbackend.model.Worker;
 import com.sevalink.sevalinkbackend.repository.JobPostRepository;
 import com.sevalink.sevalinkbackend.repository.JobTimelineRepository;
 import com.sevalink.sevalinkbackend.repository.QuotationRepository;
+import com.sevalink.sevalinkbackend.repository.WorkerRepository;
+import com.sevalink.sevalinkbackend.model.Notification;
+import com.sevalink.sevalinkbackend.repository.NotificationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.util.List;
@@ -22,22 +26,45 @@ public class QuotationService {
     @Autowired
     private JobTimelineRepository jobTimelineRepository;
 
+    @Autowired
+    private WorkerRepository workerRepository;
+
+    @Autowired
+    private NotificationRepository notificationRepository;
+
     // Worker sends a quotation
     public Quotation sendQuotation(Quotation quotation) {
+        // Load full entities from DB so nested getUser()/getClient() work correctly
+        Worker worker = workerRepository.findById(quotation.getWorker().getId())
+                .orElseThrow(() -> new RuntimeException("Worker not found"));
+        JobPost jobPost = jobPostRepository.findById(quotation.getJobPost().getId())
+                .orElseThrow(() -> new RuntimeException("Job not found"));
+
         quotationRepository.findByJobPostIdAndWorkerId(
-                quotation.getJobPost().getId(),
-                quotation.getWorker().getId())
+                jobPost.getId(),
+                worker.getId())
                 .ifPresent(q -> {
                     throw new RuntimeException("Already sent a quotation for this job");
                 });
 
+        quotation.setWorker(worker);
+        quotation.setJobPost(jobPost);
+
         Quotation saved = quotationRepository.save(quotation);
 
         JobTimeline timeline = new JobTimeline();
-        timeline.setJobPost(quotation.getJobPost());
+        timeline.setJobPost(jobPost);
         timeline.setStatus("QUOTE_RECEIVED");
         timeline.setNote("Quote received from worker");
         jobTimelineRepository.save(timeline);
+
+        // Notify Client about new quote
+        Notification notification = new Notification();
+        notification.setUser(jobPost.getClient());
+        notification.setJobPost(jobPost);
+        notification.setTitle("New Quote Received");
+        notification.setMessage("You have received a new quote from " + worker.getUser().getFullName() + " for your job.");
+        notificationRepository.save(notification);
 
         return saved;
     }
@@ -82,6 +109,14 @@ public class QuotationService {
         timeline.setNote("Client accepted a worker");
         jobTimelineRepository.save(timeline);
 
+        // Notify Worker
+        Notification notification = new Notification();
+        notification.setUser(quotation.getWorker().getUser());
+        notification.setJobPost(job);
+        notification.setTitle("Quote Accepted");
+        notification.setMessage("Your quote for " + job.getTitle() + " has been accepted!");
+        notificationRepository.save(notification);
+
         return quotation;
     }
 
@@ -90,7 +125,17 @@ public class QuotationService {
         Quotation quotation = quotationRepository.findById(quotationId)
                 .orElseThrow(() -> new RuntimeException("Quotation not found"));
         quotation.setStatus("REJECTED");
-        return quotationRepository.save(quotation);
+        Quotation saved = quotationRepository.save(quotation);
+
+        // Notify Worker
+        Notification notification = new Notification();
+        notification.setUser(quotation.getWorker().getUser());
+        notification.setJobPost(quotation.getJobPost());
+        notification.setTitle("Quote Declined");
+        notification.setMessage("Your quote for " + quotation.getJobPost().getTitle() + " was declined.");
+        notificationRepository.save(notification);
+
+        return saved;
     }
 
     // Get contact details after acceptance (phone reveal)

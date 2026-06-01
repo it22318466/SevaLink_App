@@ -4,9 +4,11 @@ import 'package:go_router/go_router.dart';
 import 'worker_profile_screen.dart';
 import 'job_details_screen.dart';
 import 'my_jobs_screen.dart';
+import '../../chat/screens/chat_list_screen.dart';
 import '../../../data/models/job.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/worker_feed_provider.dart';
+import '../../../providers/notification_provider.dart';
 import '../../../core/themes/app_theme.dart';
 
 // (Mock data removed — now using real backend feed)
@@ -21,10 +23,8 @@ class WorkerHomeScreen extends ConsumerStatefulWidget {
 
 class _WorkerHomeScreenState extends ConsumerState<WorkerHomeScreen> {
   int _selectedIndex = 0;
-  bool _hasNewNotifications = true;
 
   void _goToTab(int index) => setState(() => _selectedIndex = index);
-  void _clearNotifications() => setState(() => _hasNewNotifications = false);
 
   @override
   Widget build(BuildContext context) {
@@ -43,27 +43,26 @@ class _WorkerHomeScreenState extends ConsumerState<WorkerHomeScreen> {
     final user = ref.watch(authProvider).user;
     final stats = ref.watch(workerFeedProvider).stats;
     final workerName = stats.fullName.isNotEmpty ? stats.fullName : (user?.fullName ?? 'Worker');
+    final hasNewNotifications = ref.watch(notificationProvider).unreadCount > 0;
 
     switch (_selectedIndex) {
       case 0:
         return _HomeContent(
           workerName: workerName,
-          hasNewNotifications: _hasNewNotifications,
-          onNotificationTap: _clearNotifications,
+          hasNewNotifications: hasNewNotifications,
           onGoToJobs: () => _goToTab(1),
           onGoToProfile: () => _goToTab(3),
         );
       case 1:
         return const MyJobsScreen();
       case 2:
-        return const _ChatPage();
+        return const ChatListScreen(showBottomNav: false);
       case 3:
         return const WorkerProfileScreen(showBackButton: false);
       default:
         return _HomeContent(
           workerName: workerName,
-          hasNewNotifications: _hasNewNotifications,
-          onNotificationTap: _clearNotifications,
+          hasNewNotifications: hasNewNotifications,
           onGoToJobs: () => _goToTab(1),
           onGoToProfile: () => _goToTab(3),
         );
@@ -75,7 +74,6 @@ class _WorkerHomeScreenState extends ConsumerState<WorkerHomeScreen> {
 class _HomeContent extends ConsumerWidget {
   final VoidCallback? onGoToJobs;
   final VoidCallback? onGoToProfile;
-  final VoidCallback? onNotificationTap;
   final String workerName;
   final bool hasNewNotifications;
 
@@ -84,7 +82,6 @@ class _HomeContent extends ConsumerWidget {
     this.hasNewNotifications = false,
     this.onGoToJobs,
     this.onGoToProfile,
-    this.onNotificationTap,
   });
 
   @override
@@ -105,7 +102,6 @@ class _HomeContent extends ConsumerWidget {
             child: _Header(
               workerName: workerName,
               hasNewNotifications: hasNewNotifications,
-              onNotificationTap: onNotificationTap,
               stats: feedState.stats,
             ),
           ),
@@ -275,13 +271,11 @@ class _ErrorView extends StatelessWidget {
 class _Header extends StatelessWidget {
   final String workerName;
   final bool hasNewNotifications;
-  final VoidCallback? onNotificationTap;
   final WorkerStats stats;
 
   const _Header({
     required this.workerName,
     this.hasNewNotifications = false,
-    this.onNotificationTap,
     this.stats = const WorkerStats(),
   });
 
@@ -325,7 +319,6 @@ class _Header extends StatelessWidget {
               ),
               GestureDetector(
                 onTap: () {
-                  if (onNotificationTap != null) onNotificationTap!();
                   Scaffold.of(context).openEndDrawer();
                 },
                 child: Stack(
@@ -839,48 +832,21 @@ class _BottomNav extends StatelessWidget {
   }
 }
 
-//  Chat Placeholder
-class _ChatPage extends StatelessWidget {
-  const _ChatPage();
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.chat_bubble_outline_rounded,
-              size: 64, color: context.sevaColors.textSecondary),
-          const SizedBox(height: 16),
-          Text('Chat',
-              style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: context.sevaColors.textPrimary)),
-          const SizedBox(height: 8),
-          Text('Coming soon',
-              style: TextStyle(fontSize: 14, color: context.sevaColors.textSecondary)),
-        ],
-      ),
-    );
-  }
-}
-
 // ─── Notifications Drawer ─────────────────────────────────────────────────────
-class _NotificationsDrawer extends StatelessWidget {
+class _NotificationsDrawer extends ConsumerWidget {
   const _NotificationsDrawer();
 
-  void _navigateToJob(BuildContext context, Job job) {
-    Navigator.pop(context); // close drawer
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => JobDetailsScreen(job: job)),
-    );
+  void _handleNotificationTap(BuildContext context, WidgetRef ref, int notifId) {
+    ref.read(notificationProvider.notifier).markAsRead(notifId);
+    Navigator.pop(context);
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colors = context.sevaColors;
+    final notificationState = ref.watch(notificationProvider);
+    final notifications = notificationState.notifications;
+
     return Drawer(
       backgroundColor: colors.cardBg,
       surfaceTintColor: Colors.transparent,
@@ -890,35 +856,115 @@ class _NotificationsDrawer extends StatelessWidget {
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
-              child: Text(
-                'Notifications',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: colors.textPrimary,
-                ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Notifications',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: colors.textPrimary,
+                    ),
+                  ),
+                  if (notificationState.unreadCount > 0)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.redAccent,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        '${notificationState.unreadCount} New',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
             Divider(height: 1, color: colors.divider),
             Expanded(
-              child: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.notifications_none_rounded,
-                        size: 52, color: Colors.grey.shade300),
-                    const SizedBox(height: 12),
-                    const Text('No notifications yet',
-                        style: TextStyle(
-                            color: Colors.grey, fontSize: 15)),
-                  ],
-                ),
-              ),
+              child: notificationState.isLoading && notifications.isEmpty
+                  ? const Center(child: CircularProgressIndicator())
+                  : notifications.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.notifications_none_rounded,
+                                  size: 52, color: Colors.grey.shade300),
+                              const SizedBox(height: 12),
+                              const Text('No notifications yet',
+                                  style: TextStyle(color: Colors.grey, fontSize: 15)),
+                            ],
+                          ),
+                        )
+                      : ListView.builder(
+                          itemCount: notifications.length,
+                          itemBuilder: (context, index) {
+                            final notif = notifications[index];
+                            return InkWell(
+                              onTap: () => _handleNotificationTap(context, ref, notif.id),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                                decoration: BoxDecoration(
+                                  color: notif.isRead ? Colors.transparent : const Color(0xFF0F9B8E).withValues(alpha: 0.05),
+                                  border: Border(bottom: BorderSide(color: colors.divider)),
+                                ),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: notif.isRead ? Colors.grey.shade100 : const Color(0xFF0F9B8E).withValues(alpha: 0.1),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: Icon(
+                                        Icons.notifications_active,
+                                        color: notif.isRead ? Colors.grey.shade400 : const Color(0xFF0F9B8E),
+                                        size: 20,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            notif.title,
+                                            style: TextStyle(
+                                              fontWeight: notif.isRead ? FontWeight.normal : FontWeight.bold,
+                                              fontSize: 15,
+                                              color: colors.textPrimary,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            notif.message,
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              color: colors.textSecondary,
+                                              height: 1.3,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
             ),
           ],
         ),
       ),
     );
   }
-
 }

@@ -70,17 +70,14 @@ class _SendQuoteScreenState extends ConsumerState<SendQuoteScreen>
 
       if (user == null) throw Exception('Not logged in');
 
-      // Find this worker's backend Worker ID (different from User ID)
+      // Get this worker's own worker-profile ID directly via JWT (no list search needed)
       int workerId = 0;
       try {
-        final workersRes = await dioClient.dio.get('/workers');
-        final List<dynamic> workers = workersRes.data;
-        final found = workers.firstWhere(
-          (w) => w['user'] != null && w['user']['id'] == user.id,
-          orElse: () => null,
-        );
-        if (found != null) workerId = found['id'] ?? 0;
-      } catch (_) {}
+        final meRes = await dioClient.dio.get('/workers/me');
+        workerId = (meRes.data['id'] as num?)?.toInt() ?? 0;
+      } catch (e) {
+        throw Exception('Worker profile not found. Please complete your profile first.');
+      }
 
       if (workerId == 0) throw Exception('Worker profile not found');
 

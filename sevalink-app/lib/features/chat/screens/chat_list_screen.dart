@@ -6,7 +6,8 @@ import '../../../data/models/chat_message.dart';
 import '../../../core/themes/app_theme.dart';
 
 class ChatListScreen extends ConsumerStatefulWidget {
-  const ChatListScreen({super.key});
+  final bool showBottomNav;
+  const ChatListScreen({super.key, this.showBottomNav = true});
 
   @override
   ConsumerState<ChatListScreen> createState() => _ChatListScreenState();
@@ -81,10 +82,13 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 12.0),
                 child: Row(
                   children: [
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back, color: Colors.white),
-                      onPressed: () => context.go('/client/home'),
-                    ),
+                    if (widget.showBottomNav)
+                      IconButton(
+                        icon: const Icon(Icons.arrow_back, color: Colors.white),
+                        onPressed: () => context.go('/client/home'),
+                      )
+                    else
+                      const SizedBox(width: 48), // Balance spacing
                     const Expanded(
                       child: Text(
                         'Messages',
@@ -139,7 +143,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
           ),
         ],
       ),
-      bottomNavigationBar: _buildBottomNavigationBar(),
+      bottomNavigationBar: widget.showBottomNav ? _buildBottomNavigationBar() : null,
     );
   }
 

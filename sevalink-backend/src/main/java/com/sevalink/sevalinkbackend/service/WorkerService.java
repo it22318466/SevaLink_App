@@ -50,6 +50,23 @@ public class WorkerService {
         return workerRepository.findById(id);
     }
 
+    // Get worker profile of the currently authenticated user (by email)
+    public Worker getWorkerByEmail(String email) {
+        com.sevalink.sevalinkbackend.model.User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Auto-create worker profile if it doesn't exist
+        return workerRepository.findByUserId(user.getId()).orElseGet(() -> {
+            Worker newWorker = new Worker();
+            newWorker.setUser(user);
+            newWorker.setIsAvailable(true);
+            newWorker.setRating(5.0);
+            newWorker.setTotalJobs(0);
+            workerRepository.save(newWorker);
+            return newWorker;
+        });
+    }
+
     // Search workers by keyword (e.g. "plumber", "electrician")
     public List<Worker> searchWorkers(String keyword) {
         return workerRepository.searchWorkers(keyword);

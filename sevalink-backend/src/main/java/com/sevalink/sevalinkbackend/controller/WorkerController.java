@@ -5,9 +5,12 @@ import com.sevalink.sevalinkbackend.service.WorkerService;
 import com.sevalink.sevalinkbackend.dto.UpdateWorkerProfileRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/workers")
@@ -16,6 +19,25 @@ public class WorkerController {
 
     @Autowired
     private WorkerService workerService;
+
+    // Get current authenticated worker's own profile
+    // GET http://localhost:8080/api/workers/me
+    @GetMapping("/me")
+    public ResponseEntity<?> getMyWorkerProfile() {
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            String email = auth.getName();
+            Worker worker = workerService.getWorkerByEmail(email);
+            // Return minimal safe map - just id and userId
+            return ResponseEntity.ok(Map.of(
+                "id", worker.getId(),
+                "userId", worker.getUser().getId(),
+                "isAvailable", worker.getIsAvailable() != null && worker.getIsAvailable()
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
 
     // Get all workers
     // GET http://localhost:8080/api/workers

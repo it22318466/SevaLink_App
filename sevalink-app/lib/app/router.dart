@@ -19,9 +19,12 @@ import '../features/profile/screens/client_profile_screen.dart';
 import '../features/profile/screens/edit_client_profile_screen.dart';
 import '../features/jobs/screens/client_jobs_screen.dart';
 import '../features/jobs/screens/post_job_screen.dart';
+import '../features/jobs/screens/quotes_received_screen.dart';
+import '../features/jobs/screens/quote_details_screen.dart';
 import '../features/chat/screens/chat_list_screen.dart';
 import '../features/chat/screens/chat_screen.dart';
 import '../data/models/job.dart';
+import '../data/models/quotation_model.dart';
 
 class RouterNotifier extends ChangeNotifier {
   final Ref _ref;
@@ -124,6 +127,21 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/client/jobs/post',
         builder: (context, state) => const PostJobScreen(),
+      ),
+      GoRoute(
+        path: '/client/jobs/:jobId/quotes',
+        builder: (context, state) {
+          final job = state.extra as Map<String, dynamic>? ?? {};
+          final jobId = int.tryParse(state.pathParameters['jobId'] ?? '0') ?? 0;
+          return QuotesReceivedScreen(jobId: jobId, jobDetails: job);
+        },
+      ),
+      GoRoute(
+        path: '/client/quote-details',
+        builder: (context, state) {
+          final quote = state.extra as Quotation;
+          return QuoteDetailsScreen(quotation: quote);
+        },
       ),
       GoRoute(
         path: '/client/chat',

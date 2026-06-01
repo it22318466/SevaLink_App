@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'dart:async';
 import '../data/repositories/chat_repository.dart';
 import '../data/models/chat_message.dart';
 import 'auth_provider.dart';
@@ -21,12 +22,23 @@ final conversationProvider = FutureProvider.family<List<ChatMessageModel>, int>(
 
 class ChatNotifier extends Notifier<List<ChatMessageModel>> {
   final int otherUserId;
+  Timer? _timer;
 
   ChatNotifier(this.otherUserId);
 
   @override
   List<ChatMessageModel> build() {
     _loadMessages();
+    
+    // Poll every 5 seconds for new messages to keep chat in sync
+    _timer = Timer.periodic(const Duration(seconds: 5), (_) {
+      _loadMessages();
+    });
+    
+    ref.onDispose(() {
+      _timer?.cancel();
+    });
+    
     return [];
   }
 
@@ -52,6 +64,7 @@ class ChatNotifier extends Notifier<List<ChatMessageModel>> {
         content: content,
         jobPostId: jobPostId,
       );
+      // Immediately append, the next poll will verify
       state = [...state, message];
     } catch (e) {
       // Handle error

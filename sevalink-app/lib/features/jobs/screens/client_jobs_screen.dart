@@ -450,28 +450,35 @@ class _ClientJobsScreenState extends ConsumerState<ClientJobsScreen> {
               const SizedBox(width: 8),
               Container(width: 6, height: 6, decoration: const BoxDecoration(color: Color(0xFF16A34A), shape: BoxShape.circle)),
               const SizedBox(width: 6),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Text(
-                    '$quoteCount',
-                    style: const TextStyle(
-                      color: Color(0xFF16A34A),
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
-                      height: 1.0,
+              GestureDetector(
+                onTap: () {
+                  if (job['id'] != null) {
+                    context.push('/client/jobs/${job['id']}/quotes', extra: job);
+                  }
+                },
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Text(
+                      '$quoteCount',
+                      style: const TextStyle(
+                        color: Color(0xFF16A34A),
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        height: 1.0,
+                      ),
                     ),
-                  ),
-                  const Text(
-                    'Quotes',
-                    style: TextStyle(
-                      color: Color(0xFF16A34A),
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      height: 1.0,
+                    const Text(
+                      'Quotes',
+                      style: TextStyle(
+                        color: Color(0xFF16A34A),
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        height: 1.0,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ],
           ),

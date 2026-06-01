@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import '../data/repositories/client_profile_repository.dart';
 import '../core/network/dio_client.dart';
+import 'auth_provider.dart';
 
 final clientProfileRepositoryProvider = Provider<ClientProfileRepository>((ref) {
   final dioClient = DioClient();
@@ -26,11 +27,25 @@ class ClientProfileNotifier extends AsyncNotifier<ClientProfile> {
   }) async {
     final repository = ref.read(clientProfileRepositoryProvider);
     state = const AsyncValue.loading();
-    state = await AsyncValue.guard(() => repository.updateProfile(
-          fullName: fullName,
-          phoneNumber: phoneNumber,
-          location: location,
-        ));
+    state = await AsyncValue.guard(() async {
+      final updatedProfile = await repository.updateProfile(
+        fullName: fullName,
+        phoneNumber: phoneNumber,
+        location: location,
+      );
+
+      // Synchronize with authProvider to enable real-time dashboard updates
+      final auth = ref.read(authProvider);
+      ref.read(authProvider.notifier).updateProfile(
+        fullName: fullName,
+        phoneNumber: phoneNumber,
+        location: location,
+        bio: auth.profileExtra.bio,
+        hourlyRate: auth.profileExtra.hourlyRate,
+      );
+
+      return updatedProfile;
+    });
   }
 
   Future<void> uploadProfileImage(XFile imageFile) async {
@@ -38,11 +53,16 @@ class ClientProfileNotifier extends AsyncNotifier<ClientProfile> {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
       final bytes = await imageFile.readAsBytes();
-      return repository.uploadProfileImage(
+      final updatedProfile = await repository.uploadProfileImage(
         imageFile.path,
         imageFile.name,
         bytes,
       );
+
+      // Synchronize profile image with authProvider
+      ref.read(authProvider.notifier).updateProfileImage(updatedProfile.profileImageUrl);
+
+      return updatedProfile;
     });
   }
 }
