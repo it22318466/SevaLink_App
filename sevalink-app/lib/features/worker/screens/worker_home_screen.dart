@@ -289,8 +289,12 @@ class _Header extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(36),
+          bottomRight: Radius.circular(36),
+        ),
       ),
-      padding: EdgeInsets.fromLTRB(20, topPadding + 20, 20, 48),
+      padding: EdgeInsets.fromLTRB(20, topPadding + 20, 20, 56),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

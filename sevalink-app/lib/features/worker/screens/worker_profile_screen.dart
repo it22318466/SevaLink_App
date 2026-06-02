@@ -344,18 +344,20 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: CustomScrollView(
         slivers: [
-          _buildSliverHeader(),
           SliverToBoxAdapter(
-            child: Transform.translate(
-              offset: const Offset(0, -50),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildAvatarCard(stats),
+            child: Column(
+              children: [
+                _buildHeaderWidget(),
+                Transform.translate(
+                  offset: const Offset(0, -50),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildAvatarCard(stats),
                       const SizedBox(height: 20),
                       _buildSection('Personal Information', [
                         _buildField(
@@ -418,11 +420,13 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
                         const SizedBox(height: 12),
                         _buildLogoutButton(),
                       ],
-                      const SizedBox(height: 30),
+                      const SizedBox(height: 50),
                     ],
                   ),
                 ),
               ),
+            ),
+              ],
             ),
           ),
         ],
@@ -431,67 +435,65 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
   }
 
   //  HEADER
-  Widget _buildSliverHeader() {
-    return SliverToBoxAdapter(
-      child: Container(
-        height: 160,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFFD3410A), Color(0xFFE8520B)],
-          ),
-          borderRadius: BorderRadius.only(
-            bottomLeft: Radius.circular(36),
-            bottomRight: Radius.circular(36),
-          ),
+  Widget _buildHeaderWidget() {
+    return Container(
+      height: 190,
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFD3410A), Color(0xFFE8520B)],
         ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-            child: Row(
-              children: [
-                if (widget.showBackButton)
-                  GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.15),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(Icons.arrow_back_rounded,
-                          color: Colors.white, size: 22),
-                    ),
-                  ),
-                if (widget.showBackButton) const SizedBox(width: 16),
-                const Expanded(
-                  child: Text(
-                    'My Profile',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(36),
+          bottomRight: Radius.circular(36),
+        ),
+      ),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          child: Row(
+            children: [
+              if (widget.showBackButton)
                 GestureDetector(
-                  onTap: () => setState(() => _isEditing = !_isEditing),
+                  onTap: () => Navigator.pop(context),
                   child: Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.15),
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(
-                      _isEditing ? Icons.close_rounded : Icons.edit_rounded,
-                      color: Colors.white,
-                      size: 20,
-                    ),
+                    child: const Icon(Icons.arrow_back_rounded,
+                        color: Colors.white, size: 22),
                   ),
                 ),
-              ],
-            ),
+              if (widget.showBackButton) const SizedBox(width: 16),
+              const Expanded(
+                child: Text(
+                  'My Profile',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              GestureDetector(
+                onTap: () => setState(() => _isEditing = !_isEditing),
+                child: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    _isEditing ? Icons.close_rounded : Icons.edit_rounded,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
