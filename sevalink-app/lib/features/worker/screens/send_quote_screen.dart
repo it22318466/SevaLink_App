@@ -215,14 +215,14 @@ class _SendQuoteScreenState extends ConsumerState<SendQuoteScreen>
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF1A3FBB), Color(0xFF0E257A)],
+          colors: [Color(0xFFD3410A), Color(0xFFE8520B)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF1A3FBB).withValues(alpha: 0.3),
+            color: const Color(0xFFD3410A).withValues(alpha: 0.3),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),

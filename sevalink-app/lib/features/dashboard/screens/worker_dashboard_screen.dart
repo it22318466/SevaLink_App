@@ -147,7 +147,7 @@ class _WorkerDashboardScreenState
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [Color(0xFF1A3FBB), Color(0xFF0E257A)],
+            colors: [Color(0xFFD3410A), Color(0xFFE8520B)],
           ),
           borderRadius: BorderRadius.only(
             bottomLeft: Radius.circular(36),
@@ -162,29 +162,34 @@ class _WorkerDashboardScreenState
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Welcome back,',
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w400,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Welcome back,',
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w400,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      workerName,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 26,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 0.3,
+                      const SizedBox(height: 4),
+                      Text(
+                        workerName,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 26,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.3,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
+                const SizedBox(width: 12),
                 Stack(
                   clipBehavior: Clip.none,
                   children: [
@@ -210,7 +215,7 @@ class _WorkerDashboardScreenState
                           color: const Color(0xFFEF4444),
                           shape: BoxShape.circle,
                           border: Border.all(
-                              color: const Color(0xFF1A3FBB), width: 2),
+                              color: const Color(0xFFD3410A), width: 2),
                         ),
                       ),
                     ),

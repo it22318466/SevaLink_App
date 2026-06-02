@@ -14,7 +14,7 @@ class ChatListScreen extends ConsumerStatefulWidget {
 }
 
 class _ChatListScreenState extends ConsumerState<ChatListScreen> {
-  int _currentNavIndex = 2; // Chat tab
+  final int _currentNavIndex = 2; // Chat tab
 
   void _onNavTapped(int index) {
     if (index == _currentNavIndex) return;
@@ -170,7 +170,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
                   height: 52,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: const Color(0xFFE8520B).withOpacity(0.1),
+                    color: const Color(0xFFE8520B).withValues(alpha: 0.1),
                   ),
                   child: Center(
                     child: Text(

@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../providers/client_profile_provider.dart';
-import '../../../core/themes/app_theme.dart';
 
 class EditClientProfileScreen extends ConsumerStatefulWidget {
   const EditClientProfileScreen({super.key});
@@ -104,7 +103,6 @@ class _EditClientProfileScreenState extends ConsumerState<EditClientProfileScree
 
   @override
   Widget build(BuildContext context) {
-    final profileState = ref.watch(clientProfileProvider);
     final initials = _getInitials(_nameController.text.isNotEmpty ? _nameController.text : 'U');
 
     return Scaffold(
@@ -165,7 +163,7 @@ class _EditClientProfileScreenState extends ConsumerState<EditClientProfileScree
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
+                            color: Colors.black.withValues(alpha: 0.05),
                             blurRadius: 10,
                             offset: const Offset(0, 4),
                           ),
@@ -238,7 +236,7 @@ class _EditClientProfileScreenState extends ConsumerState<EditClientProfileScree
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
+                            color: Colors.black.withValues(alpha: 0.05),
                             blurRadius: 10,
                             offset: const Offset(0, 4),
                           ),

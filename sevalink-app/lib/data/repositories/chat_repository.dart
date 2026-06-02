@@ -41,7 +41,7 @@ class ChatRepository {
       final response = await _dioClient.dio.post('/chat/send', data: {
         'receiverId': receiverId,
         'content': content,
-        if (jobPostId != null) 'jobPostId': jobPostId,
+        'jobPostId': ?jobPostId,
       });
       if (response.statusCode == 200) {
         return ChatMessageModel.fromJson(response.data['data']);

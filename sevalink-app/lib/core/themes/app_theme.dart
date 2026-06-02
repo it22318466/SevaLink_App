@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class AppTheme {
   // ─── Brand Colours ───────────────────────────────────────────────────────
-  static const Color primaryColor     = Color(0xFF1A3FBB); // SevaLink Blue
+  static const Color primaryColor     = Color(0xFFD3410A); // SevaLink Orange
   static const Color accentColor      = Color(0xFF006B5E); // SevaLink Teal
 
   // ─── Backward-compatible aliases (used by auth screens) ──────────────────

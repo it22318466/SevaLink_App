@@ -12,7 +12,7 @@ class ClientJobsScreen extends ConsumerStatefulWidget {
 }
 
 class _ClientJobsScreenState extends ConsumerState<ClientJobsScreen> {
-  int _currentNavIndex = 1; // Jobs tab
+  final int _currentNavIndex = 1; // Jobs tab
   int _selectedTabIndex = 0;
   final List<String> _statusFilters = ['OPEN', 'ASSIGNED', 'COMPLETED', 'CANCELLED'];
 
@@ -107,7 +107,7 @@ class _ClientJobsScreenState extends ConsumerState<ClientJobsScreen> {
                       ],
                     ),
                     loading: () => const SizedBox(height: 80, child: Center(child: CircularProgressIndicator(color: Colors.white))),
-                    error: (_, __) => Row(
+                    error: (err, stack) => Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         _buildStatSquare('0', 'Total'),
@@ -171,7 +171,7 @@ class _ClientJobsScreenState extends ConsumerState<ClientJobsScreen> {
                             ),
                           ),
                           loading: () => const Text('Loading...'),
-                          error: (_, __) => const Text('0 Jobs'),
+                          error: (err, stack) => const Text('0 Jobs'),
                         ),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),

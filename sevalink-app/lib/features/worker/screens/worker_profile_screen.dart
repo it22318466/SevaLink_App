@@ -152,7 +152,7 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: const Icon(Icons.visibility_rounded,
-                        color: Color(0xFF1A3FBB)),
+                        color: Color(0xFFD3410A)),
                   ),
                   title: const Text('View Profile Picture'),
                   onTap: () {
@@ -193,8 +193,8 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
                     color: const Color(0xFFEFF6FF),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(Icons.camera_alt_rounded,
-                      color: Color(0xFF1A3FBB)),
+                    child: const Icon(Icons.camera_alt_rounded,
+                        color: Color(0xFFD3410A)),
                 ),
                 title: const Text('Take a Photo'),
                 onTap: () async {
@@ -439,7 +439,7 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [Color(0xFF1A3FBB), Color(0xFF0E257A)],
+            colors: [Color(0xFFD3410A), Color(0xFFE8520B)],
           ),
           borderRadius: BorderRadius.only(
             bottomLeft: Radius.circular(36),
@@ -529,7 +529,7 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
                   decoration: BoxDecoration(
                     gradient: (_profileImage == null && (stats.profileImageUrl == null || stats.profileImageUrl!.isEmpty))
                         ? const LinearGradient(
-                            colors: [Color(0xFF1A3FBB), Color(0xFF006B5E)],
+                            colors: [Color(0xFFD3410A), Color(0xFF006B5E)],
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                           )
@@ -537,7 +537,7 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF1A3FBB).withValues(alpha: 0.3),
+                        color: const Color(0xFFD3410A).withValues(alpha: 0.3),
                         blurRadius: 12,
                         offset: const Offset(0, 4),
                       ),
@@ -592,7 +592,7 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
                     decoration: BoxDecoration(
                       color: _isEditing
                           ? const Color(0xFF006B5E)
-                          : const Color(0xFF1A3FBB),
+                          : const Color(0xFFD3410A),
                       shape: BoxShape.circle,
                       border: Border.all(color: Colors.white, width: 1.5),
                     ),
@@ -1092,13 +1092,13 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
               color: isDark
-                  ? const Color(0xFF1A3FBB).withValues(alpha: 0.2)
+                  ? const Color(0xFFD3410A).withValues(alpha: 0.2)
                   : const Color(0xFFEFF6FF),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
               isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
-              color: isDark ? const Color(0xFF93C5FD) : const Color(0xFF1A3FBB),
+              color: isDark ? const Color(0xFFFDBA74) : const Color(0xFFD3410A),
               size: 20,
             ),
           ),
@@ -1132,8 +1132,8 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
             value: isDark,
             onChanged: (_) =>
                 ref.read(themeProvider.notifier).toggleTheme(),
-            activeThumbColor: const Color(0xFF1A3FBB),
-            activeTrackColor: const Color(0xFF1A3FBB).withValues(alpha: 0.3),
+            activeThumbColor: const Color(0xFFD3410A),
+            activeTrackColor: const Color(0xFFD3410A).withValues(alpha: 0.3),
             inactiveThumbColor: Colors.white,
             inactiveTrackColor: const Color(0xFFE5E7EB),
           ),

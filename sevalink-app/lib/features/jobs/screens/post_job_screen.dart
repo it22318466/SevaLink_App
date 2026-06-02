@@ -130,7 +130,7 @@ class _PostJobScreenState extends ConsumerState<PostJobScreen> {
                 _buildSectionContainer(
                   title: 'Service Category *',
                   child: DropdownButtonFormField<String>(
-                    value: _selectedCategory,
+                    initialValue: _selectedCategory,
                     hint: const Text('Select a category'),
                     decoration: InputDecoration(
                       border: OutlineInputBorder(
@@ -283,7 +283,7 @@ class _PostJobScreenState extends ConsumerState<PostJobScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),

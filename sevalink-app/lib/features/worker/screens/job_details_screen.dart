@@ -148,7 +148,7 @@ class JobDetailsScreen extends StatelessWidget {
     return SliverAppBar(
       expandedHeight: 200,
       pinned: true,
-      backgroundColor: const Color(0xFF1A3FBB),
+      backgroundColor: const Color(0xFFD3410A),
       leading: GestureDetector(
         onTap: () => context.pop(),
         child: Container(
@@ -181,7 +181,7 @@ class JobDetailsScreen extends StatelessWidget {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [Color(0xFF1A3FBB), Color(0xFF0E257A)],
+              colors: [Color(0xFFD3410A), Color(0xFFE8520B)],
             ),
           ),
           child: SafeArea(
@@ -232,7 +232,7 @@ class JobDetailsScreen extends StatelessWidget {
     return Row(
       children: [
         _buildChip(context,
-            Icons.location_on_outlined, job.location, const Color(0xFF1A3FBB)),
+            Icons.location_on_outlined, job.location, const Color(0xFFD3410A)),
         const SizedBox(width: 10),
         _buildChip(context, Icons.access_time_rounded, job.postedAt,
             const Color(0xFF6B7280)),
@@ -352,7 +352,7 @@ class JobDetailsScreen extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(icon, size: 18, color: const Color(0xFF1A3FBB)),
+              Icon(icon, size: 18, color: const Color(0xFFD3410A)),
               const SizedBox(width: 8),
               Text(
                 title,
@@ -430,7 +430,7 @@ class JobDetailsScreen extends StatelessWidget {
           const Row(
             children: [
               Icon(Icons.person_outline_rounded,
-                  size: 18, color: Color(0xFF1A3FBB)),
+                  size: 18, color: Color(0xFFD3410A)),
               SizedBox(width: 8),
               Text(
                 'Posted By',
@@ -455,7 +455,7 @@ class JobDetailsScreen extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF1A3FBB),
+                    color: Color(0xFFD3410A),
                   ),
                 ),
               ),
@@ -532,8 +532,8 @@ class JobDetailsScreen extends StatelessWidget {
             child: OutlinedButton(
               onPressed: () => context.pop(),
               style: OutlinedButton.styleFrom(
-                foregroundColor: const Color(0xFF1A3FBB),
-                side: const BorderSide(color: Color(0xFF1A3FBB), width: 1.5),
+                foregroundColor: const Color(0xFFD3410A),
+                side: const BorderSide(color: Color(0xFFD3410A), width: 1.5),
                 padding: const EdgeInsets.symmetric(vertical: 15),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14)),

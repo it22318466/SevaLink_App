@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import '../data/models/job.dart';
@@ -120,18 +121,18 @@ class WorkerFeedNotifier extends Notifier<WorkerFeedState> {
       try {
         final user = ref.read(authProvider).user;
         if (user != null) {
-          print('loadFeed: current user: id=${user.id}, name=${user.fullName}, role=${user.role}');
+          debugPrint('loadFeed: current user: id=${user.id}, name=${user.fullName}, role=${user.role}');
           // Get all workers and find the one matching this user
           final workersResponse = await dio.get('/workers');
           final List<dynamic> workersData = workersResponse.data;
-          print('loadFeed: fetched ${workersData.length} workers');
+          debugPrint('loadFeed: fetched ${workersData.length} workers');
 
           // Find worker entry where worker.user.id == current user id
           final workerEntry = workersData.firstWhere(
             (w) => w['user'] != null && w['user']['id'].toString() == user.id.toString(),
             orElse: () => null,
           );
-          print('loadFeed: matched worker entry: $workerEntry');
+          debugPrint('loadFeed: matched worker entry: $workerEntry');
 
           if (workerEntry != null) {
             final userEntry = workerEntry['user'] ?? {};
@@ -158,8 +159,8 @@ class WorkerFeedNotifier extends Notifier<WorkerFeedState> {
         }
       } catch (e, stack) {
         // Stats fetch failure is non-fatal — keep defaults
-        print('Error fetching worker stats: $e');
-        print(stack);
+        debugPrint('Error fetching worker stats: $e');
+        debugPrint(stack.toString());
       }
 
       state = state.copyWith(

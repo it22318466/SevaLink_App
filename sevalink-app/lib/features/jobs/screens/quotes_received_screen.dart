@@ -71,7 +71,7 @@ class QuotesReceivedScreen extends ConsumerWidget {
                 ),
               ),
               loading: () => const SizedBox(),
-              error: (_, __) => const SizedBox(),
+              error: (error, stack) => const SizedBox(),
             ),
           ],
         ),

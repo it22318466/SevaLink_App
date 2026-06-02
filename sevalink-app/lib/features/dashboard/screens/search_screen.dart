@@ -50,8 +50,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen>
   late final Animation<double> _fadeAnim;
   late final Animation<Offset> _slideAnim;
 
-  static const _primaryBlue = Color(0xFF2B4EEF);
-  static const _blueDark = Color(0xFF1A2FBF);
+  static const _primaryOrange = Color(0xFFD3410A);
+  static const _orangeDark = Color(0xFFE8520B);
   static const _bg = Color(0xFFF8F9FA);
 
   @override
@@ -165,7 +165,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen>
       ),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [_blueDark, _primaryBlue],
+          colors: [_orangeDark, _primaryOrange],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -297,11 +297,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen>
                   padding: const EdgeInsets.symmetric(
                       horizontal: 14, vertical: 8),
                   decoration: BoxDecoration(
-                    color: isSelected ? _primaryBlue : const Color(0xFFF5F5F5),
+                    color: isSelected ? _primaryOrange : const Color(0xFFF5F5F5),
                     borderRadius: BorderRadius.circular(24),
                     border: Border.all(
                       color: isSelected
-                          ? _primaryBlue
+                          ? _primaryOrange
                           : Colors.grey.shade200,
                       width: 1.5,
                     ),
@@ -367,7 +367,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen>
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.search_rounded,
-                  size: 48, color: _primaryBlue),
+                  size: 48, color: _primaryOrange),
             ),
             const SizedBox(height: 20),
             const Text(
@@ -507,7 +507,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen>
             const SizedBox(height: 20),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: _primaryBlue,
+                backgroundColor: _primaryOrange,
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12)),
@@ -591,7 +591,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen>
                         style: const TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.bold,
-                          color: _primaryBlue,
+                          color: _primaryOrange,
                         ),
                       ),
                   ],
@@ -674,12 +674,12 @@ class _SearchScreenState extends ConsumerState<SearchScreen>
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(Icons.verified_outlined,
-                                color: _primaryBlue, size: 13),
+                                color: _primaryOrange, size: 13),
                             SizedBox(width: 4),
                             Text(
                               'Seva Verified',
                               style: TextStyle(
-                                color: _primaryBlue,
+                                color: _primaryOrange,
                                 fontSize: 11,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -711,7 +711,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen>
         style: const TextStyle(
           fontSize: 28,
           fontWeight: FontWeight.bold,
-          color: _primaryBlue,
+          color: _primaryOrange,
         ),
       ),
     );

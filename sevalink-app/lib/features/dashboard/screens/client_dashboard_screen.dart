@@ -54,7 +54,7 @@ class ClientDashboardScreen extends ConsumerStatefulWidget {
 }
 
 class _ClientDashboardScreenState extends ConsumerState<ClientDashboardScreen> {
-  int _currentNavIndex = 0;
+  final int _currentNavIndex = 0;
 
   void _onNavTapped(int index) {
     if (index == _currentNavIndex) return;
@@ -177,7 +177,7 @@ class _ClientDashboardScreenState extends ConsumerState<ClientDashboardScreen> {
       padding: const EdgeInsets.only(top: 65, left: 24, right: 24),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [Color(0xFF1A2FBF), Color(0xFF2B4EEF)],
+          colors: [Color(0xFFD3410A), Color(0xFFE8520B)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -193,24 +193,29 @@ class _ClientDashboardScreenState extends ConsumerState<ClientDashboardScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Hello,',
-                    style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w400),
-                  ),
-                  Text(
-                    userName,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 26,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.5,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Hello,',
+                      style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w400),
                     ),
-                  ),
-                ],
+                    Text(
+                      userName,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 26,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.5,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
               ),
+              const SizedBox(width: 12),
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
@@ -230,7 +235,7 @@ class _ClientDashboardScreenState extends ConsumerState<ClientDashboardScreen> {
                         decoration: BoxDecoration(
                           color: const Color(0xFFE53935),
                           shape: BoxShape.circle,
-                          border: Border.all(color: const Color(0xFF2B4EEF), width: 2),
+                          border: Border.all(color: const Color(0xFFD3410A), width: 2),
                         ),
                       ),
                     ),
@@ -481,7 +486,7 @@ class _ClientDashboardScreenState extends ConsumerState<ClientDashboardScreen> {
                 onTap: () => context.go('/client/jobs'),
                 child: const Text(
                   'View All',
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF2B4EEF)),
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFFD3410A)),
                 ),
               ),
             ],
@@ -547,7 +552,7 @@ class _ClientDashboardScreenState extends ConsumerState<ClientDashboardScreen> {
                               ),
                               Text(
                                 'Rs. ${worker.hourlyRate}',
-                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF2B4EEF)),
+                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFFD3410A)),
                               ),
                             ],
                           ),
@@ -606,12 +611,12 @@ class _ClientDashboardScreenState extends ConsumerState<ClientDashboardScreen> {
                               child: const Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(Icons.verified_outlined, color: Color(0xFF2B4EEF), size: 16),
+                                  Icon(Icons.verified_outlined, color: Color(0xFFD3410A), size: 16),
                                   SizedBox(width: 6),
                                   Text(
                                     'Seva Verified',
                                     style: TextStyle(
-                                      color: Color(0xFF2B4EEF),
+                                      color: Color(0xFFD3410A),
                                       fontSize: 12,
                                       fontWeight: FontWeight.bold,
                                     ),
