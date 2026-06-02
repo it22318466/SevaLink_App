@@ -22,6 +22,8 @@ public class Worker {
 
     private String bio;
 
+    private String skills;
+
     @Column(name = "hourly_rate")
     private Double hourlyRate;
 
