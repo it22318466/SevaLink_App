@@ -258,11 +258,7 @@ class QuotesReceivedScreen extends ConsumerWidget {
                     Row(
                       children: [
                         const Icon(Icons.star, color: Color(0xFFFACC15), size: 16),
-                        const Icon(Icons.star, color: Color(0xFFFACC15), size: 16),
-                        const Icon(Icons.star, color: Color(0xFFFACC15), size: 16),
-                        const Icon(Icons.star, color: Color(0xFFFACC15), size: 16),
-                        const Icon(Icons.star_half, color: Color(0xFFFACC15), size: 16),
-                        const SizedBox(width: 6),
+                        const SizedBox(width: 4),
                         Text(
                           quote.workerRating.toStringAsFixed(1),
                           style: const TextStyle(
@@ -282,7 +278,7 @@ class QuotesReceivedScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
                         color: const Color(0xFFFFF7ED),
                         borderRadius: BorderRadius.circular(12),
@@ -292,12 +288,16 @@ class QuotesReceivedScreen extends ConsumerWidget {
                         children: [
                           const Icon(Icons.verified, color: Color(0xFFE64A19), size: 14),
                           const SizedBox(width: 4),
-                          Text(
-                            'Seva Verified',
-                            style: TextStyle(
-                              color: const Color(0xFFE64A19),
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
+                          Flexible(
+                            child: Text(
+                              'Seva Verified',
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                              style: TextStyle(
+                                color: const Color(0xFFE64A19),
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
                         ],
