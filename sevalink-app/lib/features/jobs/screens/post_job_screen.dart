@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../providers/client_jobs_provider.dart';
 import '../../../providers/auth_provider.dart';
+import 'job_location_picker_screen.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class PostJobScreen extends ConsumerStatefulWidget {
   const PostJobScreen({super.key});
@@ -22,6 +24,8 @@ class _PostJobScreenState extends ConsumerState<PostJobScreen> {
   final TextEditingController _budgetMaxController = TextEditingController();
 
   bool _isLoading = false;
+  double? _latitude;
+  double? _longitude;
 
   final List<Map<String, dynamic>> _categories = [
     {'id': 1, 'name': 'Electrical'},
@@ -62,6 +66,8 @@ class _PostJobScreenState extends ConsumerState<PostJobScreen> {
         'title': _titleController.text.trim(),
         'description': _descriptionController.text.trim(),
         'locationName': _locationController.text.trim(),
+        'latitude': _latitude,
+        'longitude': _longitude,
         'category': {'id': categoryId},
         'client': {'id': user?.id},
         'budgetMin': double.tryParse(_budgetMinController.text.trim()) ?? 0,
@@ -99,6 +105,27 @@ class _PostJobScreenState extends ConsumerState<PostJobScreen> {
     }
   }
 
+  Future<void> _selectLocation() async {
+    final result = await Navigator.push<Map<String, dynamic>>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => JobLocationPickerScreen(
+          initialLocation: (_latitude != null && _longitude != null)
+              ? LatLng(_latitude!, _longitude!)
+              : null,
+        ),
+      ),
+    );
+
+    if (result != null && mounted) {
+      setState(() {
+        _latitude = result['latitude'] as double?;
+        _longitude = result['longitude'] as double?;
+        _locationController.text = result['address'] ?? '';
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -131,19 +158,24 @@ class _PostJobScreenState extends ConsumerState<PostJobScreen> {
                   title: 'Service Category *',
                   child: DropdownButtonFormField<String>(
                     initialValue: _selectedCategory,
-                    hint: const Text('Select a category'),
+                    dropdownColor: Colors.white,
+                    style: const TextStyle(color: Color(0xFF1F2937), fontSize: 16),
+                    hint: const Text(
+                      'Select a category',
+                      style: TextStyle(color: Color(0xFF6B7280), fontSize: 16),
+                    ),
                     decoration: InputDecoration(
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Colors.grey.shade300),
+                        borderSide: const BorderSide(color: Color(0xFFD3410A), width: 1.0),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Colors.grey.shade300),
+                        borderSide: const BorderSide(color: Color(0xFFD3410A), width: 1.0),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Color(0xFF006D5B), width: 2),
+                        borderSide: const BorderSide(color: Color(0xFFD3410A), width: 2.0),
                       ),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                       filled: true,
@@ -152,7 +184,10 @@ class _PostJobScreenState extends ConsumerState<PostJobScreen> {
                     items: _categories.map((c) {
                       return DropdownMenuItem<String>(
                         value: c['name'],
-                        child: Text(c['name']),
+                        child: Text(
+                          c['name'],
+                          style: const TextStyle(color: Color(0xFF1F2937), fontSize: 16),
+                        ),
                       );
                     }).toList(),
                     onChanged: (val) => setState(() => _selectedCategory = val),
@@ -165,6 +200,7 @@ class _PostJobScreenState extends ConsumerState<PostJobScreen> {
                   title: 'Job Title *',
                   child: TextFormField(
                     controller: _titleController,
+                    style: const TextStyle(color: Color(0xFF1F2937), fontSize: 16),
                     decoration: _buildInputDecoration('e.g., Fix kitchen electrical wiring'),
                     validator: (val) => val == null || val.isEmpty ? 'Required' : null,
                   ),
@@ -176,6 +212,7 @@ class _PostJobScreenState extends ConsumerState<PostJobScreen> {
                   child: TextFormField(
                     controller: _descriptionController,
                     maxLines: 4,
+                    style: const TextStyle(color: Color(0xFF1F2937), fontSize: 16),
                     decoration: _buildInputDecoration('Describe the work you need done in detail...'),
                     validator: (val) => val == null || val.isEmpty ? 'Required' : null,
                   ),
@@ -186,7 +223,10 @@ class _PostJobScreenState extends ConsumerState<PostJobScreen> {
                   title: 'Location *',
                   child: TextFormField(
                     controller: _locationController,
-                    decoration: _buildInputDecoration('Enter job location', prefixIcon: Icons.location_on_outlined),
+                    readOnly: true,
+                    onTap: _selectLocation,
+                    style: const TextStyle(color: Color(0xFF1F2937), fontSize: 16),
+                    decoration: _buildInputDecoration('Tap to select location', prefixIcon: Icons.location_on_outlined),
                     validator: (val) => val == null || val.isEmpty ? 'Required' : null,
                   ),
                 ),
@@ -200,6 +240,7 @@ class _PostJobScreenState extends ConsumerState<PostJobScreen> {
                         child: TextFormField(
                           controller: _budgetMinController,
                           keyboardType: TextInputType.number,
+                          style: const TextStyle(color: Color(0xFF1F2937), fontSize: 16),
                           decoration: _buildInputDecoration('Min', prefixText: '\$ '),
                         ),
                       ),
@@ -208,6 +249,7 @@ class _PostJobScreenState extends ConsumerState<PostJobScreen> {
                         child: TextFormField(
                           controller: _budgetMaxController,
                           keyboardType: TextInputType.number,
+                          style: const TextStyle(color: Color(0xFF1F2937), fontSize: 16),
                           decoration: _buildInputDecoration('Max', prefixText: '\$ '),
                         ),
                       ),
@@ -310,20 +352,24 @@ class _PostJobScreenState extends ConsumerState<PostJobScreen> {
   InputDecoration _buildInputDecoration(String hint, {IconData? prefixIcon, String? prefixText}) {
     return InputDecoration(
       hintText: hint,
-      hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
-      prefixIcon: prefixIcon != null ? Icon(prefixIcon, color: Colors.grey.shade400, size: 20) : null,
+      hintStyle: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+      prefixIcon: prefixIcon != null ? Icon(prefixIcon, color: Colors.grey.shade600, size: 20) : null,
       prefixText: prefixText,
-      prefixStyle: const TextStyle(color: Colors.grey, fontSize: 16, fontWeight: FontWeight.w500),
+      prefixStyle: const TextStyle(color: Color(0xFF1F2937), fontSize: 16, fontWeight: FontWeight.w500),
       filled: true,
       fillColor: const Color(0xFFF9FAFB),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide.none,
+        borderSide: const BorderSide(color: Color(0xFFD3410A), width: 1.0),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFFD3410A), width: 1.0),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFF006D5B), width: 1.5),
+        borderSide: const BorderSide(color: Color(0xFFD3410A), width: 2.0),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
