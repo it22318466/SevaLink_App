@@ -2,6 +2,7 @@ package com.sevalink.sevalinkbackend.controller;
 
 import com.sevalink.sevalinkbackend.model.User;
 import com.sevalink.sevalinkbackend.service.UserService;
+import com.sevalink.sevalinkbackend.dto.ApiResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -36,7 +37,7 @@ public class UserController {
             User saved = userService.registerUser(user);
             return ResponseEntity.ok(saved);
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
 

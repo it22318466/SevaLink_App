@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:dio/dio.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/worker_feed_provider.dart';
 import '../../jobs/screens/job_location_picker_screen.dart';
@@ -156,10 +157,24 @@ class _WorkerOnboardingScreenState extends ConsumerState<WorkerOnboardingScreen>
       // Refresh the feed & worker profile details to pop onboarding
       await workerFeedNotifier.refresh();
     } catch (e) {
+      debugPrint('Error saving onboarding: $e');
+      if (e is DioException) {
+        debugPrint('Response data: ${e.response?.data}');
+        debugPrint('Response status: ${e.response?.statusCode}');
+      }
       if (mounted) {
+        String errorMessage = 'Error saving details: $e';
+        if (e is DioException && e.response?.data != null) {
+          final data = e.response?.data;
+          if (data is Map && data.containsKey('message')) {
+            errorMessage = data['message'];
+          } else {
+            errorMessage = 'Server Error: $data';
+          }
+        }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error saving details: $e'),
+            content: Text(errorMessage),
             backgroundColor: Colors.red.shade600,
           ),
         );

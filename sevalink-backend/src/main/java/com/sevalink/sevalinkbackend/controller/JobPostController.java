@@ -5,6 +5,7 @@ import com.sevalink.sevalinkbackend.model.JobTimeline;
 import com.sevalink.sevalinkbackend.service.JobPostService;
 import com.sevalink.sevalinkbackend.dto.ClientJobStatsDto;
 import com.sevalink.sevalinkbackend.dto.ClientJobDto;
+import com.sevalink.sevalinkbackend.dto.ApiResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -26,7 +27,7 @@ public class JobPostController {
             JobPost saved = jobPostService.createJob(jobPost);
             return ResponseEntity.ok(saved);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
 
@@ -99,7 +100,7 @@ public class JobPostController {
             JobPost cancelled = jobPostService.cancelJob(id);
             return ResponseEntity.ok(cancelled);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
 
@@ -121,7 +122,7 @@ public class JobPostController {
             JobTimeline timeline = jobPostService.updateTimeline(id, status, note);
             return ResponseEntity.ok(timeline);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
 
@@ -133,7 +134,7 @@ public class JobPostController {
             ClientJobStatsDto stats = jobPostService.getClientJobStats(clientId);
             return ResponseEntity.ok(stats);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
 
@@ -147,7 +148,7 @@ public class JobPostController {
             List<ClientJobDto> jobs = jobPostService.getClientJobsWithQuotes(clientId, status);
             return ResponseEntity.ok(jobs);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
 }

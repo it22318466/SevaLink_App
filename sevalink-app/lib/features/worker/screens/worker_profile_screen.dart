@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:dio/dio.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -331,10 +332,23 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
         );
       }
     } catch (e) {
+      debugPrint('Error updating profile: $e');
+      if (e is DioException) {
+        debugPrint('Response data: ${e.response?.data}');
+      }
       if (mounted) {
+        String errorMessage = 'Failed to update profile: $e';
+        if (e is DioException && e.response?.data != null) {
+          final data = e.response?.data;
+          if (data is Map && data.containsKey('message')) {
+            errorMessage = data['message'];
+          } else {
+            errorMessage = 'Server Error: $data';
+          }
+        }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to update profile: $e'),
+            content: Text(errorMessage),
             backgroundColor: Colors.red.shade600,
           ),
         );
