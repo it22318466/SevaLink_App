@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'worker_profile_screen.dart';
+import 'worker_onboarding_screen.dart';
 import 'job_details_screen.dart';
 import 'my_jobs_screen.dart';
 import '../../chat/screens/chat_list_screen.dart';
@@ -28,6 +29,17 @@ class _WorkerHomeScreenState extends ConsumerState<WorkerHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final feedState = ref.watch(workerFeedProvider);
+    final stats = feedState.stats;
+
+    // Check if worker profile stats are loaded but incomplete
+    final isProfileIncomplete = stats.workerId != null &&
+        (stats.categoryId == null || stats.location.isEmpty || stats.hourlyRate.isEmpty);
+
+    if (!feedState.isLoading && feedState.error == null && isProfileIncomplete) {
+      return const WorkerOnboardingScreen();
+    }
+
     return Scaffold(
       backgroundColor: context.sevaColors.bodyBg,
       endDrawer: const _NotificationsDrawer(),
