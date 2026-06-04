@@ -3,12 +3,15 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:dio/dio.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/theme_provider.dart';
 import '../../../core/themes/app_theme.dart';
 import '../../../providers/worker_feed_provider.dart';
+import '../../jobs/screens/job_location_picker_screen.dart';
 import 'my_jobs_screen.dart';
 
 class WorkerProfileScreen extends ConsumerStatefulWidget {
@@ -38,6 +41,11 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
   // Skill tags state
   List<String> _skillTags = [];
 
+  // Onboarding/Edit setup states
+  int? _selectedCategoryId;
+  double? _selectedLatitude;
+  double? _selectedLongitude;
+
   @override
   void initState() {
     super.initState();
@@ -63,6 +71,10 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
         ? List.from(stats.skills)
         : ['Electrician', 'AC Repair', 'Wiring'];
 
+    _selectedCategoryId = stats.categoryId;
+    _selectedLatitude = stats.latitude;
+    _selectedLongitude = stats.longitude;
+
     // Restore profile image from Riverpod state
     final extra = authState.profileExtra;
     if (extra.profileImagePath != null) {
@@ -76,6 +88,27 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
     Future.microtask(() {
       ref.read(workerFeedProvider.notifier).refresh();
     });
+  }
+
+  Future<void> _selectLocation() async {
+    final result = await Navigator.push<Map<String, dynamic>>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => JobLocationPickerScreen(
+          initialLocation: (_selectedLatitude != null && _selectedLongitude != null)
+              ? LatLng(_selectedLatitude!, _selectedLongitude!)
+              : null,
+        ),
+      ),
+    );
+
+    if (result != null && mounted) {
+      setState(() {
+        _selectedLatitude = result['latitude'] as double?;
+        _selectedLongitude = result['longitude'] as double?;
+        _locationController.text = result['address'] ?? '';
+      });
+    }
   }
 
   @override
@@ -262,6 +295,9 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
         bio: _bioController.text.trim(),
         skills: _skillTags,
         hourlyRate: _rateController.text.trim(),
+        categoryId: _selectedCategoryId,
+        latitude: _selectedLatitude,
+        longitude: _selectedLongitude,
       );
 
       // Keep Auth provider state updated for name/phone changes
@@ -296,10 +332,23 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
         );
       }
     } catch (e) {
+      debugPrint('Error updating profile: $e');
+      if (e is DioException) {
+        debugPrint('Response data: ${e.response?.data}');
+      }
       if (mounted) {
+        String errorMessage = 'Failed to update profile: $e';
+        if (e is DioException && e.response?.data != null) {
+          final data = e.response?.data;
+          if (data is Map && data.containsKey('message')) {
+            errorMessage = data['message'];
+          } else {
+            errorMessage = 'Server Error: $data';
+          }
+        }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to update profile: $e'),
+            content: Text(errorMessage),
             backgroundColor: Colors.red.shade600,
           ),
         );
@@ -330,6 +379,9 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
         if (stats.bio.isNotEmpty) _bioController.text = stats.bio;
         if (stats.hourlyRate.isNotEmpty) _rateController.text = stats.hourlyRate;
         setState(() {
+          _selectedCategoryId = stats.categoryId;
+          _selectedLatitude = stats.latitude;
+          _selectedLongitude = stats.longitude;
           _skillTags = stats.skills.isNotEmpty
               ? List.from(stats.skills)
               : ['Electrician', 'AC Repair', 'Wiring'];
@@ -391,11 +443,24 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
                           label: 'Location',
                           controller: _locationController,
                           icon: Icons.location_on_outlined,
-                          enabled: _isEditing,
+                          enabled: false, // Tap-to-select only
+                          onTap: _isEditing ? _selectLocation : null,
                         ),
                       ]),
                       const SizedBox(height: 20),
                       _buildSection('Professional Details', [
+                        if (_isEditing) ...[
+                          _buildCategoryDropdownField(),
+                          const SizedBox(height: 14),
+                        ] else ...[
+                          _buildField(
+                            label: 'Service Category',
+                            controller: TextEditingController(text: stats.categoryName ?? 'Not Set'),
+                            icon: Icons.category_rounded,
+                            enabled: false,
+                          ),
+                          const SizedBox(height: 14),
+                        ],
                         _buildField(
                           label: 'Bio / About Me',
                           controller: _bioController,
@@ -724,17 +789,21 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
     int maxLines = 1,
     String? Function(String?)? validator,
     String? prefix,
+    VoidCallback? onTap,
   }) {
     final colors = context.sevaColors;
     final isDark  = context.isDark;
+    final isFieldEnabled = enabled || onTap != null;
     final fillColor = isDark
-        ? (enabled ? colors.inputFill : colors.cardBg2)
-        : (enabled ? const Color(0xFFF9FAFB) : const Color(0xFFF3F4F6));
+        ? (isFieldEnabled ? colors.inputFill : colors.cardBg2)
+        : (isFieldEnabled ? const Color(0xFFF9FAFB) : const Color(0xFFF3F4F6));
     final borderColor = isDark ? colors.border : const Color(0xFFE5E7EB);
     final disabledBorderColor = isDark ? colors.border : Colors.grey.shade200;
     return TextFormField(
       controller: controller,
-      enabled: enabled,
+      enabled: isFieldEnabled,
+      readOnly: onTap != null,
+      onTap: onTap,
       keyboardType: keyboardType,
       maxLines: maxLines,
       validator: validator,
@@ -746,11 +815,11 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
         labelText: label,
         prefixIcon: Icon(icon,
             size: 18,
-            color: enabled ? const Color(0xFF006B5E) : colors.textSecondary),
+            color: isFieldEnabled ? const Color(0xFF006B5E) : colors.textSecondary),
         prefixText: prefix,
         labelStyle: TextStyle(
           fontSize: 13,
-          color: enabled ? colors.textSecondary : colors.textSecondary.withValues(alpha: 0.6),
+          color: isFieldEnabled ? colors.textSecondary : colors.textSecondary.withValues(alpha: 0.6),
         ),
         filled: true,
         fillColor: fillColor,
@@ -774,6 +843,50 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
         contentPadding:
         const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       ),
+    );
+  }
+
+  Widget _buildCategoryDropdownField() {
+    return DropdownButtonFormField<int>(
+      initialValue: _selectedCategoryId,
+      dropdownColor: Colors.white,
+      style: TextStyle(
+          color: context.sevaColors.textPrimary,
+          fontSize: 14,
+          fontWeight: FontWeight.w500),
+      hint: const Text(
+        'Select a category',
+        style: TextStyle(color: Color(0xFF6B7280), fontSize: 13),
+      ),
+      decoration: InputDecoration(
+        labelText: 'Service Category',
+        prefixIcon: const Icon(Icons.category_rounded, size: 18, color: Color(0xFF006B5E)),
+        filled: true,
+        fillColor: const Color(0xFFF9FAFB),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFFD3410A), width: 1.0),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFFD3410A), width: 2.0),
+        ),
+      ),
+      items: const [
+        DropdownMenuItem(value: 1, child: Text('Electrical')),
+        DropdownMenuItem(value: 2, child: Text('Plumbing')),
+        DropdownMenuItem(value: 3, child: Text('Carpentry')),
+        DropdownMenuItem(value: 4, child: Text('Cleaning')),
+        DropdownMenuItem(value: 5, child: Text('Painting')),
+        DropdownMenuItem(value: 6, child: Text('General')),
+      ],
+      onChanged: (val) {
+        setState(() {
+          _selectedCategoryId = val;
+        });
+      },
+      validator: (val) => val == null ? 'Required' : null,
     );
   }
 

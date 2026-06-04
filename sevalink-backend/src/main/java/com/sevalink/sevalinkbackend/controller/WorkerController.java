@@ -3,6 +3,7 @@ package com.sevalink.sevalinkbackend.controller;
 import com.sevalink.sevalinkbackend.model.Worker;
 import com.sevalink.sevalinkbackend.service.WorkerService;
 import com.sevalink.sevalinkbackend.dto.UpdateWorkerProfileRequest;
+import com.sevalink.sevalinkbackend.dto.ApiResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -35,7 +36,7 @@ public class WorkerController {
                 "isAvailable", worker.getIsAvailable() != null && worker.getIsAvailable()
             ));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
 
@@ -91,7 +92,7 @@ public class WorkerController {
             Worker updated = workerService.updateWorkerProfile(id, request);
             return ResponseEntity.ok(updated);
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
 
@@ -104,7 +105,7 @@ public class WorkerController {
             Worker updated = workerService.uploadProfileImage(id, file);
             return ResponseEntity.ok(updated);
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
 }

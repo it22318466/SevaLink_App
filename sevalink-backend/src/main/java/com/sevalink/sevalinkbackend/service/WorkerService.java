@@ -1,7 +1,9 @@
 package com.sevalink.sevalinkbackend.service;
 
 import com.sevalink.sevalinkbackend.model.Worker;
+import com.sevalink.sevalinkbackend.model.Category;
 import com.sevalink.sevalinkbackend.repository.WorkerRepository;
+import com.sevalink.sevalinkbackend.repository.CategoryRepository;
 import com.sevalink.sevalinkbackend.dto.UpdateWorkerProfileRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -16,6 +18,9 @@ public class WorkerService {
 
     @Autowired
     private WorkerRepository workerRepository;
+
+    @Autowired
+    private CategoryRepository categoryRepository;
 
     @Autowired
     private com.sevalink.sevalinkbackend.repository.UserRepository userRepository;
@@ -102,6 +107,15 @@ public class WorkerService {
         worker.setBio(request.getBio());
         worker.setSkills(request.getSkills());
         worker.setHourlyRate(request.getHourlyRate());
+
+        if (request.getCategoryId() != null) {
+            Category category = categoryRepository.findById(request.getCategoryId())
+                    .orElseThrow(() -> new RuntimeException("Category not found"));
+            worker.setCategory(category);
+        }
+
+        worker.setLatitude(request.getLatitude());
+        worker.setLongitude(request.getLongitude());
 
         return workerRepository.save(worker);
     }

@@ -114,13 +114,13 @@ class AuthNotifier extends Notifier<AuthState> {
 
   Future<void> _restoreLocalProfileData(User apiUser) async {
     final prefs = await SharedPreferences.getInstance();
-    final savedName  = prefs.getString(_kName);
-    final savedPhone = prefs.getString(_kPhone);
+    final savedName  = prefs.getString('${_kName}_${apiUser.id}');
+    final savedPhone = prefs.getString('${_kPhone}_${apiUser.id}');
     final extra = ProfileExtra(
-      location:         prefs.getString(_kLocation)  ?? 'Colombo, Sri Lanka',
-      bio:              prefs.getString(_kBio)        ?? 'Experienced electrician with 8+ years working on residential and commercial projects.',
-      hourlyRate:       prefs.getString(_kRate)       ?? '2,500',
-      profileImagePath: prefs.getString(_kImagePath),
+      location:         prefs.getString('${_kLocation}_${apiUser.id}')  ?? 'Colombo, Sri Lanka',
+      bio:              prefs.getString('${_kBio}_${apiUser.id}')        ?? 'Experienced electrician with 8+ years working on residential and commercial projects.',
+      hourlyRate:       prefs.getString('${_kRate}_${apiUser.id}')       ?? '2,500',
+      profileImagePath: prefs.getString('${_kImagePath}_${apiUser.id}'),
     );
 
     final effectiveUser = User(
@@ -140,6 +140,7 @@ class AuthNotifier extends Notifier<AuthState> {
 
   //  Save all profile fields to disk
   Future<void> _saveProfileToPrefs({
+    required int userId,
     required String fullName,
     required String phoneNumber,
     required String location,
@@ -149,15 +150,15 @@ class AuthNotifier extends Notifier<AuthState> {
     bool clearImage = false,
   }) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_kName,     fullName);
-    await prefs.setString(_kPhone,    phoneNumber);
-    await prefs.setString(_kLocation, location);
-    await prefs.setString(_kBio,      bio);
-    await prefs.setString(_kRate,     hourlyRate);
+    await prefs.setString('${_kName}_$userId',     fullName);
+    await prefs.setString('${_kPhone}_$userId',    phoneNumber);
+    await prefs.setString('${_kLocation}_$userId', location);
+    await prefs.setString('${_kBio}_$userId',      bio);
+    await prefs.setString('${_kRate}_$userId',     hourlyRate);
     if (clearImage) {
-      await prefs.remove(_kImagePath);
+      await prefs.remove('${_kImagePath}_$userId');
     } else if (imagePath != null) {
-      await prefs.setString(_kImagePath, imagePath);
+      await prefs.setString('${_kImagePath}_$userId', imagePath);
     }
   }
 
@@ -222,6 +223,7 @@ class AuthNotifier extends Notifier<AuthState> {
     );
     // Persist to disk
     _saveProfileToPrefs(
+      userId:      state.user!.id,
       fullName:    fullName,
       phoneNumber: phoneNumber,
       location:    location,
@@ -240,6 +242,7 @@ class AuthNotifier extends Notifier<AuthState> {
     );
     // Persist to disk
     _saveProfileToPrefs(
+      userId:      state.user?.id ?? 0,
       fullName:    state.user?.fullName    ?? '',
       phoneNumber: state.user?.phoneNumber ?? '',
       location:    state.profileExtra.location,

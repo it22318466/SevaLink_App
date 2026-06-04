@@ -17,6 +17,10 @@ class WorkerStats {
   final List<String> skills;
   final String hourlyRate;
   final String? profileImageUrl;
+  final int? categoryId;
+  final String? categoryName;
+  final double? latitude;
+  final double? longitude;
 
   const WorkerStats({
     this.totalJobs = 0,
@@ -29,6 +33,10 @@ class WorkerStats {
     this.skills = const [],
     this.hourlyRate = '',
     this.profileImageUrl,
+    this.categoryId,
+    this.categoryName,
+    this.latitude,
+    this.longitude,
   });
 
   WorkerStats copyWith({
@@ -42,6 +50,10 @@ class WorkerStats {
     List<String>? skills,
     String? hourlyRate,
     String? profileImageUrl,
+    int? categoryId,
+    String? categoryName,
+    double? latitude,
+    double? longitude,
     bool clearProfileImageUrl = false,
   }) {
     return WorkerStats(
@@ -55,6 +67,10 @@ class WorkerStats {
       skills: skills ?? this.skills,
       hourlyRate: hourlyRate ?? this.hourlyRate,
       profileImageUrl: clearProfileImageUrl ? null : (profileImageUrl ?? this.profileImageUrl),
+      categoryId: categoryId ?? this.categoryId,
+      categoryName: categoryName ?? this.categoryName,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
     );
   }
 }
@@ -154,6 +170,10 @@ class WorkerFeedNotifier extends Notifier<WorkerFeedState> {
               skills: parsedSkills,
               hourlyRate: workerEntry['hourlyRate']?.toString() ?? '',
               profileImageUrl: userEntry['profileImageUrl'],
+              categoryId: workerEntry['category']?['id'],
+              categoryName: workerEntry['category']?['name'],
+              latitude: workerEntry['latitude'] != null ? (workerEntry['latitude'] as num).toDouble() : null,
+              longitude: workerEntry['longitude'] != null ? (workerEntry['longitude'] as num).toDouble() : null,
             );
           }
         }
@@ -183,6 +203,9 @@ class WorkerFeedNotifier extends Notifier<WorkerFeedState> {
     required String bio,
     required List<String> skills,
     required String hourlyRate,
+    int? categoryId,
+    double? latitude,
+    double? longitude,
   }) async {
     final workerId = state.stats.workerId;
     if (workerId == null) throw Exception('Worker ID not found');
@@ -199,6 +222,9 @@ class WorkerFeedNotifier extends Notifier<WorkerFeedState> {
         'bio': bio,
         'skills': skills.join(','),
         'hourlyRate': rateDouble,
+        'categoryId': categoryId,
+        'latitude': latitude,
+        'longitude': longitude,
       },
     );
 
@@ -221,6 +247,10 @@ class WorkerFeedNotifier extends Notifier<WorkerFeedState> {
           skills: parsedSkills,
           hourlyRate: updatedWorker['hourlyRate']?.toString() ?? '',
           profileImageUrl: userEntry['profileImageUrl'],
+          categoryId: updatedWorker['category']?['id'],
+          categoryName: updatedWorker['category']?['name'],
+          latitude: updatedWorker['latitude'] != null ? (updatedWorker['latitude'] as num).toDouble() : null,
+          longitude: updatedWorker['longitude'] != null ? (updatedWorker['longitude'] as num).toDouble() : null,
         ),
       );
     } else {

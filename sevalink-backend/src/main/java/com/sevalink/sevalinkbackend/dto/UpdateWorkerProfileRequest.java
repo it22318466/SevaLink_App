@@ -10,4 +10,7 @@ public class UpdateWorkerProfileRequest {
     private String bio;
     private String skills;
     private Double hourlyRate;
+    private Long categoryId;
+    private Double latitude;
+    private Double longitude;
 }
