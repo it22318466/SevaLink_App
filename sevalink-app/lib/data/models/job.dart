@@ -12,6 +12,14 @@ class Job extends Equatable {
   final bool isNew;
   final String category;
 
+  // Client Details & Coordinates
+  final int? clientId;
+  final String? clientName;
+  final String? clientPhone;
+  final String? clientProfileImageUrl;
+  final double? latitude;
+  final double? longitude;
+
   const Job({
     required this.id,
     required this.title,
@@ -22,6 +30,12 @@ class Job extends Equatable {
     required this.maxBudget,
     required this.isNew,
     required this.category,
+    this.clientId,
+    this.clientName,
+    this.clientPhone,
+    this.clientProfileImageUrl,
+    this.latitude,
+    this.longitude,
   });
 
   factory Job.fromJson(Map<String, dynamic> json) {
@@ -53,6 +67,12 @@ class Job extends Equatable {
       maxBudget: (json['budgetMax'] ?? json['maxBudget'] ?? 0).toInt(),
       isNew: json['isNew'] ?? (json['status'] == 'OPEN'),
       category: json['category'] is Map ? (json['category']['name'] ?? '') : (json['category'] ?? ''),
+      clientId: json['client']?['id'],
+      clientName: json['client']?['fullName'],
+      clientPhone: json['client']?['phoneNumber'],
+      clientProfileImageUrl: json['client']?['profileImageUrl'],
+      latitude: json['latitude'] != null ? (json['latitude'] as num).toDouble() : null,
+      longitude: json['longitude'] != null ? (json['longitude'] as num).toDouble() : null,
     );
   }
 
@@ -66,9 +86,30 @@ class Job extends Equatable {
         'maxBudget': maxBudget,
         'isNew': isNew,
         'category': category,
+        'clientId': clientId,
+        'clientName': clientName,
+        'clientPhone': clientPhone,
+        'clientProfileImageUrl': clientProfileImageUrl,
+        'latitude': latitude,
+        'longitude': longitude,
       };
 
   @override
-  List<Object?> get props =>
-      [id, title, description, location, postedAt, minBudget, maxBudget, isNew, category];
+  List<Object?> get props => [
+        id,
+        title,
+        description,
+        location,
+        postedAt,
+        minBudget,
+        maxBudget,
+        isNew,
+        category,
+        clientId,
+        clientName,
+        clientPhone,
+        clientProfileImageUrl,
+        latitude,
+        longitude,
+      ];
 }

@@ -251,6 +251,29 @@ class _MyJobsScreenState extends ConsumerState<MyJobsScreen>
     });
   }
 
+  void _navigateToDetails(WorkerJob job) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => JobDetailsScreen(
+          // Worker already sent a quote (accepted) — hide Send Quote button
+          showSendQuote: false,
+          job: Job(
+            id: int.tryParse(job.id) ?? 0,
+            title: job.title,
+            description: 'No description available.',
+            location: job.location,
+            postedAt: job.date,
+            minBudget: 0,
+            maxBudget: 0,
+            isNew: false,
+            category: job.category ?? '',
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildErrorView(String errorMsg) {
     final colors = Theme.of(context).extension<SevaLinkColors>()!;
     return Center(
@@ -327,32 +350,20 @@ class _MyJobsScreenState extends ConsumerState<MyJobsScreen>
                             jobs: active,
                             emptyLabel: 'No active jobs right now',
                             onMarkDone: (id) => _handleMarkDone(id),
+                            onViewDetails: _navigateToDetails,
                           ),
                           // Pending tab
                           _JobList(
                             jobs: pending,
                             emptyLabel: 'No upcoming jobs scheduled',
-                            onViewDetails: (job) => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => JobDetailsScreen(
-                                  job: Job(
-                                    id: int.tryParse(job.id) ?? 0,
-                                    title: job.title,
-                                    description: 'No description available.',
-                                    location: job.location,
-                                    postedAt: job.date,
-                                    minBudget: 0,
-                                    maxBudget: 0,
-                                    isNew: false,
-                                    category: job.category ?? '',
-                                  ),
-                                ),
-                              ),
-                            ),
+                            onViewDetails: _navigateToDetails,
                           ),
                           // Done tab
-                          _JobList(jobs: completed, emptyLabel: 'No completed jobs yet'),
+                          _JobList(
+                            jobs: completed,
+                            emptyLabel: 'No completed jobs yet',
+                            onViewDetails: _navigateToDetails,
+                          ),
                         ],
                       ),
           ),
@@ -511,12 +522,15 @@ class _JobList extends StatelessWidget {
     return ListView.builder(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
       itemCount: jobs.length,
-      itemBuilder: (_, i) => _JobCard(
-        job: jobs[i],
-        onMarkDone:
-            onMarkDone == null ? null : () => onMarkDone!(jobs[i].id),
-        onViewDetails:
-            onViewDetails == null ? null : () => onViewDetails!(jobs[i]),
+      itemBuilder: (_, i) => GestureDetector(
+        onTap: onViewDetails == null ? null : () => onViewDetails!(jobs[i]),
+        child: _JobCard(
+          job: jobs[i],
+          onMarkDone:
+              onMarkDone == null ? null : () => onMarkDone!(jobs[i].id),
+          onViewDetails:
+              onViewDetails == null ? null : () => onViewDetails!(jobs[i]),
+        ),
       ),
     );
   }

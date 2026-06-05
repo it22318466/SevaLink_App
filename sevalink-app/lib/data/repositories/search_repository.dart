@@ -26,14 +26,20 @@ class SearchRepository {
     return _parseList(response);
   }
 
-  /// Combined search — keyword + optional category
+  /// Combined search — keyword + optional category + optional GPS coords (nearest first)
   Future<List<WorkerSearchResult>> combinedSearch({
     String? keyword,
     String? category,
+    double? lat,
+    double? lng,
+    double? radius,
   }) async {
     final params = <String, dynamic>{};
     if (keyword != null && keyword.isNotEmpty) params['keyword'] = keyword;
     if (category != null && category.isNotEmpty) params['category'] = category;
+    if (lat != null) params['lat'] = lat;
+    if (lng != null) params['lng'] = lng;
+    if (radius != null) params['radius'] = radius;
 
     final response = await _dioClient.dio.get(
       '${ApiEndpoints.baseUrl}/search/full',

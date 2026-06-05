@@ -15,6 +15,14 @@ class _ClientJobsScreenState extends ConsumerState<ClientJobsScreen> {
   final int _currentNavIndex = 1; // Jobs tab
   int _selectedTabIndex = 0;
   final List<String> _statusFilters = ['OPEN', 'ASSIGNED', 'COMPLETED', 'CANCELLED'];
+  String _searchQuery = '';
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   void _onNavTapped(int index) {
     if (index == _currentNavIndex) return;
@@ -198,29 +206,93 @@ class _ClientJobsScreenState extends ConsumerState<ClientJobsScreen> {
                     ),
                   ),
                   
+                  // Search bar
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
+                    child: Container(
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey.shade200),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.02),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: TextField(
+                        controller: _searchController,
+                        onChanged: (val) {
+                          setState(() {
+                            _searchQuery = val;
+                          });
+                        },
+                        style: const TextStyle(fontSize: 14, color: Color(0xFF1F2937)),
+                        decoration: InputDecoration(
+                          hintText: 'Search jobs by title, description...',
+                          hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+                          prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFFE64A19), size: 20),
+                          suffixIcon: _searchQuery.isNotEmpty
+                              ? GestureDetector(
+                                  onTap: () {
+                                    _searchController.clear();
+                                    setState(() {
+                                      _searchQuery = '';
+                                    });
+                                  },
+                                  child: Icon(Icons.close_rounded, color: Colors.grey.shade400, size: 18),
+                                )
+                              : null,
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                      ),
+                    ),
+                  ),
+                  
                   // Job list
                   Expanded(
                     child: jobsAsync.when(
-                      data: (jobs) => jobs.isEmpty
-                          ? Center(
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(Icons.work_off_outlined, size: 64, color: Colors.grey.shade300),
-                                  const SizedBox(height: 16),
-                                  Text(
-                                    'No jobs found',
-                                    style: TextStyle(fontSize: 16, color: Colors.grey.shade500),
-                                  ),
-                                ],
-                              ),
-                            )
-                          : ListView.builder(
-                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                              physics: const BouncingScrollPhysics(),
-                              itemCount: jobs.length,
-                              itemBuilder: (context, index) => _buildJobCard(jobs[index]),
+                      data: (jobs) {
+                        final filteredJobs = jobs.where((job) {
+                          if (_searchQuery.isEmpty) return true;
+                          final q = _searchQuery.toLowerCase();
+                          final title = (job['title'] ?? '').toLowerCase();
+                          final desc = (job['description'] ?? '').toLowerCase();
+                          final cat = (job['categoryName'] ?? '').toLowerCase();
+                          return title.contains(q) || desc.contains(q) || cat.contains(q);
+                        }).toList();
+
+                        if (filteredJobs.isEmpty) {
+                          return Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  _searchQuery.isEmpty ? Icons.work_off_outlined : Icons.search_off_rounded,
+                                  size: 64,
+                                  color: Colors.grey.shade300,
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  _searchQuery.isEmpty ? 'No jobs found' : 'No matching jobs found',
+                                  style: TextStyle(fontSize: 16, color: Colors.grey.shade500),
+                                ),
+                              ],
                             ),
+                          );
+                        }
+
+                        return ListView.builder(
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                          physics: const BouncingScrollPhysics(),
+                          itemCount: filteredJobs.length,
+                          itemBuilder: (context, index) => _buildJobCard(filteredJobs[index]),
+                        );
+                      },
                       loading: () => const Center(child: CircularProgressIndicator(color: Color(0xFFD3410A))),
                       error: (e, _) => Center(child: Text('Error loading jobs: $e')),
                     ),

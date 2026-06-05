@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:geolocator/geolocator.dart';
 import '../../../providers/search_provider.dart';
 import '../../../data/models/worker_search_result.dart';
 
@@ -45,6 +47,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen>
   Timer? _debounce;
   String? _selectedCategory;
 
+  // GPS coordinates — fetched silently on load for proximity sorting
+  double? _lat;
+  double? _lng;
+
   // Animation for the screen entrance
   late final AnimationController _animController;
   late final Animation<double> _fadeAnim;
@@ -70,19 +76,56 @@ class _SearchScreenState extends ConsumerState<SearchScreen>
 
     _animController.forward();
 
-    // Pre-select category if passed from dashboard
-    if (widget.initialCategory != null) {
-      _selectedCategory = widget.initialCategory;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        ref
-            .read(searchProvider.notifier)
-            .searchByCategory(widget.initialCategory!);
-      });
-    } else {
-      // Auto-focus keyboard when no initial category
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _focusNode.requestFocus();
-      });
+    // Fetch GPS coordinates silently in background for proximity sorting
+    _fetchLocation().then((_) {
+      // After coords are ready, trigger pre-selected category or focus
+      if (widget.initialCategory != null) {
+        _selectedCategory = widget.initialCategory;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ref.read(searchProvider.notifier).searchByCategory(
+                widget.initialCategory!,
+                lat: _lat,
+                lng: _lng,
+              );
+        });
+      } else {
+        // Auto-focus keyboard when no initial category
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _focusNode.requestFocus();
+        });
+      }
+    });
+  }
+
+  /// Silently fetch device GPS coords. Failure is non-fatal — falls back to
+  /// rating-based ordering on the backend.
+  Future<void> _fetchLocation() async {
+    try {
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) return;
+
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) return;
+      }
+      if (permission == LocationPermission.deniedForever) return;
+
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.low, // low accuracy is fast & battery-friendly
+          timeLimit: Duration(seconds: 5),
+        ),
+      );
+
+      if (mounted) {
+        setState(() {
+          _lat = position.latitude;
+          _lng = position.longitude;
+        });
+      }
+    } catch (_) {
+      // Non-fatal: search without location if GPS unavailable
     }
   }
 
@@ -100,10 +143,30 @@ class _SearchScreenState extends ConsumerState<SearchScreen>
   void _onQueryChanged(String value) {
     _debounce?.cancel();
     _debounce = Timer(const Duration(milliseconds: 450), () {
-      ref.read(searchProvider.notifier).search(
-            value,
-            category: _selectedCategory,
-          );
+      // Check if the typed text matches a known category name
+      final trimmed = value.trim().toUpperCase();
+      final matchedCat = _kCategories.firstWhere(
+        (c) => c.apiValue == trimmed || c.label.toUpperCase() == trimmed,
+        orElse: () => const _CategoryOption('', '', Icons.search),
+      );
+
+      if (matchedCat.apiValue.isNotEmpty) {
+        // Auto-select the category chip and run category search (with location)
+        setState(() => _selectedCategory = matchedCat.apiValue);
+        ref.read(searchProvider.notifier).searchByCategory(
+              matchedCat.apiValue,
+              lat: _lat,
+              lng: _lng,
+            );
+      } else {
+        // Normal keyword + optional category filter (with location)
+        ref.read(searchProvider.notifier).search(
+          value,
+          category: _selectedCategory,
+          lat: _lat,
+          lng: _lng,
+        );
+      }
     });
   }
 
@@ -112,14 +175,19 @@ class _SearchScreenState extends ConsumerState<SearchScreen>
       if (_selectedCategory == cat.apiValue) {
         // Deselect
         _selectedCategory = null;
-        ref
-            .read(searchProvider.notifier)
-            .search(_controller.text, category: null);
+        ref.read(searchProvider.notifier).search(
+          _controller.text,
+          category: null,
+          lat: _lat,
+          lng: _lng,
+        );
       } else {
         _selectedCategory = cat.apiValue;
         ref.read(searchProvider.notifier).search(
               _controller.text,
               category: cat.apiValue,
+              lat: _lat,
+              lng: _lng,
             );
       }
     });
@@ -207,7 +275,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen>
                       ),
                     ),
                     Text(
-                      'Search by name, skill or category',
+                      'Search by name, category or skill',
                       style: TextStyle(
                         color: Colors.white70,
                         fontSize: 13,
@@ -247,7 +315,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen>
                     style: const TextStyle(
                         fontSize: 16, color: Color(0xFF1A1A1A)),
                     decoration: InputDecoration(
-                      hintText: 'e.g. plumber, Sunil, electrician...',
+                      hintText: 'e.g. Plumber, Sunil, Electrician...',
                       hintStyle: TextStyle(
                           color: Colors.grey.shade400, fontSize: 15),
                       border: InputBorder.none,
@@ -514,12 +582,183 @@ class _SearchScreenState extends ConsumerState<SearchScreen>
               ),
               onPressed: () => ref
                   .read(searchProvider.notifier)
-                  .search(_controller.text, category: _selectedCategory),
+                  .search(_controller.text, category: _selectedCategory, lat: _lat, lng: _lng),
               child: const Text('Retry'),
             ),
           ],
         ),
       ),
+      ),
+    );
+  }
+
+  Widget _buildBottomSheetDetailRow(IconData icon, String label, String value) {
+    return Row(
+      children: [
+        Icon(icon, size: 20, color: Colors.grey.shade500),
+        const SizedBox(width: 12),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(label, style: TextStyle(fontSize: 12, color: Colors.grey.shade400)),
+            const SizedBox(height: 2),
+            Text(value, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF1F2937))),
+          ],
+        ),
+      ],
+    );
+  }
+
+  void _showWorkerDetails(BuildContext context, WorkerSearchResult worker) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(28),
+            topRight: Radius.circular(28),
+          ),
+        ),
+        padding: const EdgeInsets.fromLTRB(24, 24, 24, 40),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: worker.imageUrl != null
+                      ? Image.network(
+                          worker.imageUrl!,
+                          width: 80,
+                          height: 80,
+                          fit: BoxFit.cover,
+                          errorBuilder: (ctx, err, stack) => _avatarFallback(worker.name),
+                        )
+                      : _avatarFallback(worker.name),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        worker.name,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1F2937),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        worker.profession,
+                        style: TextStyle(
+                          fontSize: 15,
+                          color: Colors.grey.shade600,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          const Icon(Icons.star_rounded, color: Color(0xFFFFC107), size: 18),
+                          const SizedBox(width: 4),
+                          Text(
+                            worker.rating.toStringAsFixed(1),
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1F2937),
+                            ),
+                          ),
+                          if (worker.isVerified) ...[
+                            const SizedBox(width: 12),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFFF0E5),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Row(
+                                children: [
+                                  Icon(Icons.verified_outlined, color: _primaryOrange, size: 12),
+                                  SizedBox(width: 4),
+                                  Text(
+                                    'Verified',
+                                    style: TextStyle(
+                                      color: _primaryOrange,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            const Divider(),
+            const SizedBox(height: 16),
+            _buildBottomSheetDetailRow(Icons.location_on_outlined, 'Location', worker.location),
+            const SizedBox(height: 12),
+            _buildBottomSheetDetailRow(Icons.monetization_on_outlined, 'Hourly Rate', 'Rs. ${worker.hourlyRate} / hour'),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      side: BorderSide(color: Colors.grey.shade300),
+                    ),
+                    child: const Text('Close', style: TextStyle(color: Color(0xFF1F2937), fontWeight: FontWeight.bold)),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      context.push('/client/chat/${worker.id}', extra: {'name': worker.name});
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _primaryOrange,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      elevation: 0,
+                    ),
+                    child: const Text('Message', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -530,7 +769,13 @@ class _SearchScreenState extends ConsumerState<SearchScreen>
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
       itemCount: workers.length,
       separatorBuilder: (ctx, idx) => const SizedBox(height: 14),
-      itemBuilder: (context, index) => _buildWorkerCard(workers[index]),
+      itemBuilder: (context, index) {
+        final worker = workers[index];
+        return GestureDetector(
+          onTap: () => _showWorkerDetails(context, worker),
+          child: _buildWorkerCard(worker),
+        );
+      },
     );
   }
 

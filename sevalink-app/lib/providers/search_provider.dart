@@ -60,7 +60,7 @@ class SearchNotifier extends Notifier<SearchState> {
     return const SearchState();
   }
 
-  Future<void> search(String query, {String? category}) async {
+  Future<void> search(String query, {String? category, double? lat, double? lng}) async {
     // If both are empty, reset
     if (query.trim().isEmpty && category == null) {
       state = const SearchState();
@@ -77,6 +77,8 @@ class SearchNotifier extends Notifier<SearchState> {
       final results = await _repo.combinedSearch(
         keyword: query.trim().isEmpty ? null : query.trim(),
         category: category,
+        lat: lat,
+        lng: lng,
       );
       state = state.copyWith(
         status: SearchStatus.success,
@@ -90,14 +92,19 @@ class SearchNotifier extends Notifier<SearchState> {
     }
   }
 
-  Future<void> searchByCategory(String category) async {
+  Future<void> searchByCategory(String category, {double? lat, double? lng}) async {
     state = state.copyWith(
       status: SearchStatus.loading,
       selectedCategory: category,
       query: '',
     );
     try {
-      final results = await _repo.searchByCategory(category);
+      // Use combinedSearch so we can pass coordinates for proximity sorting
+      final results = await _repo.combinedSearch(
+        category: category,
+        lat: lat,
+        lng: lng,
+      );
       state = state.copyWith(
         status: SearchStatus.success,
         results: results,

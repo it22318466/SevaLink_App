@@ -83,7 +83,7 @@ class _WorkerHomeScreenState extends ConsumerState<WorkerHomeScreen> {
 }
 
 // ─── Home Content (connected to real backend) ─────────────────────────────────
-class _HomeContent extends ConsumerWidget {
+class _HomeContent extends ConsumerStatefulWidget {
   final VoidCallback? onGoToJobs;
   final VoidCallback? onGoToProfile;
   final String workerName;
@@ -97,12 +97,36 @@ class _HomeContent extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_HomeContent> createState() => _HomeContentState();
+}
+
+class _HomeContentState extends ConsumerState<_HomeContent> {
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final feedState = ref.watch(workerFeedProvider);
     final jobs = feedState.jobs;
     final isLoading = feedState.isLoading;
     final error = feedState.error;
     final newCount = jobs.where((j) => j.isNew).length;
+
+    // Local filter (client side search)
+    final filteredJobs = jobs.where((job) {
+      if (_searchQuery.isEmpty) return true;
+      final q = _searchQuery.toLowerCase();
+      return job.title.toLowerCase().contains(q) ||
+          job.description.toLowerCase().contains(q) ||
+          job.location.toLowerCase().contains(q) ||
+          job.category.toLowerCase().contains(q);
+    }).toList();
 
     return RefreshIndicator(
       color: const Color(0xFF0F9B8E),
@@ -112,8 +136,8 @@ class _HomeContent extends ConsumerWidget {
         slivers: [
           SliverToBoxAdapter(
             child: _Header(
-              workerName: workerName,
-              hasNewNotifications: hasNewNotifications,
+              workerName: widget.workerName,
+              hasNewNotifications: widget.hasNewNotifications,
               stats: feedState.stats,
             ),
           ),
@@ -121,8 +145,8 @@ class _HomeContent extends ConsumerWidget {
             child: Transform.translate(
               offset: const Offset(0, -24),
               child: _QuickAccessSection(
-                onMyJobsTap: onGoToJobs,
-                onProfileTap: onGoToProfile,
+                onMyJobsTap: widget.onGoToJobs,
+                onProfileTap: widget.onGoToProfile,
               ),
             ),
           ),
@@ -168,6 +192,72 @@ class _HomeContent extends ConsumerWidget {
               ),
             ),
           ),
+          // ── Search bar ────────────────────────────────────────────────────
+          if (!isLoading && error == null && jobs.isNotEmpty)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                child: Container(
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: context.sevaColors.cardBg,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: context.sevaColors.border,
+                      width: 1,
+                    ),
+                    boxShadow: context.isDark ? null : [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.04),
+                        blurRadius: 10,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: TextField(
+                    controller: _searchController,
+                    onChanged: (val) {
+                      setState(() {
+                        _searchQuery = val;
+                      });
+                    },
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: context.sevaColors.textPrimary,
+                    ),
+                    decoration: InputDecoration(
+                      hintText: 'Search jobs by title, description or location...',
+                      hintStyle: TextStyle(
+                        color: context.sevaColors.textSecondary.withValues(alpha: 0.6),
+                        fontSize: 14,
+                      ),
+                      prefixIcon: const Icon(
+                        Icons.search_rounded,
+                        color: Color(0xFF0F9B8E),
+                        size: 20,
+                      ),
+                      suffixIcon: _searchQuery.isNotEmpty
+                          ? GestureDetector(
+                              onTap: () {
+                                _searchController.clear();
+                                setState(() {
+                                  _searchQuery = '';
+                                });
+                              },
+                              child: Icon(
+                                Icons.close_rounded,
+                                color: context.sevaColors.textSecondary,
+                                size: 18,
+                              ),
+                            )
+                          : null,
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
+                ),
+              ),
+            ),
           // ── Loading state ─────────────────────────────────────────────────
           if (isLoading)
             const SliverFillRemaining(
@@ -213,15 +303,45 @@ class _HomeContent extends ConsumerWidget {
                 ),
               ),
             )
+          // ── Search matching empty state ──────────────────────────────────
+          else if (filteredJobs.isEmpty)
+            SliverFillRemaining(
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.search_off_rounded,
+                        size: 64,
+                        color: context.sevaColors.textSecondary
+                            .withValues(alpha: 0.4)),
+                    const SizedBox(height: 12),
+                    Text(
+                      'No jobs match your search',
+                      style: TextStyle(
+                          color: context.sevaColors.textPrimary,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Try typing something else',
+                      style: TextStyle(
+                          color: context.sevaColors.textSecondary,
+                          fontSize: 13),
+                    ),
+                  ],
+                ),
+              ),
+            )
           // ── Jobs list ─────────────────────────────────────────────────────
           else
             SliverList(
               delegate: SliverChildBuilderDelegate(
                 (context, index) => Padding(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
-                  child: _JobCard(job: jobs[index]),
+                  child: _JobCard(job: filteredJobs[index]),
                 ),
-                childCount: jobs.length,
+                childCount: filteredJobs.length,
               ),
             ),
           const SliverToBoxAdapter(child: SizedBox(height: 20)),
