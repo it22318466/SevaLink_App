@@ -47,29 +47,35 @@ public interface SearchRepository extends JpaRepository<Worker, Long> {
             @Param("categoryName") String categoryName,
             @Param("available") Boolean available);
 
-    //  Location based search (within radius in km)
+    //  Location based search (within radius in km) — sorted nearest first
     @Query("SELECT w FROM Worker w WHERE " +
             "(6371 * acos(cos(radians(:lat)) * cos(radians(w.latitude)) * " +
             "cos(radians(w.longitude) - radians(:lng)) + " +
             "sin(radians(:lat)) * sin(radians(w.latitude)))) < :radiusKm " +
-            "ORDER BY w.rating DESC")
+            "ORDER BY " +
+            "(6371 * acos(cos(radians(:lat)) * cos(radians(w.latitude)) * " +
+            "cos(radians(w.longitude) - radians(:lng)) + " +
+            "sin(radians(:lat)) * sin(radians(w.latitude)))) ASC")
     List<Worker> searchByLocation(
             @Param("lat") Double lat,
             @Param("lng") Double lng,
             @Param("radiusKm") Double radiusKm);
 
-    //  Full search — keyword + category + availability + location
+    //  Full search — keyword + category + availability + location (nearest first)
     @Query("SELECT w FROM Worker w WHERE " +
             "(LOWER(w.category.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
             "LOWER(w.bio) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
             "LOWER(w.user.fullName) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
             "AND (:categoryName IS NULL OR LOWER(w.category.name) = LOWER(:categoryName)) " +
             "AND (:available IS NULL OR w.isAvailable = :available) " +
-            "AND (:lat IS NULL OR :lng IS NULL OR " +
+            "AND (w.latitude IS NOT NULL AND w.longitude IS NOT NULL) " +
+            "AND (6371 * acos(cos(radians(:lat)) * cos(radians(w.latitude)) * " +
+            "cos(radians(w.longitude) - radians(:lng)) + " +
+            "sin(radians(:lat)) * sin(radians(w.latitude)))) < :radiusKm " +
+            "ORDER BY " +
             "(6371 * acos(cos(radians(:lat)) * cos(radians(w.latitude)) * " +
             "cos(radians(w.longitude) - radians(:lng)) + " +
-            "sin(radians(:lat)) * sin(radians(w.latitude)))) < :radiusKm) " +
-            "ORDER BY w.rating DESC")
+            "sin(radians(:lat)) * sin(radians(w.latitude)))) ASC")
     List<Worker> fullSearch(
             @Param("keyword") String keyword,
             @Param("categoryName") String categoryName,

@@ -14,6 +14,9 @@ public interface JobPostRepository extends JpaRepository<JobPost, Long> {
 
     List<JobPost> findByStatusOrderByCreatedAtDesc(String status);
 
+    // Open jobs matching a specific category — for worker feed filtering
+    List<JobPost> findByStatusAndCategoryIdOrderByCreatedAtDesc(String status, Long categoryId);
+
     @Query("SELECT j FROM JobPost j WHERE " +
             "j.status = 'OPEN' AND " +
             "(6371 * acos(cos(radians(:lat)) * cos(radians(j.latitude)) * " +

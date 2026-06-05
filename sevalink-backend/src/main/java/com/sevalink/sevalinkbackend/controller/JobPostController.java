@@ -38,10 +38,28 @@ public class JobPostController {
         return jobPostService.getAllOpenJobs();
     }
 
-    // Worker feed — alias for getAllOpenJobs (used by worker app UI)
-    // GET http://localhost:8080/api/jobs/feed
+    // Worker feed — smart filtered: categoryId + nearby location fallback
+    // GET http://localhost:8080/api/jobs/feed?categoryId=1&lat=6.92&lng=79.86&radius=15
     @GetMapping("/feed")
-    public List<JobPost> getWorkerFeed() {
+    public List<JobPost> getWorkerFeed(
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) Double lat,
+            @RequestParam(required = false) Double lng,
+            @RequestParam(required = false) Double radius) {
+
+        // Both location and category provided
+        if (lat != null && lng != null && categoryId != null) {
+            return jobPostService.getNearbyJobsByCategory(lat, lng, radius, categoryId);
+        }
+        // Location only
+        if (lat != null && lng != null) {
+            return jobPostService.getNearbyJobs(lat, lng, radius);
+        }
+        // Category only
+        if (categoryId != null) {
+            return jobPostService.getOpenJobsByCategory(categoryId);
+        }
+        // No filters — return all open jobs
         return jobPostService.getAllOpenJobs();
     }
 

@@ -64,9 +64,14 @@ public class JobPostService {
         return saved;
     }
 
-    // Get all open jobs (worker feed)
+    // Get all open jobs (worker feed — unfiltered)
     public List<JobPost> getAllOpenJobs() {
         return jobPostRepository.findByStatusOrderByCreatedAtDesc("OPEN");
+    }
+
+    // Get open jobs for a specific category — worker category-targeted feed
+    public List<JobPost> getOpenJobsByCategory(Long categoryId) {
+        return jobPostRepository.findByStatusAndCategoryIdOrderByCreatedAtDesc("OPEN", categoryId);
     }
 
     // Worker sees nearby jobs
