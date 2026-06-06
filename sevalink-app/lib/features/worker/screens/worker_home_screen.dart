@@ -7,6 +7,7 @@ import 'job_details_screen.dart';
 import 'my_jobs_screen.dart';
 import '../../chat/screens/chat_list_screen.dart';
 import '../../../data/models/job.dart';
+import '../../../data/models/notification_model.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/worker_feed_provider.dart';
 import '../../../providers/notification_provider.dart';
@@ -975,9 +976,41 @@ class _BottomNav extends StatelessWidget {
 class _NotificationsDrawer extends ConsumerWidget {
   const _NotificationsDrawer();
 
-  void _handleNotificationTap(BuildContext context, WidgetRef ref, int notifId) {
-    ref.read(notificationProvider.notifier).markAsRead(notifId);
+  void _handleNotificationTap(
+    BuildContext context,
+    WidgetRef ref,
+    NotificationModel notif,
+  ) {
+    // Mark as read first
+    ref.read(notificationProvider.notifier).markAsRead(notif.id);
+
+    // Close the drawer
     Navigator.pop(context);
+
+    // Navigate to the relevant job if one is linked
+    if (notif.relatedJobId != null) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => JobDetailsScreen(
+            // Pass a minimal Job stub — JobDetailsScreen auto-fetches
+            // full details from the backend when description is empty.
+            showSendQuote: false,
+            job: Job(
+              id: notif.relatedJobId!,
+              title: notif.title,
+              description: '',
+              location: '',
+              postedAt: '',
+              minBudget: 0,
+              maxBudget: 0,
+              isNew: false,
+              category: '',
+            ),
+          ),
+        ),
+      );
+    }
   }
 
   @override
@@ -1047,7 +1080,7 @@ class _NotificationsDrawer extends ConsumerWidget {
                           itemBuilder: (context, index) {
                             final notif = notifications[index];
                             return InkWell(
-                              onTap: () => _handleNotificationTap(context, ref, notif.id),
+                              onTap: () => _handleNotificationTap(context, ref, notif),
                               child: Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                                 decoration: BoxDecoration(
