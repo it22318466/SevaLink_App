@@ -46,10 +46,22 @@ public class JobPostService {
         timeline.setNote("Job posted by client");
         jobTimelineRepository.save(timeline);
 
-        // Notify nearby workers (within 15km radius)
+        // Notify relevant nearby workers (within 15 km, matching job category)
         if (saved.getLatitude() != null && saved.getLongitude() != null) {
-            List<Worker> nearbyWorkers = workerRepository.findNearbyWorkers(saved.getLatitude(), saved.getLongitude(), 15.0);
-            for (Worker worker : nearbyWorkers) {
+            List<Worker> targetWorkers;
+
+            if (saved.getCategory() != null) {
+                // Category-aware: only notify workers in the same trade within 15 km
+                targetWorkers = workerRepository.findNearbyWorkersByCategory(
+                        saved.getLatitude(), saved.getLongitude(), 15.0,
+                        saved.getCategory().getId());
+            } else {
+                // No category on job — fall back to proximity-only
+                targetWorkers = workerRepository.findNearbyWorkers(
+                        saved.getLatitude(), saved.getLongitude(), 15.0);
+            }
+
+            for (Worker worker : targetWorkers) {
                 if (worker.getUser() != null) {
                     Notification notification = new Notification();
                     notification.setUser(worker.getUser());

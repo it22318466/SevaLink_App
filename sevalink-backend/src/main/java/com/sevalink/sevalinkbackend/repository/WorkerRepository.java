@@ -44,4 +44,18 @@ public interface WorkerRepository extends JpaRepository<Worker, Long> {
             @Param("lat") Double lat,
             @Param("lng") Double lng,
             @Param("radiusKm") Double radiusKm);
+
+    // Find nearby available workers whose category matches the job's category
+    @Query("SELECT w FROM Worker w WHERE " +
+            "w.isAvailable = true AND " +
+            "w.category.id = :categoryId AND " +
+            "w.latitude IS NOT NULL AND w.longitude IS NOT NULL AND " +
+            "(6371 * acos(cos(radians(:lat)) * cos(radians(w.latitude)) * " +
+            "cos(radians(w.longitude) - radians(:lng)) + " +
+            "sin(radians(:lat)) * sin(radians(w.latitude)))) < :radiusKm")
+    List<Worker> findNearbyWorkersByCategory(
+            @Param("lat") Double lat,
+            @Param("lng") Double lng,
+            @Param("radiusKm") Double radiusKm,
+            @Param("categoryId") Long categoryId);
 }
