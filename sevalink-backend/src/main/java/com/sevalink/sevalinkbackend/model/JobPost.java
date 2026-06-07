@@ -46,8 +46,11 @@ public class JobPost {
     // Photos (stored as comma separated URLs)
     private String photos;
 
-    // OPEN, ASSIGNED, COMPLETED, CANCELLED
+    // OPEN, ASSIGNED, COMPLETED, CANCELLED, DELETED
     private String status = "OPEN";
+
+    @Column(name = "deletion_reason")
+    private String deletionReason;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();

@@ -84,6 +84,10 @@ public class QuotationService {
         Quotation quotation = quotationRepository.findById(quotationId)
                 .orElseThrow(() -> new RuntimeException("Quotation not found"));
 
+        if (!"PENDING".equals(quotation.getStatus())) {
+            throw new RuntimeException("Quotation is already " + quotation.getStatus().toLowerCase());
+        }
+
         quotation.setStatus("ACCEPTED");
         quotationRepository.save(quotation);
 
@@ -124,6 +128,10 @@ public class QuotationService {
     public Quotation rejectQuotation(Long quotationId) {
         Quotation quotation = quotationRepository.findById(quotationId)
                 .orElseThrow(() -> new RuntimeException("Quotation not found"));
+        
+        if (!"PENDING".equals(quotation.getStatus())) {
+            throw new RuntimeException("Quotation is already " + quotation.getStatus().toLowerCase());
+        }
         quotation.setStatus("REJECTED");
         Quotation saved = quotationRepository.save(quotation);
 

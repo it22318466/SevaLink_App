@@ -29,6 +29,9 @@ public class Worker {
 
     private Double rating = 0.0;
 
+    @Column(name = "total_reviews")
+    private Integer totalReviews = 0;
+
     @Column(name = "total_jobs")
     private Integer totalJobs = 0;
 

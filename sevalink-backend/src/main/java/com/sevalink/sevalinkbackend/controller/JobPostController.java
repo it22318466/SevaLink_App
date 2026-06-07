@@ -135,6 +135,22 @@ public class JobPostController {
         }
     }
 
+    // Delete a job
+    // PUT http://localhost:8080/api/jobs/1/delete?clientId=1
+    @PutMapping("/{id}/delete")
+    public ResponseEntity<?> deleteJob(
+            @PathVariable Long id,
+            @RequestParam Long clientId,
+            @RequestBody java.util.Map<String, String> payload) {
+        try {
+            String reason = payload.get("reason");
+            JobPost deleted = jobPostService.deleteJob(id, reason, clientId);
+            return ResponseEntity.ok(deleted);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
     // Get job timeline
     // GET http://localhost:8080/api/jobs/1/timeline
     @GetMapping("/detail/{id}/timeline")

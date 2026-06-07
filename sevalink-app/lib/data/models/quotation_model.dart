@@ -12,6 +12,9 @@ class Quotation extends Equatable {
   final int workerReviewCount;
   final String workerLocation;
   final int workerExperienceYears;
+  final String workerSkills;
+  final int workerTotalJobs;
+  final String workerBio;
   
   final String message;
   final double proposedPrice;
@@ -31,6 +34,9 @@ class Quotation extends Equatable {
     required this.workerReviewCount,
     required this.workerLocation,
     required this.workerExperienceYears,
+    required this.workerSkills,
+    required this.workerTotalJobs,
+    required this.workerBio,
     required this.message,
     required this.proposedPrice,
     required this.eta,
@@ -55,6 +61,9 @@ class Quotation extends Equatable {
       workerReviewCount: workerJson['reviewCount'] ?? 0,
       workerLocation: userJson['address'] ?? 'Unknown Location',
       workerExperienceYears: workerJson['experienceYears'] ?? 0,
+      workerSkills: workerJson['skills'] ?? '',
+      workerTotalJobs: workerJson['totalJobs'] ?? 0,
+      workerBio: workerJson['bio'] ?? '',
       message: json['message'] ?? '',
       proposedPrice: (json['proposedPrice'] ?? 0).toDouble(),
       eta: json['eta'] ?? '',

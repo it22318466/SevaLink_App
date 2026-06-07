@@ -11,6 +11,7 @@ import java.util.List;
 public interface JobPostRepository extends JpaRepository<JobPost, Long> {
 
     List<JobPost> findByClientIdOrderByCreatedAtDesc(Long clientId);
+    List<JobPost> findByClientIdAndStatusNotOrderByCreatedAtDesc(Long clientId, String status);
 
     List<JobPost> findByStatusOrderByCreatedAtDesc(String status);
 
@@ -42,6 +43,7 @@ public interface JobPostRepository extends JpaRepository<JobPost, Long> {
             @Param("categoryId") Long categoryId);
 
     long countByClientId(Long clientId);
+    long countByClientIdAndStatusNot(Long clientId, String status);
     long countByClientIdAndStatus(Long clientId, String status);
     List<JobPost> findByClientIdAndStatusInOrderByCreatedAtDesc(Long clientId, List<String> statuses);
 

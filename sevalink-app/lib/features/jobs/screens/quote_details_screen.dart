@@ -257,6 +257,82 @@ class _QuoteDetailsScreenState extends ConsumerState<QuoteDetailsScreen> {
                                   ),
                                 ],
                               ),
+                              if (quote.workerTotalJobs > 0) ...[
+                                const SizedBox(height: 8),
+                                Row(
+                                  children: [
+                                    const Icon(Icons.check_circle_outline, color: Color(0xFF16A34A), size: 20),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'Jobs Completed: ',
+                                      style: TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w600,
+                                        color: Color(0xFF1F2937),
+                                      ),
+                                    ),
+                                    Text(
+                                      '${quote.workerTotalJobs}',
+                                      style: TextStyle(
+                                        fontSize: 15,
+                                        color: Colors.grey.shade700,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                              if (quote.workerSkills.isNotEmpty) ...[
+                                const SizedBox(height: 12),
+                                Text(
+                                  'Skills',
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF1F2937),
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Wrap(
+                                  spacing: 8,
+                                  runSpacing: 8,
+                                  children: quote.workerSkills.split(',').map((skill) {
+                                    return Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFF3F4F6),
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                      child: Text(
+                                        skill.trim(),
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          color: Colors.grey.shade800,
+                                        ),
+                                      ),
+                                    );
+                                  }).toList(),
+                                ),
+                              ],
+                              if (quote.workerBio.isNotEmpty) ...[
+                                const SizedBox(height: 16),
+                                Text(
+                                  'About',
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF1F2937),
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  quote.workerBio,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey.shade600,
+                                    height: 1.5,
+                                  ),
+                                ),
+                              ],
                             ],
                           ),
                         ),
@@ -431,70 +507,119 @@ class _QuoteDetailsScreenState extends ConsumerState<QuoteDetailsScreen> {
                         const SizedBox(height: 24),
                         
                         // Action Buttons
-                        Row(
-                          children: [
-                            Expanded(
-                              flex: 1,
-                              child: OutlinedButton(
-                                onPressed: _isLoading ? null : _declineQuote,
-                                style: OutlinedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(vertical: 16),
-                                  side: BorderSide(color: Colors.red.shade200),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        if (quote.status == 'ACCEPTED')
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFDCFCE7),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.check_circle, color: Color(0xFF16A34A)),
+                                SizedBox(width: 8),
+                                Text(
+                                  'Accepted',
+                                  style: TextStyle(
+                                    color: Color(0xFF16A34A),
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(Icons.close, color: Colors.red.shade700, size: 20),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      'Decline',
-                                      style: TextStyle(
-                                        color: Colors.red.shade700,
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
+                              ],
+                            ),
+                          )
+                        else if (quote.status == 'REJECTED')
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFEE2E2),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.cancel, color: Color(0xFFDC2626)),
+                                SizedBox(width: 8),
+                                Text(
+                                  'Declined',
+                                  style: TextStyle(
+                                    color: Color(0xFFDC2626),
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        else
+                          Row(
+                            children: [
+                              Expanded(
+                                flex: 1,
+                                child: OutlinedButton(
+                                  onPressed: _isLoading ? null : _declineQuote,
+                                  style: OutlinedButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(vertical: 16),
+                                    side: BorderSide(color: Colors.red.shade200),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.close, color: Colors.red.shade700, size: 20),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        'Decline',
+                                        style: TextStyle(
+                                          color: Colors.red.shade700,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                       ),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
                               ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              flex: 1,
-                              child: ElevatedButton(
-                                onPressed: _isLoading ? null : _acceptQuote,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF16A34A), // Green
-                                  padding: const EdgeInsets.symmetric(vertical: 16),
-                                  elevation: 0,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                ),
-                                child: _isLoading 
-                                    ? const SizedBox(
-                                        width: 24, 
-                                        height: 24, 
-                                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
-                                      )
-                                    : const Row(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: [
-                                          Icon(Icons.check_circle_outline, color: Colors.white, size: 20),
-                                          SizedBox(width: 8),
-                                          Text(
-                                            'Accept Quote',
-                                            style: TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.bold,
+                              const SizedBox(width: 16),
+                              Expanded(
+                                flex: 1,
+                                child: ElevatedButton(
+                                  onPressed: _isLoading ? null : _acceptQuote,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF16A34A), // Green
+                                    padding: const EdgeInsets.symmetric(vertical: 16),
+                                    elevation: 0,
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  ),
+                                  child: _isLoading 
+                                      ? const SizedBox(
+                                          width: 24, 
+                                          height: 24, 
+                                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
+                                        )
+                                      : const Row(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            Icon(Icons.check_circle_outline, color: Colors.white, size: 20),
+                                            SizedBox(width: 8),
+                                            Text(
+                                              'Accept Quote',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.bold,
+                                              ),
                                             ),
-                                          ),
-                                        ],
-                                      ),
+                                          ],
+                                        ),
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
+                            ],
+                          ),
                         const SizedBox(height: 20),
                         
                         // Note text

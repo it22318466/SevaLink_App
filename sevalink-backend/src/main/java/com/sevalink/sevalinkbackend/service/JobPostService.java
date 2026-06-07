@@ -129,7 +129,22 @@ public class JobPostService {
 
     // Client sees their own jobs
     public List<JobPost> getClientJobs(Long clientId) {
-        return jobPostRepository.findByClientIdOrderByCreatedAtDesc(clientId);
+        return jobPostRepository.findByClientIdAndStatusNotOrderByCreatedAtDesc(clientId, "DELETED");
+    }
+
+    // Delete a job
+    public JobPost deleteJob(Long jobId, String reason, Long clientId) {
+        JobPost job = jobPostRepository.findById(jobId)
+                .orElseThrow(() -> new RuntimeException("Job not found"));
+        if (job.getClient() == null || job.getClient().getId() != clientId.longValue()) {
+            throw new RuntimeException("Unauthorized to delete this job");
+        }
+        if ("COMPLETED".equals(job.getStatus())) {
+            throw new RuntimeException("Cannot delete a completed job");
+        }
+        job.setStatus("DELETED");
+        job.setDeletionReason(reason);
+        return jobPostRepository.save(job);
     }
 
     // Cancel a job
@@ -160,6 +175,14 @@ public class JobPostService {
                         int current = worker.getTotalJobs() != null ? worker.getTotalJobs() : 0;
                         worker.setTotalJobs(current + 1);
                         workerRepository.save(worker);
+                        
+                        // Notify Client
+                        Notification notification = new Notification();
+                        notification.setUser(job.getClient());
+                        notification.setJobPost(job);
+                        notification.setTitle("Job Completed");
+                        notification.setMessage("Your job '" + job.getTitle() + "' has been marked as completed by " + worker.getUser().getFullName() + ". Please review and rate the worker.");
+                        notificationRepository.save(notification);
                     });
         }
         JobTimeline timeline = new JobTimeline();
@@ -172,7 +195,7 @@ public class JobPostService {
     // Client job statistics
     public ClientJobStatsDto getClientJobStats(Long clientId) {
         return ClientJobStatsDto.builder()
-                .total(jobPostRepository.countByClientId(clientId))
+                .total(jobPostRepository.countByClientIdAndStatusNot(clientId, "DELETED"))
                 .open(jobPostRepository.countByClientIdAndStatus(clientId, "OPEN"))
                 .active(jobPostRepository.countByClientIdAndStatus(clientId, "ASSIGNED"))
                 .done(jobPostRepository.countByClientIdAndStatus(clientId, "COMPLETED"))
@@ -186,7 +209,7 @@ public class JobPostService {
             jobs = jobPostRepository.findByClientIdAndStatusInOrderByCreatedAtDesc(
                     clientId, List.of(statusFilter.toUpperCase()));
         } else {
-            jobs = jobPostRepository.findByClientIdOrderByCreatedAtDesc(clientId);
+            jobs = jobPostRepository.findByClientIdAndStatusNotOrderByCreatedAtDesc(clientId, "DELETED");
         }
 
         return jobs.stream().map(job -> {
