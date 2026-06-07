@@ -723,7 +723,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen>
             const SizedBox(height: 16),
             _buildBottomSheetDetailRow(Icons.location_on_outlined, 'Location', worker.location),
             const SizedBox(height: 12),
-            _buildBottomSheetDetailRow(Icons.monetization_on_outlined, 'Hourly Rate', 'Rs. ${worker.hourlyRate} / hour'),
+            _buildBottomSheetDetailRow(Icons.monetization_on_outlined, 'Hourly Rate', 'LKR ${worker.hourlyRate} / hour'),
             const SizedBox(height: 24),
             Row(
               children: [
@@ -832,7 +832,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen>
                     ),
                     if (worker.hourlyRate > 0)
                       Text(
-                        'Rs. ${worker.hourlyRate}',
+                        'LKR ${worker.hourlyRate}',
                         style: const TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.bold,
@@ -853,12 +853,13 @@ class _SearchScreenState extends ConsumerState<SearchScreen>
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                    if (worker.hourlyRate > 0)
+                    if (worker.hourlyRate > 0) ...[
                       Text(
                         'per hour',
                         style: TextStyle(
                             fontSize: 12, color: Colors.grey.shade400),
                       ),
+                    ],
                   ],
                 ),
                 if (worker.location.isNotEmpty) ...[

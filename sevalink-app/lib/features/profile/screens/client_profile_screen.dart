@@ -43,13 +43,14 @@ class _ClientProfileScreenState extends ConsumerState<ClientProfileScreen> {
     final profileState = ref.watch(clientProfileProvider);
     final clientId = ref.watch(authProvider).user?.id ?? 0;
     final jobStatsAsync = ref.watch(clientJobStatsProvider(clientId));
-    
+
     String fullName = 'Loading...';
     String email = 'Loading...';
     String phone = 'Loading...';
     String location = 'Loading...';
     String memberSince = 'Joined recently';
     String initials = 'U';
+    String? networkImageUrl;
 
     if (profileState is AsyncData) {
       final profile = profileState.value!;
@@ -58,7 +59,7 @@ class _ClientProfileScreenState extends ConsumerState<ClientProfileScreen> {
       phone = profile.phoneNumber.isNotEmpty ? profile.phoneNumber : 'Not provided';
       location = profile.location?.isNotEmpty == true ? profile.location! : 'Not provided';
       initials = _getInitials(fullName);
-      // Can extract month/year from profile.createdAt if we want, but "Joined recently" or similar works.
+      networkImageUrl = profile.profileImageUrl;
     } else if (profileState is AsyncError) {
       fullName = 'Error loading profile';
     }
@@ -69,7 +70,7 @@ class _ClientProfileScreenState extends ConsumerState<ClientProfileScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            _buildHeader(initials),
+            _buildHeader(initials, networkImageUrl),
             const SizedBox(height: 60),
             
             Text(
@@ -159,10 +160,11 @@ class _ClientProfileScreenState extends ConsumerState<ClientProfileScreen> {
     return initials.isEmpty ? 'U' : initials;
   }
 
-  Widget _buildHeader(String initials) {
+  Widget _buildHeader(String initials, String? networkImageUrl) {
     return Stack(
       clipBehavior: Clip.none,
       children: [
+        // Green header banner
         Container(
           height: 160,
           width: double.infinity,
@@ -176,11 +178,17 @@ class _ClientProfileScreenState extends ConsumerState<ClientProfileScreen> {
                 children: [
                   IconButton(
                     icon: const Icon(Icons.arrow_back, color: Colors.white),
-                    onPressed: () => context.pop(),
+                    onPressed: () {
+                      if (context.canPop()) {
+                        context.pop();
+                      } else {
+                        context.go('/client/home');
+                      }
+                    },
                   ),
                   const Expanded(
                     child: Padding(
-                      padding: EdgeInsets.only(top: 12.0, right: 48.0), // Center adjustment
+                      padding: EdgeInsets.only(top: 12.0, right: 48.0),
                       child: Text(
                         'My Profile',
                         textAlign: TextAlign.center,
@@ -197,56 +205,49 @@ class _ClientProfileScreenState extends ConsumerState<ClientProfileScreen> {
             ),
           ),
         ),
+        // Avatar
         Positioned(
           bottom: -50,
           left: 0,
           right: 0,
           child: Center(
-            child: Stack(
-              children: [
-                Container(
-                  width: 100,
-                  height: 100,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF006D5B),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 4),
-                  ),
-                  child: Center(
-                    child: Text(
-                      initials,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 36,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-                Positioned(
-                  bottom: 0,
-                  right: 0,
-                  child: Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.1),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
+            child: Container(
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(
+                color: const Color(0xFF006D5B),
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 4),
+              ),
+              child: ClipOval(
+                child: networkImageUrl != null && networkImageUrl.isNotEmpty
+                    ? Image.network(
+                        networkImageUrl,
+                        width: 100,
+                        height: 100,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Center(
+                          child: Text(
+                            initials,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 36,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
-                      ],
-                    ),
-                    child: const Icon(
-                      Icons.camera_alt_outlined,
-                      size: 16,
-                      color: Color(0xFF006D5B),
-                    ),
-                  ),
-                ),
-              ],
+                      )
+                    : Center(
+                        child: Text(
+                          initials,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 36,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+              ),
             ),
           ),
         ),

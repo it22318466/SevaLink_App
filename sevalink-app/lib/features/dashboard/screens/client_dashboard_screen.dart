@@ -551,7 +551,7 @@ class _ClientDashboardScreenState extends ConsumerState<ClientDashboardScreen> {
                                 ),
                               ),
                               Text(
-                                'Rs. ${worker.hourlyRate}',
+                                'LKR ${worker.hourlyRate}',
                                 style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFFD3410A)),
                               ),
                             ],

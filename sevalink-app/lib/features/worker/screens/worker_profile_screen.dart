@@ -920,7 +920,7 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 14),
             child: Text(
-              'Rs.',
+              'LKR',
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w700,

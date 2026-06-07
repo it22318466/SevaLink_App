@@ -1,7 +1,9 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:image_cropper/image_cropper.dart';
 import '../../../providers/client_profile_provider.dart';
 
 class EditClientProfileScreen extends ConsumerStatefulWidget {
@@ -18,6 +20,8 @@ class _EditClientProfileScreenState extends ConsumerState<EditClientProfileScree
   late TextEditingController _phoneController;
   late TextEditingController _locationController;
   bool _isLoading = false;
+  File? _profileImage;
+  bool _isUploadingProfileImage = false;
 
   @override
   void initState() {
@@ -57,11 +61,46 @@ class _EditClientProfileScreenState extends ConsumerState<EditClientProfileScree
     return initials.isEmpty ? 'U' : initials;
   }
 
-  Future<void> _pickImage() async {
+  Future<void> _pickAndCropImage() async {
     final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      await ref.read(clientProfileProvider.notifier).uploadProfileImage(pickedFile);
+    final picked = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 90,
+    );
+    if (picked == null || !mounted) return;
+
+    final cropped = await ImageCropper().cropImage(
+      sourcePath: picked.path,
+      aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
+      uiSettings: [
+        AndroidUiSettings(
+          toolbarTitle: 'Crop Photo',
+          toolbarColor: const Color(0xFFD3410A),
+          toolbarWidgetColor: Colors.white,
+          activeControlsWidgetColor: const Color(0xFFD3410A),
+          initAspectRatio: CropAspectRatioPreset.square,
+          lockAspectRatio: true,
+          hideBottomControls: false,
+        ),
+        IOSUiSettings(
+          title: 'Crop Photo',
+          aspectRatioLockEnabled: true,
+          resetAspectRatioEnabled: false,
+        ),
+      ],
+    );
+    if (cropped == null || !mounted) return;
+
+    setState(() {
+      _profileImage = File(cropped.path);
+      _isUploadingProfileImage = true;
+    });
+
+    try {
+      final xfile = XFile(cropped.path);
+      await ref.read(clientProfileProvider.notifier).uploadProfileImage(xfile);
+    } finally {
+      if (mounted) setState(() => _isUploadingProfileImage = false);
     }
   }
 
@@ -85,7 +124,8 @@ class _EditClientProfileScreenState extends ConsumerState<EditClientProfileScree
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           ),
         );
-        context.pop();
+        // Explicitly redirect to profile screen instead of just popping
+        context.go('/client/profile');
       }
     } catch (e) {
       if (mounted) {
@@ -104,6 +144,11 @@ class _EditClientProfileScreenState extends ConsumerState<EditClientProfileScree
   @override
   Widget build(BuildContext context) {
     final initials = _getInitials(_nameController.text.isNotEmpty ? _nameController.text : 'U');
+    final profileState = ref.watch(clientProfileProvider);
+    String? networkImageUrl;
+    profileState.whenData((profile) {
+      networkImageUrl = profile.profileImageUrl;
+    });
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
@@ -172,7 +217,7 @@ class _EditClientProfileScreenState extends ConsumerState<EditClientProfileScree
                       child: Column(
                         children: [
                           GestureDetector(
-                            onTap: _pickImage,
+                            onTap: _isUploadingProfileImage ? null : _pickAndCropImage,
                             child: Stack(
                               children: [
                                 Container(
@@ -182,15 +227,48 @@ class _EditClientProfileScreenState extends ConsumerState<EditClientProfileScree
                                     color: Color(0xFFE8520B),
                                     shape: BoxShape.circle,
                                   ),
-                                  child: Center(
-                                    child: Text(
-                                      initials,
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 36,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
+                                  child: ClipOval(
+                                    child: _isUploadingProfileImage
+                                        ? const Center(
+                                            child: CircularProgressIndicator(
+                                              color: Colors.white,
+                                              strokeWidth: 2.5,
+                                            ),
+                                          )
+                                        : _profileImage != null
+                                            ? Image.file(
+                                                _profileImage!,
+                                                width: 90,
+                                                height: 90,
+                                                fit: BoxFit.cover,
+                                              )
+                                            : networkImageUrl != null && networkImageUrl!.isNotEmpty
+                                                ? Image.network(
+                                                    networkImageUrl!,
+                                                    width: 90,
+                                                    height: 90,
+                                                    fit: BoxFit.cover,
+                                                    errorBuilder: (_, __, ___) => Center(
+                                                      child: Text(
+                                                        initials,
+                                                        style: const TextStyle(
+                                                          color: Colors.white,
+                                                          fontSize: 36,
+                                                          fontWeight: FontWeight.bold,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  )
+                                                : Center(
+                                                    child: Text(
+                                                      initials,
+                                                      style: const TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 36,
+                                                        fontWeight: FontWeight.bold,
+                                                      ),
+                                                    ),
+                                                  ),
                                   ),
                                 ),
                                 Positioned(
@@ -199,7 +277,7 @@ class _EditClientProfileScreenState extends ConsumerState<EditClientProfileScree
                                   child: Container(
                                     padding: const EdgeInsets.all(6),
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFF1A73E8),
+                                      color: _isUploadingProfileImage ? Colors.grey.shade400 : const Color(0xFF1A73E8),
                                       shape: BoxShape.circle,
                                       border: Border.all(color: Colors.white, width: 2),
                                     ),
@@ -263,7 +341,14 @@ class _EditClientProfileScreenState extends ConsumerState<EditClientProfileScree
                             icon: Icons.phone_outlined,
                             label: 'Phone Number',
                             controller: _phoneController,
-                            validator: (val) => val == null || val.isEmpty ? 'Phone is required' : null,
+                            keyboardType: TextInputType.phone,
+                            validator: (val) {
+                              if (val == null || val.isEmpty) return 'Phone is required';
+                              if (val.length != 10 || !RegExp(r'^[0-9]+$').hasMatch(val)) {
+                                return 'Phone number must be exactly 10 digits';
+                              }
+                              return null;
+                            },
                           ),
                           const Divider(height: 24),
                           _buildFormField(
@@ -343,6 +428,7 @@ class _EditClientProfileScreenState extends ConsumerState<EditClientProfileScree
     required TextEditingController controller,
     bool readOnly = false,
     String? Function(String?)? validator,
+    TextInputType? keyboardType,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -366,6 +452,7 @@ class _EditClientProfileScreenState extends ConsumerState<EditClientProfileScree
           controller: controller,
           readOnly: readOnly,
           validator: validator,
+          keyboardType: keyboardType,
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w500,
