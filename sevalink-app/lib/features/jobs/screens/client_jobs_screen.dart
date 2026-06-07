@@ -376,25 +376,37 @@ class _ClientJobsScreenState extends ConsumerState<ClientJobsScreen> {
     final budgetMax = job['budgetMax'];
     final quoteCount = job['quoteCount'] ?? 0;
     final createdAt = job['createdAt']?.toString();
+    final categoryName = job['categoryName'] ?? 'General';
+    final title = job['title'] ?? 'Untitled Job';
+    final description = job['description'] ?? 'No description provided';
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    Color statusBgColor;
-    Color statusTextColor;
+    Color statusColor;
+    String statusLabel;
+    IconData statusIcon;
+
     switch (status) {
       case 'OPEN':
-        statusBgColor = const Color(0xFFE0E7FF);
-        statusTextColor = const Color(0xFF4338CA);
+        statusColor = const Color(0xFF0F9B8E);
+        statusLabel = 'Open';
+        statusIcon = Icons.search_rounded;
         break;
       case 'ASSIGNED':
-        statusBgColor = const Color(0xFFFEF3C7);
-        statusTextColor = const Color(0xFFD97706);
+        statusColor = const Color(0xFFF59E0B);
+        statusLabel = 'Active';
+        statusIcon = Icons.play_circle_outline_rounded;
         break;
       case 'COMPLETED':
-        statusBgColor = const Color(0xFFDCFCE7);
-        statusTextColor = const Color(0xFF15803D);
+        statusColor = const Color(0xFF6B7280);
+        statusLabel = 'Completed';
+        statusIcon = Icons.check_circle_outline_rounded;
         break;
+      case 'CANCELLED':
       default:
-        statusBgColor = Colors.grey.shade200;
-        statusTextColor = Colors.grey.shade700;
+        statusColor = const Color(0xFFEF4444);
+        statusLabel = 'Cancelled';
+        statusIcon = Icons.cancel_outlined;
+        break;
     }
 
     return GestureDetector(
@@ -404,169 +416,206 @@ class _ClientJobsScreenState extends ConsumerState<ClientJobsScreen> {
         }
       },
       child: Container(
-        margin: const EdgeInsets.only(bottom: 16),
-        padding: const EdgeInsets.all(20),
+        margin: const EdgeInsets.only(bottom: 14),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: isDark ? const Color(0xFF1E293B) : Colors.white,
           borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          border: isDark ? Border.all(color: const Color(0xFF334155), width: 1) : null,
+          boxShadow: isDark
+              ? null
+              : [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 14,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Title + Status badge
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Text(
-                    job['title'] ?? '',
-                    style: const TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF1F2937),
-                      height: 1.3,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Title + status
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Category icon
+                  Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      color: statusColor.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(12),
                     ),
+                    child: Icon(statusIcon, color: statusColor, size: 22),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: statusBgColor,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    status == 'ASSIGNED'
-                        ? 'Active'
-                        : status[0] + status.substring(1).toLowerCase(),
-                    style: TextStyle(
-                      color: statusTextColor,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 6),
-            // Category
-            Text(
-              job['categoryName'] ?? '',
-              style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
-            ),
-            const SizedBox(height: 14),
-            // Description
-            Text(
-              job['description'] ?? '',
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey.shade600,
-                height: 1.5,
-              ),
-            ),
-            const SizedBox(height: 16),
-            // Urgency badge
-            if (urgency == 'URGENT')
-              Container(
-                margin: const EdgeInsets.only(bottom: 16),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFEE2E2),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: const Text(
-                  'Urgent',
-                  style: TextStyle(
-                    color: Color(0xFFDC2626),
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            Divider(color: Colors.grey.shade100, height: 1),
-            const SizedBox(height: 16),
-            // Budget + Time + Quotes
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Expanded(
-                  child: Text(
-                    'Rs. ${_formatBudget(budgetMin ?? 0)} - Rs. ${_formatBudget(budgetMax ?? 0)}',
-                    style: const TextStyle(
-                      color: Color(0xFFD3410A),
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Container(
-                  width: 4,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade400,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  createdAt != null ? _timeAgo(createdAt) : '',
-                  style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
-                ),
-                const SizedBox(width: 8),
-                Container(
-                  width: 6,
-                  height: 6,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF16A34A),
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                const SizedBox(width: 6),
-                GestureDetector(
-                  onTap: () {
-                    if (job['id'] != null) {
-                      context.push('/client/jobs/${job['id']}/quotes', extra: job);
-                    }
-                  },
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Text(
-                        '$quoteCount',
-                        style: const TextStyle(
-                          color: Color(0xFF16A34A),
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
-                          height: 1.0,
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: isDark ? Colors.white : const Color(0xFF1F2937),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                      const Text(
-                        'Quotes',
-                        style: TextStyle(
-                          color: Color(0xFF16A34A),
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          height: 1.0,
+                        const SizedBox(height: 2),
+                        Text(
+                          categoryName,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
+                  const SizedBox(width: 8),
+                  // Status badge
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: statusColor.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      statusLabel,
+                      style: TextStyle(
+                        color: statusColor,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              Divider(height: 1, color: isDark ? const Color(0xFF334155) : Colors.grey.shade100),
+              const SizedBox(height: 12),
+              
+              // Details
+              _infoRow(
+                Icons.description_outlined,
+                description,
+                isDark,
+                maxLines: 2,
+              ),
+              const SizedBox(height: 6),
+              if (urgency == 'URGENT') ...[
+                _infoRow(
+                  Icons.warning_amber_rounded,
+                  'Urgent Request',
+                  isDark,
+                  iconColor: const Color(0xFFEF4444),
+                  textColor: const Color(0xFFEF4444),
                 ),
+                const SizedBox(height: 6),
               ],
-            ),
-          ],
+              _infoRow(
+                Icons.calendar_today_outlined,
+                createdAt != null ? 'Posted ${_timeAgo(createdAt)}' : 'Recently',
+                isDark,
+              ),
+              
+              const SizedBox(height: 14),
+              
+              // Budget + Quotes Action
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? const Color(0xFF006B5E).withValues(alpha: 0.2)
+                          : const Color(0xFFE8F5F2),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      'Rs. ${_formatBudget(budgetMin)} - ${_formatBudget(budgetMax)}',
+                      style: const TextStyle(
+                        color: Color(0xFF006B5E),
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                  const Spacer(),
+                  if (status == 'OPEN')
+                    OutlinedButton.icon(
+                      onPressed: () {
+                        if (job['id'] != null) {
+                          context.push('/client/jobs/${job['id']}/quotes', extra: job);
+                        }
+                      },
+                      icon: const Icon(Icons.request_quote_outlined, size: 15, color: Color(0xFFD3410A)),
+                      label: Text(
+                        '$quoteCount Quote${quoteCount == 1 ? '' : 's'}',
+                        style: const TextStyle(color: Color(0xFFD3410A), fontSize: 13, fontWeight: FontWeight.bold),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        side: const BorderSide(color: Color(0xFFD3410A)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                    )
+                  else
+                    OutlinedButton.icon(
+                      onPressed: () {
+                        if (job['id'] != null) {
+                          context.push('/client/jobs/${job['id']}/details', extra: job);
+                        }
+                      },
+                      icon: const Icon(Icons.visibility_outlined, size: 15, color: Color(0xFF6B7280)),
+                      label: const Text(
+                        'View',
+                        style: TextStyle(color: Color(0xFF6B7280), fontSize: 13, fontWeight: FontWeight.bold),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        side: const BorderSide(color: Color(0xFF6B7280)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                    ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
+    );
+  }
+
+  Widget _infoRow(IconData icon, String text, bool isDark, {int maxLines = 1, Color? iconColor, Color? textColor}) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(top: 2),
+          child: Icon(icon, size: 14, color: iconColor ?? (isDark ? Colors.grey.shade500 : Colors.grey.shade400)),
+        ),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Text(
+            text,
+            style: TextStyle(
+              color: textColor ?? (isDark ? Colors.grey.shade400 : Colors.grey.shade600),
+              fontSize: 13,
+            ),
+            maxLines: maxLines,
+            overflow: maxLines == 1 ? TextOverflow.ellipsis : null,
+          ),
+        ),
+      ],
     );
   }
 
