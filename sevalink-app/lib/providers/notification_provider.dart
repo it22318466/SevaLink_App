@@ -4,6 +4,7 @@ import '../data/models/notification_model.dart';
 import 'auth_provider.dart';
 import 'worker_feed_provider.dart';
 import 'worker_jobs_list_provider.dart';
+import 'client_jobs_provider.dart';
 
 class NotificationState {
   final List<NotificationModel> notifications;
@@ -81,17 +82,29 @@ class NotificationNotifier extends Notifier<NotificationState> {
         final hasDecline = newOnes.any((n) =>
             n.title.toLowerCase().contains('declined') ||
             n.title.toLowerCase().contains('denied') ||
-            n.title.toLowerCase().contains('rejected'));
+            n.title.toLowerCase().contains('rejected') ||
+            n.title.toLowerCase().contains('deleted') ||
+            n.title.toLowerCase().contains('cancelled') ||
+            n.title.toLowerCase().contains('canceled'));
             
         final hasAccept = newOnes.any((n) =>
             n.title.toLowerCase().contains('accepted') ||
             n.title.toLowerCase().contains('approved'));
+
+        final hasNewQuote = newOnes.any((n) =>
+            n.title.toLowerCase().contains('new quote received') ||
+            n.title.toLowerCase().contains('quote'));
 
         if (hasDecline || hasAccept) {
           // ignore: unused_result
           ref.read(workerFeedProvider.notifier).refresh();
           // ignore: unused_result
           ref.read(workerJobsListProvider.notifier).loadJobs();
+        }
+
+        if (hasNewQuote) {
+          ref.invalidate(clientJobsProvider);
+          ref.invalidate(clientJobStatsProvider);
         }
       }
     } catch (e) {

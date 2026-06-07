@@ -142,7 +142,24 @@ public class JobPostService {
         if ("COMPLETED".equals(job.getStatus())) {
             throw new RuntimeException("Cannot delete a completed job");
         }
-        job.setStatus("DELETED");
+        
+        // Notify any workers who have submitted quotes or are assigned
+        List<com.sevalink.sevalinkbackend.model.Quotation> quotes = quotationRepository.findByJobPostIdOrderByProposedPriceAsc(jobId);
+        for (com.sevalink.sevalinkbackend.model.Quotation quote : quotes) {
+            if ("ACCEPTED".equals(quote.getStatus()) || "OPEN".equals(quote.getStatus())) {
+                Worker worker = quote.getWorker();
+                if (worker != null && worker.getUser() != null) {
+                    Notification notification = new Notification();
+                    notification.setUser(worker.getUser());
+                    notification.setJobPost(job);
+                    notification.setTitle("Job Cancelled");
+                    notification.setMessage("The client has cancelled the job '" + job.getTitle() + "'. Reason: " + reason);
+                    notificationRepository.save(notification);
+                }
+            }
+        }
+
+        job.setStatus("CANCELLED");
         job.setDeletionReason(reason);
         return jobPostRepository.save(job);
     }

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 import '../../../providers/client_jobs_provider.dart';
 import '../../../providers/auth_provider.dart';
 import 'job_location_picker_screen.dart';
@@ -26,6 +28,7 @@ class _PostJobScreenState extends ConsumerState<PostJobScreen> {
   bool _isLoading = false;
   double? _latitude;
   double? _longitude;
+  final List<XFile> _selectedPhotos = [];
 
   final List<Map<String, dynamic>> _categories = [
     {'id': 1, 'name': 'Electrical'},
@@ -44,6 +47,20 @@ class _PostJobScreenState extends ConsumerState<PostJobScreen> {
     _budgetMinController.dispose();
     _budgetMaxController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickPhotos() async {
+    final picker = ImagePicker();
+    final picked = await picker.pickMultiImage(imageQuality: 80);
+    if (picked.isNotEmpty && mounted) {
+      setState(() {
+        // Limit to 5 photos
+        _selectedPhotos.addAll(picked);
+        if (_selectedPhotos.length > 5) {
+          _selectedPhotos.removeRange(5, _selectedPhotos.length);
+        }
+      });
+    }
   }
 
   Future<void> _submitJob() async {
@@ -241,7 +258,7 @@ class _PostJobScreenState extends ConsumerState<PostJobScreen> {
                           controller: _budgetMinController,
                           keyboardType: TextInputType.number,
                           style: const TextStyle(color: Color(0xFF1F2937), fontSize: 16),
-                          decoration: _buildInputDecoration('Min', prefixText: '\$ '),
+                          decoration: _buildInputDecoration('Min', prefixText: 'Rs. '),
                         ),
                       ),
                       const SizedBox(width: 16),
@@ -250,7 +267,7 @@ class _PostJobScreenState extends ConsumerState<PostJobScreen> {
                           controller: _budgetMaxController,
                           keyboardType: TextInputType.number,
                           style: const TextStyle(color: Color(0xFF1F2937), fontSize: 16),
-                          decoration: _buildInputDecoration('Max', prefixText: '\$ '),
+                          decoration: _buildInputDecoration('Max', prefixText: 'Rs. '),
                         ),
                       ),
                     ],
@@ -260,24 +277,84 @@ class _PostJobScreenState extends ConsumerState<PostJobScreen> {
 
                 _buildSectionContainer(
                   title: 'Add Photos (Optional)',
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(vertical: 24),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF3F4F6),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.grey.shade300, style: BorderStyle.none), // Dashed normally but keeping it simple
-                    ),
-                    child: Column(
-                      children: [
-                        Icon(Icons.cloud_upload_outlined, size: 40, color: Colors.grey.shade400),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Upload photos',
-                          style: TextStyle(color: Colors.grey.shade600, fontWeight: FontWeight.w500),
+                  child: Column(
+                    children: [
+                      if (_selectedPhotos.isNotEmpty) ...[
+                        SizedBox(
+                          height: 100,
+                          child: ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: _selectedPhotos.length,
+                            itemBuilder: (_, i) => Stack(
+                              children: [
+                                Container(
+                                  margin: const EdgeInsets.only(right: 10),
+                                  width: 100,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(12),
+                                    image: DecorationImage(
+                                      image: FileImage(File(_selectedPhotos[i].path)),
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                ),
+                                Positioned(
+                                  top: 4,
+                                  right: 14,
+                                  child: GestureDetector(
+                                    onTap: () => setState(() => _selectedPhotos.removeAt(i)),
+                                    child: Container(
+                                      decoration: const BoxDecoration(
+                                        color: Colors.black54,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(Icons.close, color: Colors.white, size: 16),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
+                        const SizedBox(height: 10),
                       ],
-                    ),
+                      GestureDetector(
+                        onTap: _selectedPhotos.length < 5 ? _pickPhotos : null,
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(vertical: 20),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF3F4F6),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: _selectedPhotos.length < 5 ? Colors.grey.shade400 : Colors.grey.shade200,
+                              style: BorderStyle.solid,
+                            ),
+                          ),
+                          child: Column(
+                            children: [
+                              Icon(
+                                Icons.add_photo_alternate_outlined,
+                                size: 36,
+                                color: _selectedPhotos.length < 5 ? Colors.grey.shade500 : Colors.grey.shade300,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                _selectedPhotos.isEmpty
+                                    ? 'Tap to upload photos (max 5)'
+                                    : _selectedPhotos.length >= 5
+                                        ? 'Maximum 5 photos'
+                                        : 'Add more photos (${_selectedPhotos.length}/5)',
+                                style: TextStyle(
+                                  color: _selectedPhotos.length < 5 ? Colors.grey.shade600 : Colors.grey.shade400,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 

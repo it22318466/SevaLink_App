@@ -24,7 +24,7 @@ class _RateWorkerScreenState extends ConsumerState<RateWorkerScreen> {
     setState(() => _isLoading = true);
     try {
       final user = ref.read(authProvider).user;
-      final dio = Dio(BaseOptions(baseUrl: ApiEndpoints.baseUrl));
+      final dio = ref.read(dioClientProvider).dio;
       await dio.post('/reviews', data: {
         'client': {'id': user?.id},
         'worker': {'id': widget.workerId},

@@ -6,6 +6,8 @@ import '../../../providers/auth_provider.dart';
 import '../../../data/models/job.dart';
 import '../../worker/screens/job_details_screen.dart';
 import '../../../core/themes/app_theme.dart';
+import '../../../data/models/notification_model.dart';
+import '../../../providers/notification_provider.dart';
 
 
 // WORKER DASHBOARD SCREEN
@@ -89,6 +91,7 @@ class _WorkerDashboardScreenState
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      endDrawer: const _NotificationsDrawer(),
       body: RefreshIndicator(
         color: const Color(0xFF006B5E),
         onRefresh: () async =>
@@ -190,36 +193,44 @@ class _WorkerDashboardScreenState
                   ),
                 ),
                 const SizedBox(width: 12),
-                Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(11),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.15),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.notifications_none_rounded,
-                        color: Colors.white,
-                        size: 26,
-                      ),
-                    ),
-                    Positioned(
-                      top: 8,
-                      right: 8,
-                      child: Container(
-                        width: 10,
-                        height: 10,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFEF4444),
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                              color: const Color(0xFFD3410A), width: 2),
+                Builder(
+                  builder: (drawerContext) => GestureDetector(
+                    onTap: () {
+                      Scaffold.of(drawerContext).openEndDrawer();
+                    },
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(11),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.15),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.notifications_none_rounded,
+                            color: Colors.white,
+                            size: 26,
+                          ),
                         ),
-                      ),
+                        if (ref.watch(notificationProvider).unreadCount > 0)
+                          Positioned(
+                            top: 8,
+                            right: 8,
+                            child: Container(
+                              width: 10,
+                              height: 10,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFEF4444),
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                    color: const Color(0xFFD3410A), width: 2),
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ],
             ),
@@ -788,3 +799,150 @@ class _WorkerDashboardScreenState
     );
   }
 }
+
+// ─── Notifications Drawer ─────────────────────────────────────────────────────
+class _NotificationsDrawer extends ConsumerWidget {
+  const _NotificationsDrawer();
+
+  void _handleNotificationTap(
+    BuildContext context,
+    WidgetRef ref,
+    NotificationModel notif,
+  ) {
+    ref.read(notificationProvider.notifier).markAsRead(notif.id);
+    Navigator.pop(context);
+    
+    // Auto-refresh lists when notification is tapped
+    if (notif.relatedJobId != null) {
+      ref.invalidate(workerFeedProvider);
+      ref.invalidate(workerJobsListProvider);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final notificationState = ref.watch(notificationProvider);
+    final notifications = notificationState.notifications;
+
+    return Drawer(
+      backgroundColor: Colors.white,
+      surfaceTintColor: Colors.transparent,
+      child: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Notifications',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  if (notificationState.unreadCount > 0)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.redAccent,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        '${notificationState.unreadCount} New',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            Divider(height: 1, color: Colors.grey.shade200),
+            Expanded(
+              child: notificationState.isLoading && notifications.isEmpty
+                  ? const Center(child: CircularProgressIndicator())
+                  : notifications.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.notifications_none_rounded,
+                                  size: 52, color: Colors.grey.shade300),
+                              const SizedBox(height: 12),
+                              const Text('No notifications yet',
+                                  style: TextStyle(color: Colors.grey, fontSize: 15)),
+                            ],
+                          ),
+                        )
+                      : ListView.builder(
+                          itemCount: notifications.length,
+                          itemBuilder: (context, index) {
+                            final notif = notifications[index];
+                            return InkWell(
+                              onTap: () => _handleNotificationTap(context, ref, notif),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                                decoration: BoxDecoration(
+                                  color: notif.isRead ? Colors.transparent : const Color(0xFFD3410A).withValues(alpha: 0.05),
+                                  border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
+                                ),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: notif.isRead ? Colors.grey.shade100 : const Color(0xFFD3410A).withValues(alpha: 0.1),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: Icon(
+                                        Icons.notifications_active,
+                                        color: notif.isRead ? Colors.grey.shade400 : const Color(0xFFD3410A),
+                                        size: 20,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            notif.title,
+                                            style: TextStyle(
+                                              fontWeight: notif.isRead ? FontWeight.normal : FontWeight.bold,
+                                              fontSize: 15,
+                                              color: Colors.black87,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            notif.message,
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              color: Colors.grey.shade600,
+                                              height: 1.3,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+

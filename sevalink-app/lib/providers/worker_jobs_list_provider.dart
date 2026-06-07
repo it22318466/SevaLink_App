@@ -109,6 +109,10 @@ class WorkerJobsListNotifier extends Notifier<WorkerJobsListState> {
         final jobPost = item['jobPost'];
         if (jobPost == null) continue;
 
+        // Skip if the job itself was cancelled or deleted by client
+        final jobStatusStrCheck = jobPost['status'] ?? 'OPEN';
+        if (jobStatusStrCheck == 'CANCELLED' || jobStatusStrCheck == 'DELETED') continue;
+
         final jobPostId = jobPost['id']?.toString() ?? '0';
         final title = jobPost['title'] ?? '';
         final location = jobPost['locationName'] ?? jobPost['location'] ?? '';
