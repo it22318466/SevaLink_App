@@ -11,8 +11,8 @@ import '../../../providers/auth_provider.dart';
 import '../../../providers/theme_provider.dart';
 import '../../../core/themes/app_theme.dart';
 import '../../../providers/worker_feed_provider.dart';
+import '../../../providers/worker_jobs_list_provider.dart';
 import '../../jobs/screens/job_location_picker_screen.dart';
-import 'my_jobs_screen.dart';
 
 class WorkerProfileScreen extends ConsumerStatefulWidget {
   final bool showBackButton;

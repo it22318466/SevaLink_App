@@ -2,6 +2,8 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/models/notification_model.dart';
 import 'auth_provider.dart';
+import 'worker_feed_provider.dart';
+import 'worker_jobs_list_provider.dart';
 
 class NotificationState {
   final List<NotificationModel> notifications;
@@ -35,8 +37,8 @@ class NotificationNotifier extends Notifier<NotificationState> {
     // Schedule the initial fetch after the provider is initialized
     Future.microtask(() => fetchNotifications());
     
-    // Poll every 30 seconds
-    _timer = Timer.periodic(const Duration(seconds: 30), (_) {
+    // Poll every 15 seconds so denied/accepted quotes update quickly
+    _timer = Timer.periodic(const Duration(seconds: 15), (_) {
       fetchNotifications();
     });
 
@@ -63,11 +65,35 @@ class NotificationNotifier extends Notifier<NotificationState> {
       final List<NotificationModel> notifications = notifsJson.map((json) => NotificationModel.fromJson(json)).toList();
       final int unreadCount = data['unreadCount'];
 
+      final prevCount = state.notifications.length;
+
       state = state.copyWith(
         notifications: notifications,
         unreadCount: unreadCount,
         isLoading: false,
       );
+
+      // If any newly arrived notification is a quote decline or acceptance,
+      // auto-refresh the feeds so the screens update immediately.
+      if (notifications.length > prevCount) {
+        final newOnes = notifications.skip(prevCount);
+        
+        final hasDecline = newOnes.any((n) =>
+            n.title.toLowerCase().contains('declined') ||
+            n.title.toLowerCase().contains('denied') ||
+            n.title.toLowerCase().contains('rejected'));
+            
+        final hasAccept = newOnes.any((n) =>
+            n.title.toLowerCase().contains('accepted') ||
+            n.title.toLowerCase().contains('approved'));
+
+        if (hasDecline || hasAccept) {
+          // ignore: unused_result
+          ref.read(workerFeedProvider.notifier).refresh();
+          // ignore: unused_result
+          ref.read(workerJobsListProvider.notifier).loadJobs();
+        }
+      }
     } catch (e) {
       state = state.copyWith(isLoading: false);
     }

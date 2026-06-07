@@ -11,6 +11,7 @@ import '../../../data/models/notification_model.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/worker_feed_provider.dart';
 import '../../../providers/notification_provider.dart';
+import '../../../providers/worker_jobs_list_provider.dart';
 import '../../../core/themes/app_theme.dart';
 
 // (Mock data removed — now using real backend feed)
@@ -118,6 +119,30 @@ class _HomeContentState extends ConsumerState<_HomeContent> {
     final isLoading = feedState.isLoading;
     final error = feedState.error;
     final newCount = jobs.where((j) => j.isNew).length;
+
+    // Auto-refresh the feeds when a quote status notification arrives.
+    // The notification provider polls every 15 s, so the feeds are updated
+    // automatically within 15 s of a client accepting/declining the quote.
+    ref.listen<NotificationState>(notificationProvider, (previous, next) {
+      final prevCount = previous?.notifications.length ?? 0;
+      final newNotifs = next.notifications.skip(prevCount);
+      
+      final hasDeclined = newNotifs.any(
+        (n) => n.title.toLowerCase().contains('declined') ||
+               n.title.toLowerCase().contains('denied') ||
+               n.title.toLowerCase().contains('rejected'),
+      );
+      
+      final hasAccepted = newNotifs.any(
+        (n) => n.title.toLowerCase().contains('accepted') ||
+               n.title.toLowerCase().contains('approved'),
+      );
+
+      if (hasDeclined || hasAccepted) {
+        ref.read(workerFeedProvider.notifier).refresh();
+        ref.read(workerJobsListProvider.notifier).loadJobs();
+      }
+    });
 
     // Local filter (client side search)
     final filteredJobs = jobs.where((job) {

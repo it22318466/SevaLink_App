@@ -191,6 +191,12 @@ class WorkerFeedNotifier extends Notifier<WorkerFeedState> {
         queryParams['radius'] = 25.0; // 25 km feed radius
       }
 
+      // Pass workerId so the backend hides jobs the worker already quoted
+      // (covers both pending quotes and denied/rejected quotes)
+      if (stats.workerId != null) {
+        queryParams['workerId'] = stats.workerId;
+      }
+
       // ── Step 3: Fetch job feed with smart filters ─────────────────────────
       final jobsResponse = await dio.get('/jobs/feed', queryParameters: queryParams);
       final List<dynamic> jobsData = jobsResponse.data;
