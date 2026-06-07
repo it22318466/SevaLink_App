@@ -76,14 +76,24 @@ public class JobPostService {
         return saved;
     }
 
-    // Get all open jobs (worker feed — unfiltered)
+    // Get all open jobs (worker feed — unfiltered, or filtered by worker)
     public List<JobPost> getAllOpenJobs() {
         return jobPostRepository.findByStatusOrderByCreatedAtDesc("OPEN");
+    }
+
+    // Get all open jobs excluding those the worker already quoted
+    public List<JobPost> getAllOpenJobsForWorker(Long workerId) {
+        return jobPostRepository.findOpenJobsExcludingWorkerQuotes(workerId);
     }
 
     // Get open jobs for a specific category — worker category-targeted feed
     public List<JobPost> getOpenJobsByCategory(Long categoryId) {
         return jobPostRepository.findByStatusAndCategoryIdOrderByCreatedAtDesc("OPEN", categoryId);
+    }
+
+    // Get open jobs for a category, excluding those the worker already quoted
+    public List<JobPost> getOpenJobsByCategoryForWorker(Long categoryId, Long workerId) {
+        return jobPostRepository.findOpenJobsByCategoryExcludingWorkerQuotes(categoryId, workerId);
     }
 
     // Worker sees nearby jobs
@@ -92,11 +102,24 @@ public class JobPostService {
         return jobPostRepository.findNearbyJobs(lat, lng, r);
     }
 
+    // Worker sees nearby jobs, excluding those they already quoted
+    public List<JobPost> getNearbyJobsForWorker(Double lat, Double lng, Double radius, Long workerId) {
+        double r = (radius != null) ? radius : 10.0;
+        return jobPostRepository.findNearbyJobsExcludingWorkerQuotes(lat, lng, r, workerId);
+    }
+
     // Worker sees nearby jobs by category
     public List<JobPost> getNearbyJobsByCategory(Double lat, Double lng,
                                                  Double radius, Long categoryId) {
         double r = (radius != null) ? radius : 10.0;
         return jobPostRepository.findNearbyJobsByCategory(lat, lng, r, categoryId);
+    }
+
+    // Worker sees nearby jobs by category, excluding those they already quoted
+    public List<JobPost> getNearbyJobsByCategoryForWorker(Double lat, Double lng,
+                                                          Double radius, Long categoryId, Long workerId) {
+        double r = (radius != null) ? radius : 10.0;
+        return jobPostRepository.findNearbyJobsByCategoryExcludingWorkerQuotes(lat, lng, r, categoryId, workerId);
     }
 
     // Get job by ID
@@ -129,6 +152,15 @@ public class JobPostService {
         if ("COMPLETED".equals(status)) {
             job.setStatus("COMPLETED");
             jobPostRepository.save(job);
+
+            // Increment the worker's total job count and experience
+            quotationRepository.findByJobPostIdAndStatus(jobId, "ACCEPTED")
+                    .ifPresent(acceptedQuote -> {
+                        Worker worker = acceptedQuote.getWorker();
+                        int current = worker.getTotalJobs() != null ? worker.getTotalJobs() : 0;
+                        worker.setTotalJobs(current + 1);
+                        workerRepository.save(worker);
+                    });
         }
         JobTimeline timeline = new JobTimeline();
         timeline.setJobPost(job);

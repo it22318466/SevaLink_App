@@ -39,27 +39,40 @@ public class JobPostController {
     }
 
     // Worker feed — smart filtered: categoryId + nearby location fallback
-    // GET http://localhost:8080/api/jobs/feed?categoryId=1&lat=6.92&lng=79.86&radius=15
+    // Optional workerId hides jobs the worker has already quoted (including denied quotes)
+    // GET http://localhost:8080/api/jobs/feed?categoryId=1&lat=6.92&lng=79.86&radius=15&workerId=3
     @GetMapping("/feed")
     public List<JobPost> getWorkerFeed(
             @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false) Double lat,
             @RequestParam(required = false) Double lng,
-            @RequestParam(required = false) Double radius) {
+            @RequestParam(required = false) Double radius,
+            @RequestParam(required = false) Long workerId) {
 
-        // Both location and category provided
+        // Worker ID provided — use quoted-jobs-excluded variants
+        if (workerId != null) {
+            if (lat != null && lng != null && categoryId != null) {
+                return jobPostService.getNearbyJobsByCategoryForWorker(lat, lng, radius, categoryId, workerId);
+            }
+            if (lat != null && lng != null) {
+                return jobPostService.getNearbyJobsForWorker(lat, lng, radius, workerId);
+            }
+            if (categoryId != null) {
+                return jobPostService.getOpenJobsByCategoryForWorker(categoryId, workerId);
+            }
+            return jobPostService.getAllOpenJobsForWorker(workerId);
+        }
+
+        // No workerId — fall back to standard queries (backwards compatible)
         if (lat != null && lng != null && categoryId != null) {
             return jobPostService.getNearbyJobsByCategory(lat, lng, radius, categoryId);
         }
-        // Location only
         if (lat != null && lng != null) {
             return jobPostService.getNearbyJobs(lat, lng, radius);
         }
-        // Category only
         if (categoryId != null) {
             return jobPostService.getOpenJobsByCategory(categoryId);
         }
-        // No filters — return all open jobs
         return jobPostService.getAllOpenJobs();
     }
 

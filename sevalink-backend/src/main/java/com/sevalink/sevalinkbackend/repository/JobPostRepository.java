@@ -44,4 +44,50 @@ public interface JobPostRepository extends JpaRepository<JobPost, Long> {
     long countByClientId(Long clientId);
     long countByClientIdAndStatus(Long clientId, String status);
     List<JobPost> findByClientIdAndStatusInOrderByCreatedAtDesc(Long clientId, List<String> statuses);
+
+    // ── Worker-filtered feed: exclude jobs where the worker already has a quotation ──
+
+    @Query("SELECT j FROM JobPost j WHERE " +
+            "j.status = 'OPEN' AND " +
+            "NOT EXISTS (SELECT q FROM Quotation q WHERE q.jobPost = j AND q.worker.id = :workerId) " +
+            "ORDER BY j.createdAt DESC")
+    List<JobPost> findOpenJobsExcludingWorkerQuotes(
+            @Param("workerId") Long workerId);
+
+    @Query("SELECT j FROM JobPost j WHERE " +
+            "j.status = 'OPEN' AND " +
+            "j.category.id = :categoryId AND " +
+            "NOT EXISTS (SELECT q FROM Quotation q WHERE q.jobPost = j AND q.worker.id = :workerId) " +
+            "ORDER BY j.createdAt DESC")
+    List<JobPost> findOpenJobsByCategoryExcludingWorkerQuotes(
+            @Param("categoryId") Long categoryId,
+            @Param("workerId") Long workerId);
+
+    @Query("SELECT j FROM JobPost j WHERE " +
+            "j.status = 'OPEN' AND " +
+            "NOT EXISTS (SELECT q FROM Quotation q WHERE q.jobPost = j AND q.worker.id = :workerId) AND " +
+            "(6371 * acos(cos(radians(:lat)) * cos(radians(j.latitude)) * " +
+            "cos(radians(j.longitude) - radians(:lng)) + " +
+            "sin(radians(:lat)) * sin(radians(j.latitude)))) < :radiusKm " +
+            "ORDER BY j.createdAt DESC")
+    List<JobPost> findNearbyJobsExcludingWorkerQuotes(
+            @Param("lat") Double lat,
+            @Param("lng") Double lng,
+            @Param("radiusKm") Double radiusKm,
+            @Param("workerId") Long workerId);
+
+    @Query("SELECT j FROM JobPost j WHERE " +
+            "j.status = 'OPEN' AND " +
+            "j.category.id = :categoryId AND " +
+            "NOT EXISTS (SELECT q FROM Quotation q WHERE q.jobPost = j AND q.worker.id = :workerId) AND " +
+            "(6371 * acos(cos(radians(:lat)) * cos(radians(j.latitude)) * " +
+            "cos(radians(j.longitude) - radians(:lng)) + " +
+            "sin(radians(:lat)) * sin(radians(j.latitude)))) < :radiusKm " +
+            "ORDER BY j.createdAt DESC")
+    List<JobPost> findNearbyJobsByCategoryExcludingWorkerQuotes(
+            @Param("lat") Double lat,
+            @Param("lng") Double lng,
+            @Param("radiusKm") Double radiusKm,
+            @Param("categoryId") Long categoryId,
+            @Param("workerId") Long workerId);
 }
