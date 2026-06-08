@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../../providers/search_provider.dart';
 import '../../../data/models/worker_search_result.dart';
+import '../../../data/models/search_suggestion.dart';
 
 
 // Category chip data
@@ -45,6 +46,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen>
   final TextEditingController _controller = TextEditingController();
   final FocusNode _focusNode = FocusNode();
   Timer? _debounce;
+  Timer? _debounceSuggestions;
   String? _selectedCategory;
 
   // GPS coordinates — fetched silently on load for proximity sorting
@@ -63,6 +65,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen>
   @override
   void initState() {
     super.initState();
+
+    _focusNode.addListener(() {
+      if (mounted) setState(() {});
+    });
 
     _animController = AnimationController(
       vsync: this,
@@ -132,6 +138,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen>
   @override
   void dispose() {
     _debounce?.cancel();
+    _debounceSuggestions?.cancel();
     _controller.dispose();
     _focusNode.dispose();
     _animController.dispose();
@@ -141,9 +148,15 @@ class _SearchScreenState extends ConsumerState<SearchScreen>
   }
 
   void _onQueryChanged(String value) {
+    // 1. Fetch suggestions quickly as the user types
+    _debounceSuggestions?.cancel();
+    _debounceSuggestions = Timer(const Duration(milliseconds: 150), () {
+      ref.read(searchProvider.notifier).fetchSuggestions(value);
+    });
+
+    // 2. Perform search in background after normal debounce (450ms)
     _debounce?.cancel();
     _debounce = Timer(const Duration(milliseconds: 450), () {
-      // Check if the typed text matches a known category name
       final trimmed = value.trim().toUpperCase();
       final matchedCat = _kCategories.firstWhere(
         (c) => c.apiValue == trimmed || c.label.toUpperCase() == trimmed,
@@ -151,7 +164,6 @@ class _SearchScreenState extends ConsumerState<SearchScreen>
       );
 
       if (matchedCat.apiValue.isNotEmpty) {
-        // Auto-select the category chip and run category search (with location)
         setState(() => _selectedCategory = matchedCat.apiValue);
         ref.read(searchProvider.notifier).searchByCategory(
               matchedCat.apiValue,
@@ -159,7 +171,6 @@ class _SearchScreenState extends ConsumerState<SearchScreen>
               lng: _lng,
             );
       } else {
-        // Normal keyword + optional category filter (with location)
         ref.read(searchProvider.notifier).search(
           value,
           category: _selectedCategory,
@@ -347,6 +358,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen>
 
   //  Category filter chips
   Widget _buildCategoryChips() {
+    final searchState = ref.watch(searchProvider);
     return Container(
       color: Colors.white,
       padding: const EdgeInsets.symmetric(vertical: 12),
@@ -354,7 +366,63 @@ class _SearchScreenState extends ConsumerState<SearchScreen>
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Row(
-          children: _kCategories.map((cat) {
+          children: [
+            // "Available Now" toggle chip
+            Padding(
+              padding: const EdgeInsets.only(right: 10),
+              child: GestureDetector(
+                onTap: () {
+                  ref.read(searchProvider.notifier).toggleAvailabilityFilter(
+                    lat: _lat,
+                    lng: _lng,
+                  );
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: searchState.isAvailableOnly ? const Color(0xFFE6F4EA) : const Color(0xFFF5F5F5),
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(
+                      color: searchState.isAvailableOnly
+                          ? Colors.green.shade600
+                          : Colors.grey.shade200,
+                      width: 1.5,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        searchState.isAvailableOnly ? Icons.circle : Icons.circle_outlined,
+                        size: 10,
+                        color: searchState.isAvailableOnly ? Colors.green.shade600 : Colors.grey.shade400,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Available Now',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: searchState.isAvailableOnly
+                              ? Colors.green.shade800
+                              : Colors.grey.shade700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            // Divider
+            Container(
+              height: 20,
+              width: 1,
+              color: Colors.grey.shade300,
+              margin: const EdgeInsets.only(right: 10),
+            ),
+            ..._kCategories.map((cat) {
             final isSelected = _selectedCategory == cat.apiValue;
             return Padding(
               padding: const EdgeInsets.only(right: 10),
@@ -400,6 +468,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen>
               ),
             );
           }).toList(),
+          ],
         ),
       ),
     );
@@ -407,6 +476,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen>
 
   //  Body — initial / loading / error / results
   Widget _buildBody(SearchState state) {
+    if (_focusNode.hasFocus && state.suggestions.isNotEmpty) {
+      return _buildSuggestionsList(state.suggestions);
+    }
+
     switch (state.status) {
       case SearchStatus.initial:
         return _buildInitialHint();
@@ -417,6 +490,145 @@ class _SearchScreenState extends ConsumerState<SearchScreen>
       case SearchStatus.success:
         if (state.isEmpty) return _buildEmpty(state.query, state.selectedCategory);
         return _buildResults(state.results);
+    }
+  }
+
+  // Autocomplete suggestion list view
+  Widget _buildSuggestionsList(List<SearchSuggestion> suggestions) {
+    return Container(
+      color: Colors.white,
+      child: ListView.separated(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        itemCount: suggestions.length,
+        separatorBuilder: (ctx, idx) => Divider(color: Colors.grey.shade100, height: 1),
+        itemBuilder: (context, index) {
+          final item = suggestions[index];
+          IconData icon;
+          Color iconColor;
+          
+          switch (item.type) {
+            case 'CATEGORY':
+              icon = Icons.category_rounded;
+              iconColor = _primaryOrange;
+              break;
+            case 'WORKER':
+              icon = Icons.person_rounded;
+              iconColor = Colors.blue.shade600;
+              break;
+            case 'SKILL':
+              icon = Icons.construction_rounded;
+              iconColor = Colors.green.shade600;
+              break;
+            default:
+              icon = Icons.search_rounded;
+              iconColor = Colors.grey.shade600;
+          }
+
+          return ListTile(
+            leading: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: iconColor.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: iconColor, size: 20),
+            ),
+            title: RichText(
+              text: TextSpan(
+                style: const TextStyle(fontSize: 16, color: Color(0xFF1A1A1A)),
+                children: _highlightMatch(item.text, _controller.text),
+              ),
+            ),
+            trailing: Icon(Icons.arrow_outward_rounded, color: Colors.grey.shade400, size: 18),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            onTap: () {
+              _controller.text = item.text;
+              _focusNode.unfocus();
+              
+              if (item.type == 'CATEGORY') {
+                final mappedValue = _mapDbCategoryToApiValue(item.text);
+                final matched = _kCategories.firstWhere(
+                  (c) => c.apiValue == mappedValue || c.label.toUpperCase() == item.text.toUpperCase() || c.apiValue == item.text.toUpperCase(),
+                  orElse: () => const _CategoryOption('', '', Icons.search),
+                );
+                if (matched.apiValue.isNotEmpty) {
+                  setState(() => _selectedCategory = matched.apiValue);
+                  ref.read(searchProvider.notifier).searchByCategory(
+                    matched.apiValue,
+                    lat: _lat,
+                    lng: _lng,
+                  );
+                  return;
+                }
+              }
+              
+              ref.read(searchProvider.notifier).search(
+                item.text,
+                category: _selectedCategory,
+                lat: _lat,
+                lng: _lng,
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+
+  List<TextSpan> _highlightMatch(String text, String query) {
+    if (query.isEmpty) return [TextSpan(text: text)];
+    final lowercaseText = text.toLowerCase();
+    final lowercaseQuery = query.toLowerCase();
+    final index = lowercaseText.indexOf(lowercaseQuery);
+    if (index == -1) return [TextSpan(text: text)];
+
+    return [
+      TextSpan(text: text.substring(0, index)),
+      TextSpan(
+        text: text.substring(index, index + query.length),
+        style: const TextStyle(fontWeight: FontWeight.bold, color: _primaryOrange),
+      ),
+      TextSpan(text: text.substring(index + query.length)),
+    ];
+  }
+
+  String? _getDistanceString(WorkerSearchResult worker) {
+    if (_lat == null || _lng == null || worker.latitude == null || worker.longitude == null) {
+      return null;
+    }
+    final meters = Geolocator.distanceBetween(_lat!, _lng!, worker.latitude!, worker.longitude!);
+    final km = meters / 1000.0;
+    if (km < 1.0) {
+      return '${meters.toStringAsFixed(0)} m';
+    }
+    return '${km.toStringAsFixed(1)} km';
+  }
+
+  String _mapDbCategoryToApiValue(String dbCategoryName) {
+    switch (dbCategoryName.toLowerCase()) {
+      case 'electrical':
+      case 'electrician':
+        return 'ELECTRICIAN';
+      case 'plumbing':
+      case 'plumber':
+        return 'PLUMBER';
+      case 'carpentry':
+      case 'carpenter':
+        return 'CARPENTER';
+      case 'painting':
+      case 'painter':
+        return 'PAINTER';
+      case 'cleaning':
+      case 'cleaner':
+        return 'CLEANER';
+      case 'mechanic':
+        return 'MECHANIC';
+      case 'gardener':
+        return 'GARDENER';
+      case 'technician':
+        return 'TECHNICIAN';
+      default:
+        return dbCategoryName.toUpperCase();
     }
   }
 
@@ -878,6 +1090,27 @@ class _SearchScreenState extends ConsumerState<SearchScreen>
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
+                      if (_getDistanceString(worker) != null) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEBF5FF),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.navigation_outlined, size: 10, color: Colors.blue.shade700),
+                              const SizedBox(width: 2),
+                              Text(
+                                _getDistanceString(worker)!,
+                                style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.blue.shade800),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ],

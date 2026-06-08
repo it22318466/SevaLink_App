@@ -96,4 +96,10 @@ public interface SearchRepository extends JpaRepository<Worker, Long> {
             @Param("keyword") String keyword,
             @Param("categoryName") String categoryName,
             @Param("available") Boolean available);
+
+    @Query("SELECT DISTINCT w.user.fullName FROM Worker w WHERE LOWER(w.user.fullName) LIKE LOWER(CONCAT('%', :query, '%'))")
+    List<String> findMatchingWorkerNames(@Param("query") String query);
+
+    @Query("SELECT DISTINCT w.skills FROM Worker w WHERE w.skills IS NOT NULL AND LOWER(w.skills) LIKE LOWER(CONCAT('%', :query, '%'))")
+    List<String> findMatchingSkills(@Param("query") String query);
 }

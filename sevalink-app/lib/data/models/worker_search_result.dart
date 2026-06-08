@@ -7,6 +7,8 @@ class WorkerSearchResult {
   final String location;
   final bool isVerified;
   final String? imageUrl;
+  final double? latitude;
+  final double? longitude;
 
   const WorkerSearchResult({
     required this.id,
@@ -17,6 +19,8 @@ class WorkerSearchResult {
     required this.location,
     required this.isVerified,
     this.imageUrl,
+    this.latitude,
+    this.longitude,
   });
 
   factory WorkerSearchResult.fromJson(Map<String, dynamic> json) {
@@ -32,6 +36,8 @@ class WorkerSearchResult {
       location: user['location'] as String? ?? 'Unknown Location',
       isVerified: user['isPhoneVerified'] as bool? ?? false,
       imageUrl: user['profileImageUrl'] as String?,
+      latitude: (json['latitude'] as num?)?.toDouble(),
+      longitude: (json['longitude'] as num?)?.toDouble(),
     );
   }
 }
