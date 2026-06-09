@@ -19,6 +19,7 @@ class WorkerJob {
   final String budget;
   final JobStatus status;
   final String? category;
+  final double? distanceKm;
 
   const WorkerJob({
     required this.id,
@@ -29,6 +30,7 @@ class WorkerJob {
     required this.budget,
     required this.status,
     this.category,
+    this.distanceKm,
   });
 
   WorkerJob copyWith({JobStatus? status}) {
@@ -41,6 +43,7 @@ class WorkerJob {
       budget: budget,
       status: status ?? this.status,
       category: category,
+      distanceKm: distanceKm,
     );
   }
 }
@@ -147,6 +150,7 @@ class _WorkerJobsNotifier extends Notifier<WorkerJobsListState> {
 
         final categoryMap = jobPost['category'];
         final categoryName = categoryMap is Map ? (categoryMap['name'] ?? '') : (categoryMap ?? '');
+        final distanceKm = jobPost['distanceKm'] != null ? (jobPost['distanceKm'] as num).toDouble() : null;
 
         jobsList.add(WorkerJob(
           id: jobPostId,
@@ -157,6 +161,7 @@ class _WorkerJobsNotifier extends Notifier<WorkerJobsListState> {
           budget: budgetStr,
           status: status,
           category: categoryName.isNotEmpty ? categoryName : null,
+          distanceKm: distanceKm,
         ));
       }
 
@@ -346,6 +351,7 @@ class _MyJobsScreenState extends ConsumerState<MyJobsScreen>
                                     maxBudget: 0,
                                     isNew: false,
                                     category: job.category ?? '',
+                                    distanceKm: job.distanceKm,
                                   ),
                                 ),
                               ),
@@ -643,7 +649,7 @@ class _JobCard extends StatelessWidget {
             // Details
             _infoRow(Icons.person_outline_rounded, job.clientName, colors),
             const SizedBox(height: 6),
-            _infoRow(Icons.location_on_outlined, job.location, colors),
+            _infoRow(Icons.location_on_outlined, job.location + (job.distanceKm != null ? ' (${job.distanceKm!.toStringAsFixed(1)} km)' : ''), colors),
             const SizedBox(height: 6),
             _infoRow(Icons.calendar_today_outlined, job.date, colors),
 

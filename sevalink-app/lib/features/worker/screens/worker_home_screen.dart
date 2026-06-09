@@ -672,7 +672,8 @@ class _JobCard extends StatelessWidget {
                     size: 14, color: Color(0xFF9CA3AF)),
                 const SizedBox(width: 4),
                 Expanded(
-                  child: Text(job.location,
+                  child: Text(
+                      job.location + (job.distanceKm != null ? ' (${job.distanceKm!.toStringAsFixed(1)} km)' : ''),
                       style: TextStyle(
                           color: colors.textSecondary, fontSize: 12),
                       overflow: TextOverflow.ellipsis),

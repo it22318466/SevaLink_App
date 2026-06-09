@@ -2,13 +2,17 @@ package com.sevalink.sevalinkbackend.service;
 
 import com.sevalink.sevalinkbackend.model.JobPost;
 import com.sevalink.sevalinkbackend.model.JobTimeline;
+import com.sevalink.sevalinkbackend.model.Notification;
+import com.sevalink.sevalinkbackend.model.Worker;
+import com.sevalink.sevalinkbackend.model.Quotation;
+import com.sevalink.sevalinkbackend.model.User;
+import com.sevalink.sevalinkbackend.model.UserRole;
 import com.sevalink.sevalinkbackend.repository.JobPostRepository;
 import com.sevalink.sevalinkbackend.repository.JobTimelineRepository;
 import com.sevalink.sevalinkbackend.repository.QuotationRepository;
 import com.sevalink.sevalinkbackend.repository.WorkerRepository;
 import com.sevalink.sevalinkbackend.repository.NotificationRepository;
-import com.sevalink.sevalinkbackend.model.Notification;
-import com.sevalink.sevalinkbackend.model.Worker;
+import com.sevalink.sevalinkbackend.repository.UserRepository;
 import com.sevalink.sevalinkbackend.dto.ClientJobStatsDto;
 import com.sevalink.sevalinkbackend.dto.ClientJobDto;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,6 +38,9 @@ public class JobPostService {
 
     @Autowired
     private NotificationRepository notificationRepository;
+
+    @Autowired
+    private UserRepository userRepository;
 
     // Client posts a new job
     public JobPost createJob(JobPost jobPost) {
@@ -156,5 +163,153 @@ public class JobPostService {
                     .quoteCount(quoteCount)
                     .build();
         }).collect(Collectors.toList());
+    }
+
+    // ------------------------------------------------------------------------
+    // SECURITY & DISTANCE CALCULATION METHODS FOR WORKERS
+    // ------------------------------------------------------------------------
+
+    public static String getApproximateLocation(String fullAddress) {
+        if (fullAddress == null || fullAddress.trim().isEmpty()) {
+            return "Unknown Location";
+        }
+        String[] parts = fullAddress.split(",");
+        int startIndex = parts.length - 1;
+        while (startIndex >= 0) {
+            String part = parts[startIndex].trim();
+            if (part.equalsIgnoreCase("Sri Lanka")) {
+                startIndex--;
+                continue;
+            }
+            if (part.toLowerCase().contains("colombo")) {
+                java.util.regex.Pattern p = java.util.regex.Pattern.compile("colombo\\s*(?:00|0)?(\\d{1,2})00", java.util.regex.Pattern.CASE_INSENSITIVE);
+                java.util.regex.Matcher m = p.matcher(part);
+                if (m.find()) {
+                    int district = Integer.parseInt(m.group(1));
+                    return String.format("Colombo %02d", district);
+                }
+                java.util.regex.Pattern p2 = java.util.regex.Pattern.compile("colombo\\s*(\\d+)", java.util.regex.Pattern.CASE_INSENSITIVE);
+                java.util.regex.Matcher m2 = p2.matcher(part);
+                if (m2.find()) {
+                    int district = Integer.parseInt(m2.group(1));
+                    return String.format("Colombo %02d", district);
+                }
+                return "Colombo";
+            }
+            if (part.matches("\\d+") || part.matches(".*\\d{5}.*")) {
+                part = part.replaceAll("\\d+", "").trim();
+            }
+            if (!part.isEmpty() && !part.matches(".*\\b(?:No|Street|Rd|Road|Lane|Avenue|Ave|Floor|Room|Apt|Apartment)\\b.*")) {
+                return part;
+            }
+            startIndex--;
+        }
+        if (parts.length > 1) {
+            String fallback = parts[parts.length - 2].trim();
+            return fallback.replaceAll("\\d+", "").trim();
+        }
+        return fullAddress;
+    }
+
+    public static double calculateDistanceKm(double lat1, double lon1, double lat2, double lon2) {
+        double earthRadius = 6371; // km
+        double dLat = Math.toRadians(lat2 - lat1);
+        double dLon = Math.toRadians(lon2 - lon1);
+        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                   Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2)) *
+                   Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return earthRadius * c;
+    }
+
+    public JobPost getMaskedJobPostCopy(JobPost original, Double workerLat, Double workerLng) {
+        JobPost copy = new JobPost();
+        copy.setId(original.getId());
+        copy.setClient(original.getClient());
+        copy.setCategory(original.getCategory());
+        copy.setTitle(original.getTitle());
+        copy.setDescription(original.getDescription());
+        copy.setBudgetMin(original.getBudgetMin());
+        copy.setBudgetMax(original.getBudgetMax());
+        copy.setUrgency(original.getUrgency());
+        copy.setPhotos(original.getPhotos());
+        copy.setStatus(original.getStatus());
+        copy.setCreatedAt(original.getCreatedAt());
+        
+        // Mask location for workers browsing
+        copy.setLocationName(getApproximateLocation(original.getLocationName()));
+        copy.setLatitude(null);
+        copy.setLongitude(null);
+        
+        // Compute distance if worker coordinates are available
+        if (workerLat != null && workerLng != null && original.getLatitude() != null && original.getLongitude() != null) {
+            double dist = calculateDistanceKm(workerLat, workerLng, original.getLatitude(), original.getLongitude());
+            copy.setDistanceKm(dist);
+        }
+        
+        return copy;
+    }
+
+    public JobPost processJobPostForUser(JobPost job, Double requestLat, Double requestLng) {
+        try {
+            org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getPrincipal())) {
+                String email = auth.getName();
+                Optional<User> userOpt = userRepository.findByEmail(email);
+                if (userOpt.isPresent()) {
+                    User user = userOpt.get();
+                    if (UserRole.CLIENT.equals(user.getRole()) || UserRole.ADMIN.equals(user.getRole())) {
+                        // Client or Admin: see exact location
+                        return job;
+                    }
+                    
+                    // Worker: check if assigned to this job
+                    Optional<Worker> workerOpt = workerRepository.findByUserId(user.getId());
+                    if (workerOpt.isPresent()) {
+                        Worker worker = workerOpt.get();
+                        Optional<Quotation> acceptedQuote = quotationRepository.findByJobPostIdAndStatus(job.getId(), "ACCEPTED");
+                        if (acceptedQuote.isPresent() && acceptedQuote.get().getWorker().getId().equals(worker.getId())) {
+                            // Assigned worker: see exact location
+                            return job;
+                        }
+                        
+                        // Otherwise, mask location and compute distance
+                        Double workerLat = requestLat != null ? requestLat : worker.getLatitude();
+                        Double workerLng = requestLng != null ? requestLng : worker.getLongitude();
+                        return getMaskedJobPostCopy(job, workerLat, workerLng);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            // fallback
+        }
+        // Fallback to masked
+        return getMaskedJobPostCopy(job, requestLat, requestLng);
+    }
+
+    // Processed Feed Wrappers
+    public List<JobPost> getAllOpenJobsProcessed(Double requestLat, Double requestLng) {
+        List<JobPost> jobs = getAllOpenJobs();
+        return jobs.stream()
+                .map(job -> processJobPostForUser(job, requestLat, requestLng))
+                .collect(Collectors.toList());
+    }
+
+    public List<JobPost> getNearbyJobsProcessed(Double lat, Double lng, Double radius) {
+        List<JobPost> jobs = getNearbyJobs(lat, lng, radius);
+        return jobs.stream()
+                .map(job -> processJobPostForUser(job, lat, lng))
+                .collect(Collectors.toList());
+    }
+
+    public List<JobPost> getNearbyJobsByCategoryProcessed(Double lat, Double lng, Double radius, Long categoryId) {
+        List<JobPost> jobs = getNearbyJobsByCategory(lat, lng, radius, categoryId);
+        return jobs.stream()
+                .map(job -> processJobPostForUser(job, lat, lng))
+                .collect(Collectors.toList());
+    }
+
+    public Optional<JobPost> getJobByIdProcessed(Long id) {
+        return getJobById(id).map(job -> processJobPostForUser(job, null, null));
     }
 }

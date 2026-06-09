@@ -51,4 +51,7 @@ public class JobPost {
 
     @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
+
+    @Transient
+    private Double distanceKm;
 }

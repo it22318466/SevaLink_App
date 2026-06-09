@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
+import 'package:geolocator/geolocator.dart';
 import '../data/models/job.dart';
 import 'auth_provider.dart';
 
@@ -127,8 +128,37 @@ class WorkerFeedNotifier extends Notifier<WorkerFeedState> {
     try {
       final dio = ref.read(dioClientProvider).dio;
 
+      double? lat;
+      double? lng;
+      try {
+        final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+        if (serviceEnabled) {
+          final permission = await Geolocator.checkPermission();
+          if (permission == LocationPermission.always || permission == LocationPermission.whileInUse) {
+            final position = await Geolocator.getCurrentPosition(
+              locationSettings: const LocationSettings(
+                accuracy: LocationAccuracy.low,
+                timeLimit: Duration(seconds: 2),
+              ),
+            );
+            lat = position.latitude;
+            lng = position.longitude;
+          }
+        }
+      } catch (e) {
+        debugPrint('Failed to get location for feed query parameters: $e');
+      }
+
       // Fetch all open jobs for worker feed
-      final jobsResponse = await dio.get('/jobs/feed');
+      final jobsResponse = await dio.get(
+        '/jobs/feed',
+        queryParameters: {
+          // ignore: use_null_aware_elements
+          if (lat != null) 'lat': lat,
+          // ignore: use_null_aware_elements
+          if (lng != null) 'lng': lng,
+        },
+      );
       final List<dynamic> jobsData = jobsResponse.data;
       final jobs = jobsData.map((json) => Job.fromJson(json)).toList();
 

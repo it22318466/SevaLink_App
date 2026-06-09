@@ -34,15 +34,19 @@ public class JobPostController {
     // Worker sees all open jobs
     // GET http://localhost:8080/api/jobs
     @GetMapping
-    public List<JobPost> getAllOpenJobs() {
-        return jobPostService.getAllOpenJobs();
+    public List<JobPost> getAllOpenJobs(
+            @RequestParam(required = false) Double lat,
+            @RequestParam(required = false) Double lng) {
+        return jobPostService.getAllOpenJobsProcessed(lat, lng);
     }
 
     // Worker feed — alias for getAllOpenJobs (used by worker app UI)
     // GET http://localhost:8080/api/jobs/feed
     @GetMapping("/feed")
-    public List<JobPost> getWorkerFeed() {
-        return jobPostService.getAllOpenJobs();
+    public List<JobPost> getWorkerFeed(
+            @RequestParam(required = false) Double lat,
+            @RequestParam(required = false) Double lng) {
+        return jobPostService.getAllOpenJobsProcessed(lat, lng);
     }
 
     // Worker sees nearby jobs
@@ -52,7 +56,7 @@ public class JobPostController {
             @RequestParam Double lat,
             @RequestParam Double lng,
             @RequestParam(required = false) Double radius) {
-        return jobPostService.getNearbyJobs(lat, lng, radius);
+        return jobPostService.getNearbyJobsProcessed(lat, lng, radius);
     }
 
     // Worker feed nearby — alias for getNearbyJobs
@@ -62,7 +66,7 @@ public class JobPostController {
             @RequestParam Double lat,
             @RequestParam Double lng,
             @RequestParam(required = false) Double radius) {
-        return jobPostService.getNearbyJobs(lat, lng, radius);
+        return jobPostService.getNearbyJobsProcessed(lat, lng, radius);
     }
 
     // Worker sees nearby jobs by category
@@ -73,14 +77,14 @@ public class JobPostController {
             @RequestParam Double lng,
             @RequestParam(required = false) Double radius,
             @RequestParam Long categoryId) {
-        return jobPostService.getNearbyJobsByCategory(lat, lng, radius, categoryId);
+        return jobPostService.getNearbyJobsByCategoryProcessed(lat, lng, radius, categoryId);
     }
 
     // Get job by ID
-// GET http://localhost:8080/api/jobs/detail/1
+    // GET http://localhost:8080/api/jobs/detail/1
     @GetMapping("/detail/{id}")
     public ResponseEntity<?> getJobById(@PathVariable Long id) {
-        return jobPostService.getJobById(id)
+        return jobPostService.getJobByIdProcessed(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
