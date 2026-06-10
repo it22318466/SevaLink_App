@@ -49,6 +49,12 @@ public class JobPost {
     // OPEN, ASSIGNED, COMPLETED, CANCELLED
     private String status = "OPEN";
 
+    @Column(name = "client_payment_confirmed")
+    private Boolean clientPaymentConfirmed = false;
+
+    @Column(name = "worker_payment_confirmed")
+    private Boolean workerPaymentConfirmed = false;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
 

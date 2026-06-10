@@ -2,14 +2,19 @@ package com.sevalink.sevalinkbackend.controller;
 
 import com.sevalink.sevalinkbackend.model.JobPost;
 import com.sevalink.sevalinkbackend.model.JobTimeline;
+import com.sevalink.sevalinkbackend.model.Complaint;
+import com.sevalink.sevalinkbackend.model.Worker;
 import com.sevalink.sevalinkbackend.service.JobPostService;
 import com.sevalink.sevalinkbackend.dto.ClientJobStatsDto;
 import com.sevalink.sevalinkbackend.dto.ClientJobDto;
 import com.sevalink.sevalinkbackend.dto.ApiResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/jobs")
@@ -151,6 +156,49 @@ public class JobPostController {
         try {
             List<ClientJobDto> jobs = jobPostService.getClientJobsWithQuotes(clientId, status);
             return ResponseEntity.ok(jobs);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+    // Confirm payment for a job
+    // POST http://localhost:8080/api/jobs/1/confirm-payment
+    @PostMapping("/{id}/confirm-payment")
+    public ResponseEntity<?> confirmPayment(@PathVariable Long id) {
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            String email = auth.getName();
+            JobPost job = jobPostService.confirmPayment(id, email);
+            return ResponseEntity.ok(job);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+    // Get assigned worker coordinates for client live map tracking
+    // GET http://localhost:8080/api/jobs/1/assigned-worker
+    @GetMapping("/{id}/assigned-worker")
+    public ResponseEntity<?> getAssignedWorker(@PathVariable Long id) {
+        try {
+            Worker worker = jobPostService.getAssignedWorker(id);
+            return ResponseEntity.ok(worker);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+    // File a complaint for a job
+    // POST http://localhost:8080/api/jobs/1/complaint
+    @PostMapping("/{id}/complaint")
+    public ResponseEntity<?> fileComplaint(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> body) {
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            String email = auth.getName();
+            String description = body.getOrDefault("description", "");
+            Complaint complaint = jobPostService.fileComplaint(id, email, description);
+            return ResponseEntity.ok(complaint);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'job_details_screen.dart';
 import '../../../data/models/job.dart';
 import '../../../core/themes/app_theme.dart';
@@ -517,14 +518,27 @@ class _JobList extends StatelessWidget {
     return ListView.builder(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
       itemCount: jobs.length,
-      itemBuilder: (_, i) => _JobCard(
-        job: jobs[i],
-        onMarkDone:
-            onMarkDone == null ? null : () => onMarkDone!(jobs[i].id),
-        onViewDetails:
-            onViewDetails == null ? null : () => onViewDetails!(jobs[i]),
-      ),
+      itemBuilder: (context, i) {
+        final job = jobs[i];
+        return GestureDetector(
+          onTap: () {
+            if (job.status == JobStatus.active || job.status == JobStatus.completed) {
+              context.push('/worker/jobs/${job.id}/timeline');
+            } else if (onViewDetails != null) {
+              onViewDetails!(job);
+            }
+          },
+          child: _JobCard(
+            job: job,
+            onMarkDone:
+                onMarkDone == null ? null : () => onMarkDone!(job.id),
+            onViewDetails:
+                onViewDetails == null ? null : () => onViewDetails!(job),
+          ),
+        );
+      },
     );
+
   }
 }
 
