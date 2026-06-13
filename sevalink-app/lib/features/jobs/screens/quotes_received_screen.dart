@@ -79,53 +79,60 @@ class QuotesReceivedScreen extends ConsumerWidget {
           ],
         ),
       ),
-      body: CustomScrollView(
-        slivers: [
-          SliverToBoxAdapter(
-            child: _buildJobHeader(),
-          ),
-          quotesAsync.when(
-            data: (quotes) {
-              final activeQuotes = quotes.where((q) => q.status != 'REJECTED').toList();
-              if (activeQuotes.isEmpty) {
-                return SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.only(top: 60),
-                    child: Center(
-                      child: Column(
-                        children: [
-                          Icon(Icons.inbox_outlined, size: 64, color: Colors.grey.shade300),
-                          const SizedBox(height: 16),
-                          Text('No quotes received yet', style: TextStyle(color: Colors.grey.shade500, fontSize: 16)),
-                        ],
+      body: RefreshIndicator(
+        color: const Color(0xFFE64A19),
+        onRefresh: () async {
+          ref.invalidate(jobQuotationsProvider(jobId));
+        },
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            SliverToBoxAdapter(
+              child: _buildJobHeader(),
+            ),
+            quotesAsync.when(
+              data: (quotes) {
+                final activeQuotes = quotes.where((q) => q.status != 'REJECTED').toList();
+                if (activeQuotes.isEmpty) {
+                  return SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 60),
+                      child: Center(
+                        child: Column(
+                          children: [
+                            Icon(Icons.inbox_outlined, size: 64, color: Colors.grey.shade300),
+                            const SizedBox(height: 16),
+                            Text('No quotes received yet', style: TextStyle(color: Colors.grey.shade500, fontSize: 16)),
+                          ],
+                        ),
                       ),
                     ),
+                  );
+                }
+                return SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      return _buildQuoteCard(context, activeQuotes[index]);
+                    },
+                    childCount: activeQuotes.length,
                   ),
                 );
-              }
-              return SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    return _buildQuoteCard(context, activeQuotes[index]);
-                  },
-                  childCount: activeQuotes.length,
+              },
+              loading: () => const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.only(top: 60),
+                  child: Center(child: CircularProgressIndicator(color: Color(0xFFE64A19))),
                 ),
-              );
-            },
-            loading: () => const SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.only(top: 60),
-                child: Center(child: CircularProgressIndicator(color: Color(0xFFE64A19))),
+              ),
+              error: (e, _) => SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 60),
+                  child: Center(child: Text('Error: $e')),
+                ),
               ),
             ),
-            error: (e, _) => SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.only(top: 60),
-                child: Center(child: Text('Error: $e')),
-              ),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

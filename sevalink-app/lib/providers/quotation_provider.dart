@@ -8,7 +8,7 @@ final quotationRepositoryProvider = Provider<QuotationRepository>((ref) {
   return QuotationRepository(dioClient);
 });
 
-final jobQuotationsProvider = FutureProvider.family<List<Quotation>, int>((ref, jobId) async {
+final jobQuotationsProvider = FutureProvider.autoDispose.family<List<Quotation>, int>((ref, jobId) async {
   final repository = ref.watch(quotationRepositoryProvider);
   return await repository.getJobQuotations(jobId);
 });
