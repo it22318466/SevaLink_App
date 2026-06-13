@@ -136,7 +136,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           ),
                         ),
                         const SizedBox(width: 8),
-                        const Text('Remember me', style: TextStyle(fontSize: 14)),
+                        const Text('Remember me', style: TextStyle(fontSize: 14, color: AppTheme.textColor)),
+
                       ],
                     ),
                     GestureDetector(
