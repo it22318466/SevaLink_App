@@ -29,52 +29,93 @@ class _WorkerJobTimelineScreenState extends ConsumerState<WorkerJobTimelineScree
   GoogleMapController? _mapController;
   bool _isEnRoute = false;
 
+  Timer? _pollingTimer;
+  int? _workerId;
+
   @override
   void initState() {
     super.initState();
     _fetchData();
+    _startPolling();
   }
 
   @override
   void dispose() {
+    _stopPolling();
     _stopLocationTracking();
     super.dispose();
   }
 
-  Future<void> _fetchData() async {
+  void _startPolling() {
+    _pollingTimer?.cancel();
+    _pollingTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
+      _fetchData(background: true);
+    });
+  }
+
+  void _stopPolling() {
+    _pollingTimer?.cancel();
+    _pollingTimer = null;
+  }
+
+  Future<void> _fetchData({bool background = false}) async {
     if (!mounted) return;
-    try {
-      final dio = ref.read(dioClientProvider).dio;
-      
-      // 1. Fetch job details
-      final jobResponse = await dio.get('/jobs/detail/${widget.jobId}');
-      _jobDetails = jobResponse.data;
-
-      // 2. Fetch timeline
-      final timelineResponse = await dio.get('/jobs/detail/${widget.jobId}/timeline');
-      _timeline = timelineResponse.data;
-
-      final hasArrived = _isStepCompleted('WORKER_ARRIVED');
-      final enRoute = _isStepCompleted('WORKER_EN_ROUTE') && !hasArrived;
-
+    if (!background && _jobDetails == null) {
       setState(() {
-        _isLoading = false;
-        _error = null;
-        _isEnRoute = enRoute;
-      });
-
-      if (enRoute) {
-        _startLocationTracking();
-      } else {
-        _stopLocationTracking();
-      }
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-        _error = e.toString();
+        _isLoading = true;
       });
     }
+    try {
+      final dio = ref.read(dioClientProvider).dio;
+
+      // 1. Fetch workerId if null
+      if (_workerId == null) {
+        try {
+          final profileRes = await dio.get('/workers/me');
+          _workerId = profileRes.data['id'];
+        } catch (e) {
+          debugPrint('Failed to fetch workerId from /workers/me: $e');
+        }
+      }
+      
+      // 2. Fetch job details
+      final jobResponse = await dio.get('/jobs/detail/${widget.jobId}');
+      final newJobDetails = jobResponse.data;
+
+      // 3. Fetch timeline
+      final timelineResponse = await dio.get('/jobs/detail/${widget.jobId}/timeline');
+      final newTimeline = timelineResponse.data;
+
+      if (mounted) {
+        final hasArrived = newTimeline.any((t) => t['status'] == 'WORKER_ARRIVED');
+        final enRoute = newTimeline.any((t) => t['status'] == 'WORKER_EN_ROUTE') && !hasArrived;
+
+        setState(() {
+          _jobDetails = newJobDetails;
+          _timeline = newTimeline;
+          _isLoading = false;
+          _error = null;
+          _isEnRoute = enRoute;
+        });
+
+        if (enRoute) {
+          if (_positionSubscription == null) {
+            _startLocationTracking();
+          }
+        } else {
+          _stopLocationTracking();
+        }
+      }
+    } catch (e) {
+      if (mounted && !background) {
+        setState(() {
+          _isLoading = false;
+          _error = e.toString();
+        });
+      }
+    }
   }
+
 
   Future<void> _startLocationTracking() async {
     _positionSubscription?.cancel();
@@ -113,7 +154,7 @@ class _WorkerJobTimelineScreenState extends ConsumerState<WorkerJobTimelineScree
     // Send coordinates to backend
     try {
       final dio = ref.read(dioClientProvider).dio;
-      final workerId = ref.read(workerFeedProvider).stats.workerId;
+      final workerId = _workerId ?? ref.read(workerFeedProvider).stats.workerId;
       if (workerId != null) {
         await dio.put('/workers/$workerId/location', queryParameters: {
           'latitude': lat,
@@ -121,6 +162,7 @@ class _WorkerJobTimelineScreenState extends ConsumerState<WorkerJobTimelineScree
         });
       }
     } catch (e) {
+
       debugPrint('Failed to upload location: $e');
     }
 
@@ -519,6 +561,7 @@ class _WorkerJobTimelineScreenState extends ConsumerState<WorkerJobTimelineScree
   Widget _buildStepperCard(SevaLinkColors colors) {
     final steps = [
       {'status': 'JOB_POSTED', 'label': 'Job Posted', 'desc': 'Job successfully posted'},
+      {'status': 'QUOTE_RECEIVED', 'label': 'Quotes Received', 'desc': 'Received worker bids'},
       {'status': 'QUOTE_ACCEPTED', 'label': 'Worker Assigned', 'desc': 'Worker assigned & details shared'},
       {'status': 'WORKER_EN_ROUTE', 'label': 'Worker En Route', 'desc': 'Worker on the way'},
       {'status': 'WORKER_ARRIVED', 'label': 'Worker Arrived', 'desc': 'Worker arrived at location'},
@@ -526,6 +569,7 @@ class _WorkerJobTimelineScreenState extends ConsumerState<WorkerJobTimelineScree
       {'status': 'JOB_DONE', 'label': 'Job Done', 'desc': 'Job marked done by worker'},
       {'status': 'PAYMENT_DONE', 'label': 'Completed', 'desc': 'Payment confirmed & completed'},
     ];
+
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -714,7 +758,8 @@ class _WorkerJobTimelineScreenState extends ConsumerState<WorkerJobTimelineScree
           ),
 
         // 5. Confirm Payment
-        if (isDone && !_jobDetails!['workerPaymentConfirmed'])
+        if (isDone && _jobDetails!['workerPaymentConfirmed'] != true)
+
           ElevatedButton.icon(
             onPressed: _confirmPayment,
             icon: const Icon(Icons.check, color: Colors.white),

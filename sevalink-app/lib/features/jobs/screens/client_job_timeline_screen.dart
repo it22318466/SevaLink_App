@@ -28,100 +28,102 @@ class _ClientJobTimelineScreenState extends ConsumerState<ClientJobTimelineScree
   void initState() {
     super.initState();
     _fetchData();
+    _startPolling();
   }
 
   @override
   void dispose() {
-    _pollingTimer?.cancel();
+    _stopPolling();
     super.dispose();
   }
 
-  Future<void> _fetchData() async {
+  void _startPolling() {
+    _pollingTimer?.cancel();
+    _pollingTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
+      _fetchData(background: true);
+    });
+  }
+
+  void _stopPolling() {
+    _pollingTimer?.cancel();
+    _pollingTimer = null;
+  }
+
+  Future<void> _fetchData({bool background = false}) async {
     if (!mounted) return;
+    if (!background && _jobDetails == null) {
+      setState(() {
+        _isLoading = true;
+      });
+    }
     try {
       final dio = ref.read(dioClientProvider).dio;
       
       // 1. Fetch job details
       final jobResponse = await dio.get('/jobs/detail/${widget.jobId}');
-      _jobDetails = jobResponse.data;
+      final newJobDetails = jobResponse.data;
 
       // 2. Fetch timeline
       final timelineResponse = await dio.get('/jobs/detail/${widget.jobId}/timeline');
-      _timeline = timelineResponse.data;
+      final newTimeline = timelineResponse.data;
 
       // 3. If ASSIGNED (or later) and not COMPLETED, get assigned worker
-      final status = _jobDetails?['status'] ?? 'OPEN';
-      final isEnRoute = _timeline.any((t) => t['status'] == 'WORKER_EN_ROUTE') &&
-          !_timeline.any((t) => t['status'] == 'WORKER_ARRIVED');
+      final status = newJobDetails?['status'] ?? 'OPEN';
+      Map<String, dynamic>? newAssignedWorker;
 
       if (status != 'OPEN' && status != 'CANCELLED') {
         try {
           final workerResponse = await dio.get('/jobs/${widget.jobId}/assigned-worker');
-          _assignedWorker = workerResponse.data;
+          newAssignedWorker = workerResponse.data;
         } catch (_) {
           // Worker details could be empty if not accepted yet (fallback)
         }
       }
 
-      setState(() {
-        _isLoading = false;
-        _error = null;
-      });
+      if (mounted) {
+        setState(() {
+          _jobDetails = newJobDetails;
+          _timeline = newTimeline;
+          _assignedWorker = newAssignedWorker;
+          _isLoading = false;
+          _error = null;
+        });
 
-      // Start polling if worker is en route
-      if (isEnRoute) {
-        _startWorkerLocationPolling();
-      } else {
-        _pollingTimer?.cancel();
+        // Trigger map camera update if worker location changed and en route
+        final hasArrived = _isStepCompleted('WORKER_ARRIVED');
+        final isEnRoute = _isStepCompleted('WORKER_EN_ROUTE') && !hasArrived;
+        if (isEnRoute &&
+            _mapController != null &&
+            _assignedWorker?['latitude'] != null &&
+            _assignedWorker?['longitude'] != null &&
+            _jobDetails?['latitude'] != null &&
+            _jobDetails?['longitude'] != null) {
+          final jobLatLng = LatLng(_jobDetails!['latitude'], _jobDetails!['longitude']);
+          final workerLatLng = LatLng(_assignedWorker!['latitude'], _assignedWorker!['longitude']);
+          
+          final bounds = LatLngBounds(
+            southwest: LatLng(
+              jobLatLng.latitude < workerLatLng.latitude ? jobLatLng.latitude : workerLatLng.latitude,
+              jobLatLng.longitude < workerLatLng.longitude ? jobLatLng.longitude : workerLatLng.longitude,
+            ),
+            northeast: LatLng(
+              jobLatLng.latitude > workerLatLng.latitude ? jobLatLng.latitude : workerLatLng.latitude,
+              jobLatLng.longitude > workerLatLng.longitude ? jobLatLng.longitude : workerLatLng.longitude,
+            ),
+          );
+          _mapController!.animateCamera(CameraUpdate.newLatLngBounds(bounds, 50));
+        }
       }
     } catch (e) {
-      setState(() {
-        _isLoading = false;
-        _error = e.toString();
-      });
+      if (mounted && !background) {
+        setState(() {
+          _isLoading = false;
+          _error = e.toString();
+        });
+      }
     }
   }
 
-  void _startWorkerLocationPolling() {
-    _pollingTimer?.cancel();
-    _pollingTimer = Timer.periodic(const Duration(seconds: 10), (timer) async {
-      if (!mounted) return;
-      try {
-        final dio = ref.read(dioClientProvider).dio;
-        final workerResponse = await dio.get('/jobs/${widget.jobId}/assigned-worker');
-        final workerData = workerResponse.data;
-        if (mounted && workerData != null) {
-          setState(() {
-            _assignedWorker = workerData;
-          });
-          // Update map bounds or camera
-          if (_mapController != null && 
-              workerData['latitude'] != null && 
-              workerData['longitude'] != null && 
-              _jobDetails?['latitude'] != null && 
-              _jobDetails?['longitude'] != null) {
-            
-            final jobLatLng = LatLng(_jobDetails!['latitude'], _jobDetails!['longitude']);
-            final workerLatLng = LatLng(workerData['latitude'], workerData['longitude']);
-            
-            final bounds = LatLngBounds(
-              southwest: LatLng(
-                jobLatLng.latitude < workerLatLng.latitude ? jobLatLng.latitude : workerLatLng.latitude,
-                jobLatLng.longitude < workerLatLng.longitude ? jobLatLng.longitude : workerLatLng.longitude,
-              ),
-              northeast: LatLng(
-                jobLatLng.latitude > workerLatLng.latitude ? jobLatLng.latitude : workerLatLng.latitude,
-                jobLatLng.longitude > workerLatLng.longitude ? jobLatLng.longitude : workerLatLng.longitude,
-              ),
-            );
-            _mapController!.animateCamera(CameraUpdate.newLatLngBounds(bounds, 50));
-          }
-        }
-      } catch (e) {
-        debugPrint('Error polling worker location: $e');
-      }
-    });
-  }
 
   Future<void> _cancelJob() async {
     final confirm = await showDialog<bool>(
@@ -459,6 +461,7 @@ class _ClientJobTimelineScreenState extends ConsumerState<ClientJobTimelineScree
   Widget _buildStepperCard(SevaLinkColors colors) {
     final steps = [
       {'status': 'JOB_POSTED', 'label': 'Job Posted', 'desc': 'Job successfully posted'},
+      {'status': 'QUOTE_RECEIVED', 'label': 'Quotes Received', 'desc': 'Received worker bids'},
       {'status': 'QUOTE_ACCEPTED', 'label': 'Worker Assigned', 'desc': 'Worker assigned & details shared'},
       {'status': 'WORKER_EN_ROUTE', 'label': 'Worker En Route', 'desc': 'Worker on the way'},
       {'status': 'WORKER_ARRIVED', 'label': 'Worker Arrived', 'desc': 'Worker arrived at location'},
@@ -466,6 +469,7 @@ class _ClientJobTimelineScreenState extends ConsumerState<ClientJobTimelineScree
       {'status': 'JOB_DONE', 'label': 'Job Done', 'desc': 'Job marked done by worker'},
       {'status': 'PAYMENT_DONE', 'label': 'Completed', 'desc': 'Payment confirmed & completed'},
     ];
+
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -599,7 +603,8 @@ class _ClientJobTimelineScreenState extends ConsumerState<ClientJobTimelineScree
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         // Payment Confirm Action
-        if (isDone && !_jobDetails!['clientPaymentConfirmed'])
+        if (isDone && _jobDetails!['clientPaymentConfirmed'] != true)
+
           ElevatedButton.icon(
             onPressed: _confirmPayment,
             icon: const Icon(Icons.check, color: Colors.white),
