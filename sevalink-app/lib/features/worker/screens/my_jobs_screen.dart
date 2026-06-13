@@ -168,27 +168,7 @@ class _WorkerJobsNotifier extends Notifier<WorkerJobsListState> {
     }
   }
 
-  /// Mark a job as completed (moves it to Done tab)
-  Future<void> markDone(String id) async {
-    try {
-      final dioClient = ref.read(dioClientProvider);
-      
-      // Update job timeline to COMPLETED
-      await dioClient.dio.put(
-        '/jobs/detail/$id/timeline',
-        queryParameters: {
-          'status': 'COMPLETED',
-          'note': 'Job completed by worker',
-        },
-      );
 
-      // Refresh the local job list and the worker home feed stats
-      await loadJobs();
-      ref.read(workerFeedProvider.notifier).refresh();
-    } catch (e) {
-      // Propagation of error can be handled in UI or log
-    }
-  }
 }
 
 // Public so the home screen can watch the live active count
@@ -226,32 +206,7 @@ class _MyJobsScreenState extends ConsumerState<MyJobsScreen>
   List<WorkerJob> _byStatus(List<WorkerJob> all, JobStatus s) =>
       all.where((j) => j.status == s).toList();
 
-  void _handleMarkDone(String id) {
-    ref.read(workerJobsListProvider.notifier).markDone(id);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Row(
-          children: [
-            Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
-            SizedBox(width: 8),
-            Text('Job marked as done!',
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-          ],
-        ),
-        backgroundColor: const Color(0xFF0F9B8E),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        margin: const EdgeInsets.all(16),
-        duration: const Duration(seconds: 2),
-      ),
-    );
-
-    // Animate to Completed tab after short delay
-    Future.delayed(const Duration(milliseconds: 600), () {
-      if (mounted) _tabController.animateTo(1);
-    });
-  }
 
   Widget _buildErrorView(String errorMsg) {
     final colors = Theme.of(context).extension<SevaLinkColors>()!;
@@ -328,7 +283,6 @@ class _MyJobsScreenState extends ConsumerState<MyJobsScreen>
                           _JobList(
                             jobs: active,
                             emptyLabel: 'No in-progress jobs right now',
-                            onMarkDone: (id) => _handleMarkDone(id),
                             onRefresh: () => ref.read(workerJobsListProvider.notifier).loadJobs(),
                           ),
                           // Completed tab (formerly Done)
@@ -470,13 +424,11 @@ class _MyJobsScreenState extends ConsumerState<MyJobsScreen>
 class _JobList extends StatelessWidget {
   final List<WorkerJob> jobs;
   final String emptyLabel;
-  final void Function(String id)? onMarkDone;
   final RefreshCallback? onRefresh;
 
   const _JobList({
     required this.jobs,
     required this.emptyLabel,
-    this.onMarkDone,
     this.onRefresh,
   });
 
@@ -516,8 +468,6 @@ class _JobList extends StatelessWidget {
             },
             child: _JobCard(
               job: job,
-              onMarkDone:
-                  onMarkDone == null ? null : () => onMarkDone!(job.id),
             ),
           );
         },
@@ -539,8 +489,7 @@ class _JobList extends StatelessWidget {
 
 class _JobCard extends StatelessWidget {
   final WorkerJob job;
-  final VoidCallback? onMarkDone;
-  const _JobCard({required this.job, this.onMarkDone});
+  const _JobCard({required this.job});
 
   Color get _statusColor {
     switch (job.status) {
@@ -710,9 +659,9 @@ class _JobCard extends StatelessWidget {
     switch (job.status) {
       case JobStatus.active:
         return ElevatedButton.icon(
-          onPressed: onMarkDone,
-          icon: const Icon(Icons.check_rounded, size: 15, color: Colors.white),
-          label: const Text('Mark Done',
+          onPressed: () => context.push('/worker/jobs/${job.id}/timeline'),
+          icon: const Icon(Icons.timeline_rounded, size: 15, color: Colors.white),
+          label: const Text('Track',
               style: TextStyle(color: Colors.white, fontSize: 13)),
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFF0F9B8E),

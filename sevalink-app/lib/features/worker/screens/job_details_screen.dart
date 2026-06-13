@@ -12,6 +12,27 @@ class JobDetailsScreen extends StatelessWidget {
 
   const JobDetailsScreen({super.key, required this.job});
 
+  String _getApproximateLocation(String fullAddress) {
+    if (fullAddress.isEmpty) return 'Unknown Location';
+    final parts = fullAddress.split(',');
+    if (parts.length <= 1) {
+      final words = fullAddress.split(' ');
+      if (words.length <= 2) return fullAddress;
+      return words.sublist(words.length - 2).join(' ');
+    }
+    for (int i = parts.length - 1; i >= 0; i--) {
+      final part = parts[i].trim();
+      if (part.toLowerCase() == 'sri lanka') continue;
+      if (part.toLowerCase().contains('colombo')) {
+        return 'Colombo';
+      }
+      if (RegExp(r'^\d+$').hasMatch(part) || RegExp(r'\d{5}').hasMatch(part)) continue;
+      if (RegExp(r'\b(no|street|rd|road|lane|ave|avenue|floor|apt|apartment)\b', caseSensitive: false).hasMatch(part)) continue;
+      return part;
+    }
+    return parts.length > 1 ? parts[parts.length - 2].trim() : fullAddress;
+  }
+
   Future<void> _openMap(String location, BuildContext context) async {
     final Uri mapUrl = Uri.parse(
         'https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(location)}');
@@ -60,7 +81,7 @@ class JobDetailsScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
                   GestureDetector(
-                    onTap: () => _openMap(job.location, context),
+                    onTap: () => _openMap(_getApproximateLocation(job.location), context),
                     child: _buildSection(
                       context: context,
                       title: 'Location',
@@ -85,7 +106,7 @@ class JobDetailsScreen extends StatelessWidget {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      job.location,
+                                      _getApproximateLocation(job.location),
                                       style: TextStyle(
                                         fontSize: 15,
                                         fontWeight: FontWeight.w600,
@@ -113,7 +134,7 @@ class JobDetailsScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: 16),
                           AbsorbPointer(
-                            child: _EmbeddedMap(location: job.location),
+                            child: _EmbeddedMap(location: _getApproximateLocation(job.location)),
                           ),
                         ],
                       ),
@@ -242,7 +263,7 @@ class JobDetailsScreen extends StatelessWidget {
         _buildChip(
             context,
             Icons.location_on_outlined,
-            job.location + (job.distanceKm != null ? ' (${job.distanceKm!.toStringAsFixed(1)} km)' : ''),
+            _getApproximateLocation(job.location) + (job.distanceKm != null ? ' (${job.distanceKm!.toStringAsFixed(1)} km)' : ''),
             const Color(0xFFD3410A)),
         const SizedBox(width: 10),
         _buildChip(context, Icons.access_time_rounded, job.postedAt,
@@ -458,12 +479,12 @@ class JobDetailsScreen extends StatelessWidget {
           const SizedBox(height: 16),
           Row(
             children: [
-              const CircleAvatar(
+              CircleAvatar(
                 radius: 26,
-                backgroundColor: Color(0xFFE8EAF6),
+                backgroundColor: const Color(0xFFE8EAF6),
                 child: Text(
-                  'C',
-                  style: TextStyle(
+                  job.clientName.isNotEmpty ? job.clientName[0].toUpperCase() : 'C',
+                  style: const TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
                     color: Color(0xFFD3410A),
@@ -471,19 +492,19 @@ class JobDetailsScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 14),
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Client',
-                      style: TextStyle(
+                      job.clientName,
+                      style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                           color: Color(0xFF1F2937)),
                     ),
-                    SizedBox(height: 3),
-                    Row(
+                    const SizedBox(height: 3),
+                    const Row(
                       children: [
                         Icon(Icons.verified_outlined,
                             size: 14, color: Color(0xFF006B5E)),

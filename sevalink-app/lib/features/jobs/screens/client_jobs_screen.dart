@@ -511,63 +511,89 @@ class _ClientJobsScreenState extends ConsumerState<ClientJobsScreen> {
             Divider(color: Colors.grey.shade100, height: 1),
             const SizedBox(height: 16),
   
-            // Budget + Time + Quotes
+            // Budget + Time + Quotes / Track
             Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Expanded(
-                  child: Text(
-                    'Rs. ${_formatBudget(budgetMin ?? 25000)} - Rs. ${_formatBudget(budgetMax ?? 35000)}',
-                    style: const TextStyle(
-                      color: Color(0xFFD3410A), // Orange text
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Container(width: 4, height: 4, decoration: BoxDecoration(color: Colors.grey.shade400, shape: BoxShape.circle)),
-                const SizedBox(width: 8),
-                Text(
-                  createdAt != null ? _timeAgo(createdAt) : '2 hours ago',
-                  style: TextStyle(
-                    color: Colors.grey.shade500,
-                    fontSize: 13,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Container(width: 6, height: 6, decoration: const BoxDecoration(color: Color(0xFF16A34A), shape: BoxShape.circle)),
-                const SizedBox(width: 6),
-                GestureDetector(
-                  onTap: () {
-                    if (job['id'] != null) {
-                      context.push('/client/jobs/${job['id']}/quotes', extra: job);
-                    }
-                  },
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
+                  child: Row(
                     children: [
                       Text(
-                        '$quoteCount',
+                        'Rs. ${_formatBudget(budgetMin ?? 25000)} - Rs. ${_formatBudget(budgetMax ?? 35000)}',
                         style: const TextStyle(
-                          color: Color(0xFF16A34A),
-                          fontSize: 13,
+                          color: Color(0xFFD3410A), // Orange text
+                          fontSize: 14,
                           fontWeight: FontWeight.bold,
-                          height: 1.0,
                         ),
                       ),
-                      const Text(
-                        'Quotes',
-                        style: TextStyle(
-                          color: Color(0xFF16A34A),
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          height: 1.0,
+                      const SizedBox(width: 8),
+                      Container(width: 4, height: 4, decoration: BoxDecoration(color: Colors.grey.shade400, shape: BoxShape.circle)),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          createdAt != null ? _timeAgo(createdAt) : '2 hours ago',
+                          style: TextStyle(
+                            color: Colors.grey.shade500,
+                            fontSize: 13,
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ],
                   ),
                 ),
+                const SizedBox(width: 8),
+                if (status == 'ASSIGNED') ...[
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      if (job['id'] != null) {
+                        context.push('/client/jobs/${job['id']}/timeline');
+                      }
+                    },
+                    icon: const Icon(Icons.timeline_rounded, size: 15, color: Colors.white),
+                    label: const Text('Track',
+                        style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF0F9B8E),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      elevation: 0,
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                  ),
+                ] else ...[
+                  GestureDetector(
+                    onTap: () {
+                      if (job['id'] != null) {
+                        context.push('/client/jobs/${job['id']}/quotes', extra: job);
+                      }
+                    },
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Text(
+                          '$quoteCount',
+                          style: const TextStyle(
+                            color: Color(0xFF16A34A),
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            height: 1.0,
+                          ),
+                        ),
+                        const Text(
+                          'Quotes',
+                          style: TextStyle(
+                            color: Color(0xFF16A34A),
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            height: 1.0,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ],
             ),
           ],

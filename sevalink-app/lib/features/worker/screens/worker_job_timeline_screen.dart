@@ -28,6 +28,8 @@ class _WorkerJobTimelineScreenState extends ConsumerState<WorkerJobTimelineScree
   LatLng? _workerLatLng;
   GoogleMapController? _mapController;
   bool _isEnRoute = false;
+  List<LatLng> _routePoints = [];
+  bool _isFetchingRoute = false;
 
   Timer? _pollingTimer;
   int? _workerId;
@@ -101,6 +103,8 @@ class _WorkerJobTimelineScreenState extends ConsumerState<WorkerJobTimelineScree
         if (enRoute) {
           if (_positionSubscription == null) {
             _startLocationTracking();
+          } else {
+            _fetchRoutePoints();
           }
         } else {
           _stopLocationTracking();
@@ -129,6 +133,18 @@ class _WorkerJobTimelineScreenState extends ConsumerState<WorkerJobTimelineScree
       }
     }
 
+    // Get current position immediately to show on map and fetch route
+    try {
+      Position pos = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(accuracy: LocationAccuracy.high)
+      );
+      if (mounted) {
+        _updateLiveLocation(pos.latitude, pos.longitude);
+      }
+    } catch (e) {
+      debugPrint('Failed to get current location immediately: $e');
+    }
+
     // Start listening to coordinates
     _positionSubscription = Geolocator.getPositionStream(
       locationSettings: const LocationSettings(
@@ -146,10 +162,75 @@ class _WorkerJobTimelineScreenState extends ConsumerState<WorkerJobTimelineScree
     _positionSubscription = null;
   }
 
+  Future<void> _fetchRoutePoints() async {
+    if (_isFetchingRoute) return;
+    if (_workerLatLng == null || _jobDetails?['latitude'] == null || _jobDetails?['longitude'] == null) {
+      return;
+    }
+    final double jobLat = _jobDetails!['latitude'] as double;
+    final double jobLng = _jobDetails!['longitude'] as double;
+    final double workerLat = _workerLatLng!.latitude;
+    final double workerLng = _workerLatLng!.longitude;
+
+    _isFetchingRoute = true;
+    try {
+      final dio = ref.read(dioClientProvider).dio;
+      final url = 'https://router.project-osrm.org/route/v1/driving/$workerLng,$workerLat;$jobLng,$jobLat?overview=full&geometries=geojson';
+      final response = await dio.get(url);
+      if (response.statusCode == 200 && response.data != null) {
+        final routes = response.data['routes'] as List<dynamic>?;
+        if (routes != null && routes.isNotEmpty) {
+          final geometry = routes[0]['geometry'] as Map<String, dynamic>?;
+          if (geometry != null) {
+            final coordinates = geometry['coordinates'] as List<dynamic>?;
+            if (coordinates != null) {
+              final List<LatLng> points = coordinates.map((coord) {
+                final double lng = (coord[0] as num).toDouble();
+                final double lat = (coord[1] as num).toDouble();
+                return LatLng(lat, lng);
+              }).toList();
+              if (mounted) {
+                setState(() {
+                  _routePoints = points;
+                });
+              }
+              _isFetchingRoute = false;
+              return;
+            }
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Failed to fetch road route from OSRM: $e');
+    }
+    _isFetchingRoute = false;
+    // Fallback to straight line
+    if (mounted && _routePoints.isEmpty) {
+      setState(() {
+        _routePoints = [LatLng(workerLat, workerLng), LatLng(jobLat, jobLng)];
+      });
+    }
+  }
+
+  Future<void> _makeCall(String phoneNumber) async {
+    final Uri launchUri = Uri(
+      scheme: 'tel',
+      path: phoneNumber,
+    );
+    try {
+      if (await canLaunchUrl(launchUri)) {
+        await launchUrl(launchUri);
+      }
+    } catch (e) {
+      debugPrint('Failed to launch dialer: $e');
+    }
+  }
+
   Future<void> _updateLiveLocation(double lat, double lng) async {
     setState(() {
       _workerLatLng = LatLng(lat, lng);
     });
+    _fetchRoutePoints();
 
     // Send coordinates to backend
     try {
@@ -505,7 +586,7 @@ class _WorkerJobTimelineScreenState extends ConsumerState<WorkerJobTimelineScree
           polylines: {
             Polyline(
               polylineId: const PolylineId('route'),
-              points: [jobLatLng, workerLatLng],
+              points: _routePoints.isNotEmpty ? _routePoints : [jobLatLng, workerLatLng],
               color: const Color(0xFFD3410A),
               width: 4,
             ),
@@ -518,6 +599,7 @@ class _WorkerJobTimelineScreenState extends ConsumerState<WorkerJobTimelineScree
   Widget _buildJobSummaryCard(SevaLinkColors colors) {
     final client = _jobDetails?['client'] ?? {};
     final clientName = client['fullName'] ?? 'Client';
+    final clientPhone = client['phoneNumber'] ?? '';
     final locationName = _jobDetails?['locationName'] ?? '';
 
     return Container(
@@ -527,32 +609,51 @@ class _WorkerJobTimelineScreenState extends ConsumerState<WorkerJobTimelineScree
         borderRadius: BorderRadius.circular(16),
         boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, 4))],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          const Text('Job Information', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              const Icon(Icons.person, color: Color(0xFFD3410A), size: 18),
-              const SizedBox(width: 8),
-              Text(clientName, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14)),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              const Icon(Icons.location_on, color: Color(0xFFD3410A), size: 18),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  locationName,
-                  style: TextStyle(color: colors.textSecondary, fontSize: 13),
-                  overflow: TextOverflow.ellipsis,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Job Information', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    const Icon(Icons.person, color: Color(0xFFD3410A), size: 18),
+                    const SizedBox(width: 8),
+                    Text(clientName, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14)),
+                  ],
                 ),
-              ),
-            ],
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    const Icon(Icons.location_on, color: Color(0xFFD3410A), size: 18),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        locationName,
+                        style: TextStyle(color: colors.textSecondary, fontSize: 13),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
+          if (clientPhone.isNotEmpty) ...[
+            const SizedBox(width: 12),
+            Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFF006B5E).withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: IconButton(
+                icon: const Icon(Icons.phone, color: Color(0xFF006B5E)),
+                onPressed: () => _makeCall(clientPhone),
+              ),
+            ),
+          ],
         ],
       ),
     );
