@@ -413,9 +413,41 @@ public class JobPostService {
         return getMaskedJobPostCopy(job, requestLat, requestLng);
     }
 
+    private User getCurrentAuthenticatedUser() {
+        try {
+            org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getPrincipal())) {
+                String email = auth.getName();
+                return userRepository.findByEmail(email).orElse(null);
+            }
+        } catch (Exception e) {
+            // ignore
+        }
+        return null;
+    }
+
+    private List<JobPost> filterQuotedJobsForCurrentWorker(List<JobPost> jobs) {
+        User user = getCurrentAuthenticatedUser();
+        if (user != null && UserRole.WORKER.equals(user.getRole())) {
+            Optional<Worker> workerOpt = workerRepository.findByUserId(user.getId());
+            if (workerOpt.isPresent()) {
+                Worker worker = workerOpt.get();
+                List<Long> quotedJobIds = quotationRepository.findByWorkerIdOrderByCreatedAtDesc(worker.getId())
+                        .stream()
+                        .map(q -> q.getJobPost().getId())
+                        .collect(Collectors.toList());
+                return jobs.stream()
+                        .filter(j -> !quotedJobIds.contains(j.getId()))
+                        .collect(Collectors.toList());
+            }
+        }
+        return jobs;
+    }
+
     // Processed Feed Wrappers
     public List<JobPost> getAllOpenJobsProcessed(Double requestLat, Double requestLng) {
         List<JobPost> jobs = getAllOpenJobs();
+        jobs = filterQuotedJobsForCurrentWorker(jobs);
         return jobs.stream()
                 .map(job -> processJobPostForUser(job, requestLat, requestLng))
                 .collect(Collectors.toList());
@@ -423,6 +455,7 @@ public class JobPostService {
 
     public List<JobPost> getNearbyJobsProcessed(Double lat, Double lng, Double radius) {
         List<JobPost> jobs = getNearbyJobs(lat, lng, radius);
+        jobs = filterQuotedJobsForCurrentWorker(jobs);
         return jobs.stream()
                 .map(job -> processJobPostForUser(job, lat, lng))
                 .collect(Collectors.toList());
@@ -430,6 +463,7 @@ public class JobPostService {
 
     public List<JobPost> getNearbyJobsByCategoryProcessed(Double lat, Double lng, Double radius, Long categoryId) {
         List<JobPost> jobs = getNearbyJobsByCategory(lat, lng, radius, categoryId);
+        jobs = filterQuotedJobsForCurrentWorker(jobs);
         return jobs.stream()
                 .map(job -> processJobPostForUser(job, lat, lng))
                 .collect(Collectors.toList());

@@ -1,15 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'job_details_screen.dart';
-import '../../../data/models/job.dart';
 import '../../../core/themes/app_theme.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/worker_feed_provider.dart';
 
 // ─── Enums & Model ────────────────────────────────────────────────────────────
 
-enum JobStatus { active, pending, completed }
+enum JobStatus { active, completed, cancelled }
 
 class WorkerJob {
   final String id;
@@ -116,7 +114,7 @@ class _WorkerJobsNotifier extends Notifier<WorkerJobsListState> {
       final List<WorkerJob> jobsList = [];
       for (final item in data) {
         final statusStr = item['status'] ?? 'PENDING';
-        if (statusStr == 'REJECTED') continue; // Skip rejected ones
+        if (statusStr != 'ACCEPTED') continue; // Only process accepted quotations
 
         final jobPost = item['jobPost'];
         if (jobPost == null) continue;
@@ -139,14 +137,12 @@ class _WorkerJobsNotifier extends Notifier<WorkerJobsListState> {
 
         final jobStatusStr = jobPost['status'] ?? 'OPEN';
         JobStatus status;
-        if (statusStr == 'ACCEPTED') {
-          if (jobStatusStr == 'COMPLETED') {
-            status = JobStatus.completed;
-          } else {
-            status = JobStatus.active;
-          }
+        if (jobStatusStr == 'COMPLETED') {
+          status = JobStatus.completed;
+        } else if (jobStatusStr == 'CANCELLED') {
+          status = JobStatus.cancelled;
         } else {
-          status = JobStatus.pending;
+          status = JobStatus.active;
         }
 
         final categoryMap = jobPost['category'];
@@ -251,9 +247,9 @@ class _MyJobsScreenState extends ConsumerState<MyJobsScreen>
       ),
     );
 
-    // Animate to Done tab after short delay
+    // Animate to Completed tab after short delay
     Future.delayed(const Duration(milliseconds: 600), () {
-      if (mounted) _tabController.animateTo(2);
+      if (mounted) _tabController.animateTo(1);
     });
   }
 
@@ -305,9 +301,9 @@ class _MyJobsScreenState extends ConsumerState<MyJobsScreen>
     final isLoading = jobsState.isLoading;
     final error     = jobsState.error;
 
-    final active    = _byStatus(jobs, JobStatus.active);
-    final pending   = _byStatus(jobs, JobStatus.pending);
-    final completed = _byStatus(jobs, JobStatus.completed);
+    final active    = _byStatus(jobs, JobStatus.active);      // In Progress
+    final completed = _byStatus(jobs, JobStatus.completed);   // Completed
+    final cancelled = _byStatus(jobs, JobStatus.cancelled);   // Cancelled
     final colors    = Theme.of(context).extension<SevaLinkColors>()!;
 
     return Scaffold(
@@ -315,7 +311,7 @@ class _MyJobsScreenState extends ConsumerState<MyJobsScreen>
       body: Column(
         children: [
           // Header
-          _buildHeader(active.length, pending.length, completed.length),
+          _buildHeader(active.length, completed.length, cancelled.length),
 
           // Tab content
           Expanded(
@@ -328,38 +324,25 @@ class _MyJobsScreenState extends ConsumerState<MyJobsScreen>
                     : TabBarView(
                         controller: _tabController,
                         children: [
-                          // Active tab
+                          // In Progress tab (formerly Active)
                           _JobList(
                             jobs: active,
-                            emptyLabel: 'No active jobs right now',
+                            emptyLabel: 'No in-progress jobs right now',
                             onMarkDone: (id) => _handleMarkDone(id),
+                            onRefresh: () => ref.read(workerJobsListProvider.notifier).loadJobs(),
                           ),
-                          // Pending tab
+                          // Completed tab (formerly Done)
                           _JobList(
-                            jobs: pending,
-                            emptyLabel: 'No upcoming jobs scheduled',
-                            onViewDetails: (job) => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => JobDetailsScreen(
-                                  job: Job(
-                                    id: int.tryParse(job.id) ?? 0,
-                                    title: job.title,
-                                    description: 'No description available.',
-                                    location: job.location,
-                                    postedAt: job.date,
-                                    minBudget: 0,
-                                    maxBudget: 0,
-                                    isNew: false,
-                                    category: job.category ?? '',
-                                    distanceKm: job.distanceKm,
-                                  ),
-                                ),
-                              ),
-                            ),
+                            jobs: completed,
+                            emptyLabel: 'No completed jobs yet',
+                            onRefresh: () => ref.read(workerJobsListProvider.notifier).loadJobs(),
                           ),
-                          // Done tab
-                          _JobList(jobs: completed, emptyLabel: 'No completed jobs yet'),
+                          // Cancelled tab
+                          _JobList(
+                            jobs: cancelled,
+                            emptyLabel: 'No cancelled jobs',
+                            onRefresh: () => ref.read(workerJobsListProvider.notifier).loadJobs(),
+                          ),
                         ],
                       ),
           ),
@@ -368,7 +351,7 @@ class _MyJobsScreenState extends ConsumerState<MyJobsScreen>
     );
   }
 
-  Widget _buildHeader(int active, int pending, int completed) {
+  Widget _buildHeader(int active, int completed, int cancelled) {
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
@@ -423,11 +406,11 @@ class _MyJobsScreenState extends ConsumerState<MyJobsScreen>
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
               child: Row(
                 children: [
-                  _summaryChip('$active',    'Active', const Color(0xFF0F9B8E)),
+                  _summaryChip('$active',    'In Progress', const Color(0xFF2DD4BF)),
                   const SizedBox(width: 10),
-                  _summaryChip('$pending',   'To-Do',  const Color(0xFFF59E0B)),
+                  _summaryChip('$completed', 'Completed',   const Color(0xFF4ADE80)),
                   const SizedBox(width: 10),
-                  _summaryChip('$completed', 'Done',   Colors.white54),
+                  _summaryChip('$cancelled', 'Cancelled',   const Color(0xFFF87171)),
                 ],
               ),
             ),
@@ -446,9 +429,9 @@ class _MyJobsScreenState extends ConsumerState<MyJobsScreen>
                   const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
               unselectedLabelStyle: const TextStyle(fontSize: 13),
               tabs: [
-                Tab(text: 'Active ($active)'),
-                Tab(text: 'To-Do ($pending)'),
-                Tab(text: 'Done ($completed)'),
+                Tab(text: 'In Progress ($active)'),
+                Tab(text: 'Completed ($completed)'),
+                Tab(text: 'Cancelled ($cancelled)'),
               ],
             ),
           ],
@@ -488,57 +471,67 @@ class _JobList extends StatelessWidget {
   final List<WorkerJob> jobs;
   final String emptyLabel;
   final void Function(String id)? onMarkDone;
-  final void Function(WorkerJob job)? onViewDetails;
+  final RefreshCallback? onRefresh;
 
   const _JobList({
     required this.jobs,
     required this.emptyLabel,
     this.onMarkDone,
-    this.onViewDetails,
+    this.onRefresh,
   });
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).extension<SevaLinkColors>()!;
 
+    Widget content;
     if (jobs.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.work_off_outlined,
-                size: 64, color: colors.textSecondary.withValues(alpha: 0.4)),
-            const SizedBox(height: 12),
-            Text(emptyLabel,
-                style: TextStyle(color: colors.textSecondary, fontSize: 15)),
-          ],
+      content = SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: Container(
+          height: MediaQuery.of(context).size.height * 0.6,
+          alignment: Alignment.center,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.work_off_outlined,
+                  size: 64, color: colors.textSecondary.withValues(alpha: 0.4)),
+              const SizedBox(height: 12),
+              Text(emptyLabel,
+                  style: TextStyle(color: colors.textSecondary, fontSize: 15)),
+            ],
+          ),
         ),
       );
-    }
-    return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
-      itemCount: jobs.length,
-      itemBuilder: (context, i) {
-        final job = jobs[i];
-        return GestureDetector(
-          onTap: () {
-            if (job.status == JobStatus.active || job.status == JobStatus.completed) {
+    } else {
+      content = ListView.builder(
+        padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
+        physics: const AlwaysScrollableScrollPhysics(),
+        itemCount: jobs.length,
+        itemBuilder: (context, i) {
+          final job = jobs[i];
+          return GestureDetector(
+            onTap: () {
               context.push('/worker/jobs/${job.id}/timeline');
-            } else if (onViewDetails != null) {
-              onViewDetails!(job);
-            }
-          },
-          child: _JobCard(
-            job: job,
-            onMarkDone:
-                onMarkDone == null ? null : () => onMarkDone!(job.id),
-            onViewDetails:
-                onViewDetails == null ? null : () => onViewDetails!(job),
-          ),
-        );
-      },
-    );
+            },
+            child: _JobCard(
+              job: job,
+              onMarkDone:
+                  onMarkDone == null ? null : () => onMarkDone!(job.id),
+            ),
+          );
+        },
+      );
+    }
 
+    if (onRefresh != null) {
+      return RefreshIndicator(
+        onRefresh: onRefresh!,
+        color: const Color(0xFF0F9B8E),
+        child: content,
+      );
+    }
+    return content;
   }
 }
 
@@ -547,30 +540,29 @@ class _JobList extends StatelessWidget {
 class _JobCard extends StatelessWidget {
   final WorkerJob job;
   final VoidCallback? onMarkDone;
-  final VoidCallback? onViewDetails;
-  const _JobCard({required this.job, this.onMarkDone, this.onViewDetails});
+  const _JobCard({required this.job, this.onMarkDone});
 
   Color get _statusColor {
     switch (job.status) {
       case JobStatus.active:    return const Color(0xFF0F9B8E);
-      case JobStatus.pending:   return const Color(0xFFF59E0B);
       case JobStatus.completed: return const Color(0xFF6B7280);
+      case JobStatus.cancelled: return const Color(0xFFEF4444);
     }
   }
 
   String get _statusLabel {
     switch (job.status) {
-      case JobStatus.active:    return 'Active';
-      case JobStatus.pending:   return 'To-Do';
+      case JobStatus.active:    return 'In Progress';
       case JobStatus.completed: return 'Completed';
+      case JobStatus.cancelled: return 'Cancelled';
     }
   }
 
   IconData get _statusIcon {
     switch (job.status) {
       case JobStatus.active:    return Icons.play_circle_outline_rounded;
-      case JobStatus.pending:   return Icons.schedule_rounded;
       case JobStatus.completed: return Icons.check_circle_outline_rounded;
+      case JobStatus.cancelled: return Icons.cancel_outlined;
     }
   }
 
@@ -733,23 +725,6 @@ class _JobCard extends StatelessWidget {
           ),
         );
 
-      case JobStatus.pending:
-        return OutlinedButton.icon(
-          onPressed: onViewDetails,
-          icon: const Icon(Icons.visibility_outlined,
-              size: 15, color: Color(0xFFF59E0B)),
-          label: const Text('View',
-              style: TextStyle(color: Color(0xFFF59E0B), fontSize: 13)),
-          style: OutlinedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-            side: const BorderSide(color: Color(0xFFF59E0B)),
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12)),
-            minimumSize: Size.zero,
-            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          ),
-        );
-
       case JobStatus.completed:
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -772,6 +747,34 @@ class _JobCard extends StatelessWidget {
                       color: isDark
                           ? const Color(0xFF94A3B8)
                           : const Color(0xFF6B7280),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600)),
+            ],
+          ),
+        );
+
+      case JobStatus.cancelled:
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: isDark
+                ? const Color(0xFF2E3347)
+                : const Color(0xFFFEE2E2),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.cancel_outlined,
+                  size: 14,
+                  color: isDark
+                      ? const Color(0xFF94A3B8)
+                      : const Color(0xFFDC2626)),
+              const SizedBox(width: 4),
+              Text('Cancelled',
+                  style: TextStyle(
+                      color: isDark
+                          ? const Color(0xFF94A3B8)
+                          : const Color(0xFFDC2626),
                       fontSize: 12,
                       fontWeight: FontWeight.w600)),
             ],
