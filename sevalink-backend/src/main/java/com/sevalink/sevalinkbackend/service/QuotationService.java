@@ -13,6 +13,7 @@ import com.sevalink.sevalinkbackend.repository.NotificationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class QuotationService {
@@ -39,6 +40,10 @@ public class QuotationService {
                 .orElseThrow(() -> new RuntimeException("Worker not found"));
         JobPost jobPost = jobPostRepository.findById(quotation.getJobPost().getId())
                 .orElseThrow(() -> new RuntimeException("Job not found"));
+
+        if (!"OPEN".equals(jobPost.getStatus())) {
+            throw new RuntimeException("Cannot send a quotation. This job is no longer open.");
+        }
 
         quotationRepository.findByJobPostIdAndWorkerId(
                 jobPost.getId(),
@@ -76,7 +81,16 @@ public class QuotationService {
 
     // Worker sees their sent quotations
     public List<Quotation> getWorkerQuotations(Long workerId) {
-        return quotationRepository.findByWorkerIdOrderByCreatedAtDesc(workerId);
+        List<Quotation> quotations = quotationRepository.findByWorkerIdOrderByCreatedAtDesc(workerId);
+        
+        // Fetch worker coordinates
+        Worker worker = workerRepository.findById(workerId).orElse(null);
+        Double workerLat = worker != null ? worker.getLatitude() : null;
+        Double workerLng = worker != null ? worker.getLongitude() : null;
+        
+        return quotations.stream()
+                .map(q -> getMaskedQuotationCopy(q, workerLat, workerLng))
+                .collect(Collectors.toList());
     }
 
     // Client accepts a quotation
@@ -175,5 +189,53 @@ public class QuotationService {
         contact.put("agreedPrice", quotation.getProposedPrice());
 
         return contact;
+    }
+
+    private Quotation getMaskedQuotationCopy(Quotation original, Double workerLat, Double workerLng) {
+        Quotation copy = new Quotation();
+        copy.setId(original.getId());
+        copy.setWorker(original.getWorker());
+        copy.setMessage(original.getMessage());
+        copy.setProposedPrice(original.getProposedPrice());
+        copy.setEta(original.getEta());
+        copy.setStatus(original.getStatus());
+        copy.setCreatedAt(original.getCreatedAt());
+        
+        if ("ACCEPTED".equalsIgnoreCase(original.getStatus())) {
+            // Keep exact location if accepted
+            copy.setJobPost(original.getJobPost());
+        } else {
+            // Mask location if not accepted
+            copy.setJobPost(getMaskedJobPostCopy(original.getJobPost(), workerLat, workerLng));
+        }
+        return copy;
+    }
+
+    private JobPost getMaskedJobPostCopy(JobPost original, Double workerLat, Double workerLng) {
+        JobPost copy = new JobPost();
+        copy.setId(original.getId());
+        copy.setClient(original.getClient());
+        copy.setCategory(original.getCategory());
+        copy.setTitle(original.getTitle());
+        copy.setDescription(original.getDescription());
+        copy.setBudgetMin(original.getBudgetMin());
+        copy.setBudgetMax(original.getBudgetMax());
+        copy.setUrgency(original.getUrgency());
+        copy.setPhotos(original.getPhotos());
+        copy.setStatus(original.getStatus());
+        copy.setCreatedAt(original.getCreatedAt());
+        
+        // Mask location
+        copy.setLocationName(JobPostService.getApproximateLocation(original.getLocationName()));
+        copy.setLatitude(null);
+        copy.setLongitude(null);
+        
+        // Compute distance if worker coordinates are available
+        if (workerLat != null && workerLng != null && original.getLatitude() != null && original.getLongitude() != null) {
+            double dist = JobPostService.calculateDistanceKm(workerLat, workerLng, original.getLatitude(), original.getLongitude());
+            copy.setDistanceKm(dist);
+        }
+        
+        return copy;
     }
 }

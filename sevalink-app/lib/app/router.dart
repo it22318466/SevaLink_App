@@ -21,8 +21,6 @@ import '../features/jobs/screens/client_jobs_screen.dart';
 import '../features/jobs/screens/post_job_screen.dart';
 import '../features/jobs/screens/quotes_received_screen.dart';
 import '../features/jobs/screens/quote_details_screen.dart';
-import '../features/jobs/screens/client_job_details_screen.dart';
-import '../features/jobs/screens/rate_worker_screen.dart';
 import '../features/chat/screens/chat_list_screen.dart';
 import '../features/chat/screens/chat_screen.dart';
 import '../data/models/job.dart';
@@ -129,21 +127,6 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/client/jobs/post',
         builder: (context, state) => const PostJobScreen(),
-      ),
-      GoRoute(
-        path: '/client/jobs/:jobId/details',
-        builder: (context, state) {
-          final job = state.extra as Map<String, dynamic>? ?? {};
-          return ClientJobDetailsScreen(job: job);
-        },
-      ),
-      GoRoute(
-        path: '/client/rate-worker/:workerId/:jobId',
-        builder: (context, state) {
-          final workerId = int.tryParse(state.pathParameters['workerId'] ?? '0') ?? 0;
-          final jobId = int.tryParse(state.pathParameters['jobId'] ?? '0') ?? 0;
-          return RateWorkerScreen(workerId: workerId, jobId: jobId);
-        },
       ),
       GoRoute(
         path: '/client/jobs/:jobId/quotes',

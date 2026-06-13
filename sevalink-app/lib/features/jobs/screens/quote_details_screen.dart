@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../providers/quotation_provider.dart';
+import '../../../providers/client_jobs_provider.dart';
+import '../../../providers/auth_provider.dart';
 import '../../../data/models/quotation_model.dart';
 
 class QuoteDetailsScreen extends ConsumerStatefulWidget {
@@ -26,7 +28,17 @@ class _QuoteDetailsScreenState extends ConsumerState<QuoteDetailsScreen> {
         );
         // Refresh the quotes list
         ref.invalidate(jobQuotationsProvider(widget.quotation.jobPostId));
-        context.pop();
+        
+        // Refresh client jobs list and stats
+        final user = ref.read(authProvider).user;
+        if (user != null) {
+          final clientId = user.id;
+          ref.invalidate(clientJobStatsProvider(clientId));
+          ref.invalidate(clientJobsProvider);
+        }
+
+        // Navigate directly to the timeline screen
+        context.go('/client/jobs/${widget.quotation.jobPostId}/timeline');
       }
     } catch (e) {
       if (mounted) {
@@ -48,6 +60,15 @@ class _QuoteDetailsScreenState extends ConsumerState<QuoteDetailsScreen> {
           const SnackBar(content: Text('Quote declined.')),
         );
         ref.invalidate(jobQuotationsProvider(widget.quotation.jobPostId));
+        
+        // Refresh client jobs list and stats
+        final user = ref.read(authProvider).user;
+        if (user != null) {
+          final clientId = user.id;
+          ref.invalidate(clientJobStatsProvider(clientId));
+          ref.invalidate(clientJobsProvider);
+        }
+
         context.pop();
       }
     } catch (e) {

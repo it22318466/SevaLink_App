@@ -108,4 +108,19 @@ public class WorkerController {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
+
+    // Update worker live location
+    // PUT http://localhost:8080/api/workers/1/location?latitude=6.9&longitude=79.8
+    @PutMapping("/{id}/location")
+    public ResponseEntity<?> updateWorkerLocation(
+            @PathVariable Long id,
+            @RequestParam Double latitude,
+            @RequestParam Double longitude) {
+        try {
+            Worker updated = workerService.updateWorkerLocation(id, latitude, longitude);
+            return ResponseEntity.ok(updated);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+        }
+    }
 }

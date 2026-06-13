@@ -62,66 +62,77 @@ class QuotesReceivedScreen extends ConsumerWidget {
               ),
             ),
             quotesAsync.when(
-              data: (quotes) => Text(
-                '${quotes.length} quotes for your job',
-                style: TextStyle(
-                  color: Colors.grey.shade600,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w400,
-                ),
-              ),
+              data: (quotes) {
+                final activeCount = quotes.where((q) => q.status != 'REJECTED').length;
+                return Text(
+                  '$activeCount quotes for your job',
+                  style: TextStyle(
+                    color: Colors.grey.shade600,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                  ),
+                );
+              },
               loading: () => const SizedBox(),
               error: (error, stack) => const SizedBox(),
             ),
           ],
         ),
       ),
-      body: CustomScrollView(
-        slivers: [
-          SliverToBoxAdapter(
-            child: _buildJobHeader(),
-          ),
-          quotesAsync.when(
-            data: (quotes) {
-              if (quotes.isEmpty) {
-                return SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.only(top: 60),
-                    child: Center(
-                      child: Column(
-                        children: [
-                          Icon(Icons.inbox_outlined, size: 64, color: Colors.grey.shade300),
-                          const SizedBox(height: 16),
-                          Text('No quotes received yet', style: TextStyle(color: Colors.grey.shade500, fontSize: 16)),
-                        ],
+      body: RefreshIndicator(
+        color: const Color(0xFFE64A19),
+        onRefresh: () async {
+          ref.invalidate(jobQuotationsProvider(jobId));
+        },
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            SliverToBoxAdapter(
+              child: _buildJobHeader(),
+            ),
+            quotesAsync.when(
+              data: (quotes) {
+                final activeQuotes = quotes.where((q) => q.status != 'REJECTED').toList();
+                if (activeQuotes.isEmpty) {
+                  return SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 60),
+                      child: Center(
+                        child: Column(
+                          children: [
+                            Icon(Icons.inbox_outlined, size: 64, color: Colors.grey.shade300),
+                            const SizedBox(height: 16),
+                            Text('No quotes received yet', style: TextStyle(color: Colors.grey.shade500, fontSize: 16)),
+                          ],
+                        ),
                       ),
                     ),
+                  );
+                }
+                return SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      return _buildQuoteCard(context, activeQuotes[index]);
+                    },
+                    childCount: activeQuotes.length,
                   ),
                 );
-              }
-              return SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    return _buildQuoteCard(context, quotes[index]);
-                  },
-                  childCount: quotes.length,
+              },
+              loading: () => const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.only(top: 60),
+                  child: Center(child: CircularProgressIndicator(color: Color(0xFFE64A19))),
                 ),
-              );
-            },
-            loading: () => const SliverToBoxAdapter(
-              child: Padding(
-                padding: EdgeInsets.only(top: 60),
-                child: Center(child: CircularProgressIndicator(color: Color(0xFFE64A19))),
+              ),
+              error: (e, _) => SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 60),
+                  child: Center(child: Text('Error: $e')),
+                ),
               ),
             ),
-            error: (e, _) => SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.only(top: 60),
-                child: Center(child: Text('Error: $e')),
-              ),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

@@ -127,17 +127,23 @@ class WorkerFeedNotifier extends Notifier<WorkerFeedState> {
     try {
       final dio = ref.read(dioClientProvider).dio;
 
-      // ── Step 1: Fetch worker profile to get category + GPS coords ─────────
-      WorkerStats stats = state.stats; // keep existing stats if refresh
-      final user = ref.read(authProvider).user;
+      // Fetch all open jobs for worker feed
+      final jobsResponse = await dio.get('/jobs/feed');
+      final List<dynamic> jobsData = jobsResponse.data;
+      final jobs = jobsData.map((json) => Job.fromJson(json)).toList();
 
-      if (user != null) {
-        try {
+      // Try to fetch worker stats (worker profile by user id)
+      WorkerStats stats = const WorkerStats();
+      try {
+        final user = ref.read(authProvider).user;
+        if (user != null) {
           debugPrint('loadFeed: current user: id=${user.id}, name=${user.fullName}, role=${user.role}');
+          // Get all workers and find the one matching this user
           final workersResponse = await dio.get('/workers');
           final List<dynamic> workersData = workersResponse.data;
           debugPrint('loadFeed: fetched ${workersData.length} workers');
 
+          // Find worker entry where worker.user.id == current user id
           final workerEntry = workersData.firstWhere(
             (w) => w['user'] != null && w['user']['id'].toString() == user.id.toString(),
             orElse: () => null,
@@ -170,37 +176,12 @@ class WorkerFeedNotifier extends Notifier<WorkerFeedState> {
               longitude: workerEntry['longitude'] != null ? (workerEntry['longitude'] as num).toDouble() : null,
             );
           }
-        } catch (e, stack) {
-          debugPrint('Error fetching worker profile: $e');
-          debugPrint(stack.toString());
         }
+      } catch (e, stack) {
+        // Stats fetch failure is non-fatal — keep defaults
+        debugPrint('Error fetching worker stats: $e');
+        debugPrint(stack.toString());
       }
-
-      // ── Step 2: Build query params from worker profile ────────────────────
-      final queryParams = <String, dynamic>{};
-
-      // Filter by the worker's category so they see relevant jobs
-      if (stats.categoryId != null) {
-        queryParams['categoryId'] = stats.categoryId;
-      }
-
-      // Include worker's GPS coords so nearby jobs appear first
-      if (stats.latitude != null && stats.longitude != null) {
-        queryParams['lat'] = stats.latitude;
-        queryParams['lng'] = stats.longitude;
-        queryParams['radius'] = 25.0; // 25 km feed radius
-      }
-
-      // Pass workerId so the backend hides jobs the worker already quoted
-      // (covers both pending quotes and denied/rejected quotes)
-      if (stats.workerId != null) {
-        queryParams['workerId'] = stats.workerId;
-      }
-
-      // ── Step 3: Fetch job feed with smart filters ─────────────────────────
-      final jobsResponse = await dio.get('/jobs/feed', queryParameters: queryParams);
-      final List<dynamic> jobsData = jobsResponse.data;
-      final jobs = jobsData.map((json) => Job.fromJson(json)).toList();
 
       state = state.copyWith(
         jobs: jobs,

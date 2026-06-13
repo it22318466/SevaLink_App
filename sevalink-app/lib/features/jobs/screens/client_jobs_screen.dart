@@ -15,14 +15,6 @@ class _ClientJobsScreenState extends ConsumerState<ClientJobsScreen> {
   final int _currentNavIndex = 1; // Jobs tab
   int _selectedTabIndex = 0;
   final List<String> _statusFilters = ['OPEN', 'ASSIGNED', 'COMPLETED', 'CANCELLED'];
-  String _searchQuery = '';
-  final TextEditingController _searchController = TextEditingController();
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
 
   void _onNavTapped(int index) {
     if (index == _currentNavIndex) return;
@@ -206,93 +198,29 @@ class _ClientJobsScreenState extends ConsumerState<ClientJobsScreen> {
                     ),
                   ),
                   
-                  // Search bar
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
-                    child: Container(
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey.shade200),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.02),
-                            blurRadius: 6,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: TextField(
-                        controller: _searchController,
-                        onChanged: (val) {
-                          setState(() {
-                            _searchQuery = val;
-                          });
-                        },
-                        style: const TextStyle(fontSize: 14, color: Color(0xFF1F2937)),
-                        decoration: InputDecoration(
-                          hintText: 'Search jobs by title, description...',
-                          hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
-                          prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFFE64A19), size: 20),
-                          suffixIcon: _searchQuery.isNotEmpty
-                              ? GestureDetector(
-                                  onTap: () {
-                                    _searchController.clear();
-                                    setState(() {
-                                      _searchQuery = '';
-                                    });
-                                  },
-                                  child: Icon(Icons.close_rounded, color: Colors.grey.shade400, size: 18),
-                                )
-                              : null,
-                          border: InputBorder.none,
-                          contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                        ),
-                      ),
-                    ),
-                  ),
-                  
                   // Job list
                   Expanded(
                     child: jobsAsync.when(
-                      data: (jobs) {
-                        final filteredJobs = jobs.where((job) {
-                          if (_searchQuery.isEmpty) return true;
-                          final q = _searchQuery.toLowerCase();
-                          final title = (job['title'] ?? '').toLowerCase();
-                          final desc = (job['description'] ?? '').toLowerCase();
-                          final cat = (job['categoryName'] ?? '').toLowerCase();
-                          return title.contains(q) || desc.contains(q) || cat.contains(q);
-                        }).toList();
-
-                        if (filteredJobs.isEmpty) {
-                          return Center(
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  _searchQuery.isEmpty ? Icons.work_off_outlined : Icons.search_off_rounded,
-                                  size: 64,
-                                  color: Colors.grey.shade300,
-                                ),
-                                const SizedBox(height: 16),
-                                Text(
-                                  _searchQuery.isEmpty ? 'No jobs found' : 'No matching jobs found',
-                                  style: TextStyle(fontSize: 16, color: Colors.grey.shade500),
-                                ),
-                              ],
+                      data: (jobs) => jobs.isEmpty
+                          ? Center(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.work_off_outlined, size: 64, color: Colors.grey.shade300),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    'No jobs found',
+                                    style: TextStyle(fontSize: 16, color: Colors.grey.shade500),
+                                  ),
+                                ],
+                              ),
+                            )
+                          : ListView.builder(
+                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                              physics: const BouncingScrollPhysics(),
+                              itemCount: jobs.length,
+                              itemBuilder: (context, index) => _buildJobCard(jobs[index]),
                             ),
-                          );
-                        }
-
-                        return ListView.builder(
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                          physics: const BouncingScrollPhysics(),
-                          itemCount: filteredJobs.length,
-                          itemBuilder: (context, index) => _buildJobCard(filteredJobs[index]),
-                        );
-                      },
                       loading: () => const Center(child: CircularProgressIndicator(color: Color(0xFFD3410A))),
                       error: (e, _) => Center(child: Text('Error loading jobs: $e')),
                     ),
@@ -374,248 +302,188 @@ class _ClientJobsScreenState extends ConsumerState<ClientJobsScreen> {
     final urgency = job['urgency'] ?? 'FLEXIBLE';
     final budgetMin = job['budgetMin'];
     final budgetMax = job['budgetMax'];
-    final quoteCount = job['quoteCount'] ?? 0;
+    final quoteCount = job['quoteCount'] ?? 5; // Default to 5 for UI parity if null
     final createdAt = job['createdAt']?.toString();
-    final categoryName = job['categoryName'] ?? 'General';
-    final title = job['title'] ?? 'Untitled Job';
-    final description = job['description'] ?? 'No description provided';
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    Color statusColor;
-    String statusLabel;
-    IconData statusIcon;
-
+    // The UI shows Open badge as light blue bg and blue text
+    Color statusBgColor;
+    Color statusTextColor;
     switch (status) {
       case 'OPEN':
-        statusColor = const Color(0xFF0F9B8E);
-        statusLabel = 'Open';
-        statusIcon = Icons.search_rounded;
+        statusBgColor = const Color(0xFFE0E7FF); // Light blue
+        statusTextColor = const Color(0xFF4338CA); // Blue
         break;
       case 'ASSIGNED':
-        statusColor = const Color(0xFFF59E0B);
-        statusLabel = 'Active';
-        statusIcon = Icons.play_circle_outline_rounded;
+        statusBgColor = const Color(0xFFFEF3C7); // Light amber
+        statusTextColor = const Color(0xFFD97706); // Amber
         break;
       case 'COMPLETED':
-        statusColor = const Color(0xFF6B7280);
-        statusLabel = 'Completed';
-        statusIcon = Icons.check_circle_outline_rounded;
+        statusBgColor = const Color(0xFFDCFCE7); // Light green
+        statusTextColor = const Color(0xFF15803D); // Green
         break;
-      case 'CANCELLED':
       default:
-        statusColor = const Color(0xFFEF4444);
-        statusLabel = 'Cancelled';
-        statusIcon = Icons.cancel_outlined;
-        break;
+        statusBgColor = Colors.grey.shade200;
+        statusTextColor = Colors.grey.shade700;
     }
 
-    return GestureDetector(
-      onTap: () {
-        if (job['id'] != null) {
-          context.push('/client/jobs/${job['id']}/details', extra: job);
-        }
-      },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 14),
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1E293B) : Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: isDark ? Border.all(color: const Color(0xFF334155), width: 1) : null,
-          boxShadow: isDark
-              ? null
-              : [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 14,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Title + Status badge
+          Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Title + status
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Category icon
-                  Container(
-                    width: 42,
-                    height: 42,
-                    decoration: BoxDecoration(
-                      color: statusColor.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(statusIcon, color: statusColor, size: 22),
+              Expanded(
+                child: Text(
+                  job['title'] ?? 'Electrical Wiring for New Kitchen',
+                  style: const TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1F2937),
+                    height: 1.3,
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          title,
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: isDark ? Colors.white : const Color(0xFF1F2937),
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          categoryName,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  // Status badge
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: statusColor.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      statusLabel,
-                      style: TextStyle(
-                        color: statusColor,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 14),
-              Divider(height: 1, color: isDark ? const Color(0xFF334155) : Colors.grey.shade100),
-              const SizedBox(height: 12),
-              
-              // Details
-              _infoRow(
-                Icons.description_outlined,
-                description,
-                isDark,
-                maxLines: 2,
-              ),
-              const SizedBox(height: 6),
-              if (urgency == 'URGENT') ...[
-                _infoRow(
-                  Icons.warning_amber_rounded,
-                  'Urgent Request',
-                  isDark,
-                  iconColor: const Color(0xFFEF4444),
-                  textColor: const Color(0xFFEF4444),
                 ),
-                const SizedBox(height: 6),
-              ],
-              _infoRow(
-                Icons.calendar_today_outlined,
-                createdAt != null ? 'Posted ${_timeAgo(createdAt)}' : 'Recently',
-                isDark,
               ),
-              
-              const SizedBox(height: 14),
-              
-              // Budget + Quotes Action
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: isDark
-                          ? const Color(0xFF006B5E).withValues(alpha: 0.2)
-                          : const Color(0xFFE8F5F2),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      'Rs. ${_formatBudget(budgetMin)} - ${_formatBudget(budgetMax)}',
-                      style: const TextStyle(
-                        color: Color(0xFF006B5E),
-                        fontWeight: FontWeight.w700,
-                        fontSize: 13,
-                      ),
-                    ),
+              const SizedBox(width: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: statusBgColor,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  status == 'ASSIGNED' ? 'Active' : status[0] + status.substring(1).toLowerCase(),
+                  style: TextStyle(
+                    color: statusTextColor,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
                   ),
-                  const Spacer(),
-                  if (status == 'OPEN')
-                    OutlinedButton.icon(
-                      onPressed: () {
-                        if (job['id'] != null) {
-                          context.push('/client/jobs/${job['id']}/quotes', extra: job);
-                        }
-                      },
-                      icon: const Icon(Icons.request_quote_outlined, size: 15, color: Color(0xFFD3410A)),
-                      label: Text(
-                        '$quoteCount Quote${quoteCount == 1 ? '' : 's'}',
-                        style: const TextStyle(color: Color(0xFFD3410A), fontSize: 13, fontWeight: FontWeight.bold),
-                      ),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                        side: const BorderSide(color: Color(0xFFD3410A)),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        minimumSize: Size.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
-                    )
-                  else
-                    OutlinedButton.icon(
-                      onPressed: () {
-                        if (job['id'] != null) {
-                          context.push('/client/jobs/${job['id']}/details', extra: job);
-                        }
-                      },
-                      icon: const Icon(Icons.visibility_outlined, size: 15, color: Color(0xFF6B7280)),
-                      label: const Text(
-                        'View',
-                        style: TextStyle(color: Color(0xFF6B7280), fontSize: 13, fontWeight: FontWeight.bold),
-                      ),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                        side: const BorderSide(color: Color(0xFF6B7280)),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        minimumSize: Size.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
-                    ),
-                ],
+                ),
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
+          const SizedBox(height: 6),
 
-  Widget _infoRow(IconData icon, String text, bool isDark, {int maxLines = 1, Color? iconColor, Color? textColor}) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(top: 2),
-          child: Icon(icon, size: 14, color: iconColor ?? (isDark ? Colors.grey.shade500 : Colors.grey.shade400)),
-        ),
-        const SizedBox(width: 6),
-        Expanded(
-          child: Text(
-            text,
+          // Category
+          Text(
+            job['categoryName'] ?? 'Electrician',
             style: TextStyle(
-              color: textColor ?? (isDark ? Colors.grey.shade400 : Colors.grey.shade600),
-              fontSize: 13,
+              fontSize: 14,
+              color: Colors.grey.shade600,
             ),
-            maxLines: maxLines,
-            overflow: maxLines == 1 ? TextOverflow.ellipsis : null,
           ),
-        ),
-      ],
+          const SizedBox(height: 14),
+
+          // Description
+          Text(
+            job['description'] ?? 'Need complete electrical wiring for newly renovated kitchen including lights, power...',
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey.shade600,
+              height: 1.5,
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Urgency badge
+          if (urgency == 'URGENT')
+            Container(
+              margin: const EdgeInsets.only(bottom: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFEE2E2),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: const Text(
+                'Urgent',
+                style: TextStyle(
+                  color: Color(0xFFDC2626),
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            
+          Divider(color: Colors.grey.shade100, height: 1),
+          const SizedBox(height: 16),
+
+          // Budget + Time + Quotes
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Text(
+                  'Rs. ${_formatBudget(budgetMin ?? 25000)} - Rs. ${_formatBudget(budgetMax ?? 35000)}',
+                  style: const TextStyle(
+                    color: Color(0xFFD3410A), // Orange text
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(width: 4, height: 4, decoration: BoxDecoration(color: Colors.grey.shade400, shape: BoxShape.circle)),
+              const SizedBox(width: 8),
+              Text(
+                createdAt != null ? _timeAgo(createdAt) : '2 hours ago',
+                style: TextStyle(
+                  color: Colors.grey.shade500,
+                  fontSize: 13,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(width: 6, height: 6, decoration: const BoxDecoration(color: Color(0xFF16A34A), shape: BoxShape.circle)),
+              const SizedBox(width: 6),
+              GestureDetector(
+                onTap: () {
+                  if (job['id'] != null) {
+                    context.push('/client/jobs/${job['id']}/quotes', extra: job);
+                  }
+                },
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Text(
+                      '$quoteCount',
+                      style: const TextStyle(
+                        color: Color(0xFF16A34A),
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        height: 1.0,
+                      ),
+                    ),
+                    const Text(
+                      'Quotes',
+                      style: TextStyle(
+                        color: Color(0xFF16A34A),
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        height: 1.0,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 

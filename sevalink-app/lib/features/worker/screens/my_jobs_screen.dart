@@ -3,7 +3,197 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'job_details_screen.dart';
 import '../../../data/models/job.dart';
 import '../../../core/themes/app_theme.dart';
-import '../../../providers/worker_jobs_list_provider.dart';
+import '../../../providers/auth_provider.dart';
+import '../../../providers/worker_feed_provider.dart';
+
+// ─── Enums & Model ────────────────────────────────────────────────────────────
+
+enum JobStatus { active, pending, completed }
+
+class WorkerJob {
+  final String id;
+  final String title;
+  final String clientName;
+  final String location;
+  final String date;
+  final String budget;
+  final JobStatus status;
+  final String? category;
+
+  const WorkerJob({
+    required this.id,
+    required this.title,
+    required this.clientName,
+    required this.location,
+    required this.date,
+    required this.budget,
+    required this.status,
+    this.category,
+  });
+
+  WorkerJob copyWith({JobStatus? status}) {
+    return WorkerJob(
+      id: id,
+      title: title,
+      clientName: clientName,
+      location: location,
+      date: date,
+      budget: budget,
+      status: status ?? this.status,
+      category: category,
+    );
+  }
+}
+
+// ─── Jobs State Notifier ──────────────────────────────────────────────────────
+
+class WorkerJobsListState {
+  final List<WorkerJob> jobs;
+  final bool isLoading;
+  final String? error;
+
+  const WorkerJobsListState({
+    this.jobs = const [],
+    this.isLoading = false,
+    this.error,
+  });
+
+  WorkerJobsListState copyWith({
+    List<WorkerJob>? jobs,
+    bool? isLoading,
+    String? error,
+  }) {
+    return WorkerJobsListState(
+      jobs: jobs ?? this.jobs,
+      isLoading: isLoading ?? this.isLoading,
+      error: error,
+    );
+  }
+}
+
+class _WorkerJobsNotifier extends Notifier<WorkerJobsListState> {
+  @override
+  WorkerJobsListState build() {
+    // Load jobs automatically when provider is read
+    Future.microtask(() => loadJobs());
+    return const WorkerJobsListState(isLoading: true);
+  }
+
+  Future<void> loadJobs() async {
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      final dioClient = ref.read(dioClientProvider);
+      final user = ref.read(authProvider).user;
+
+      if (user == null) throw Exception('Not logged in');
+
+      // Find worker profile by user id (from workerFeedProvider stats or workers API)
+      int? workerId = ref.read(workerFeedProvider).stats.workerId;
+      if (workerId == null || workerId == 0) {
+        final workersResponse = await dioClient.dio.get('/workers');
+        final List<dynamic> workersData = workersResponse.data;
+        final workerEntry = workersData.firstWhere(
+          (w) => w['user'] != null && w['user']['id'] == user.id,
+          orElse: () => null,
+        );
+        if (workerEntry != null) {
+          workerId = workerEntry['id'];
+        }
+      }
+
+      if (workerId == null || workerId == 0) {
+        throw Exception('Worker profile not found');
+      }
+
+      // Fetch worker quotations
+      final response = await dioClient.dio.get('/quotations/worker/$workerId');
+      final List<dynamic> data = response.data;
+
+      final List<WorkerJob> jobsList = [];
+      for (final item in data) {
+        final statusStr = item['status'] ?? 'PENDING';
+        if (statusStr == 'REJECTED') continue; // Skip rejected ones
+
+        final jobPost = item['jobPost'];
+        if (jobPost == null) continue;
+
+        final jobPostId = jobPost['id']?.toString() ?? '0';
+        final title = jobPost['title'] ?? '';
+        final location = jobPost['locationName'] ?? jobPost['location'] ?? '';
+
+        // Safely extract client name
+        final clientMap = jobPost['client'];
+        final clientName = clientMap != null ? (clientMap['fullName'] ?? 'Client') : 'Client';
+
+        // Proposed price or budget
+        final proposedPrice = item['proposedPrice'] ?? 0.0;
+        final budgetStr = 'Rs. ${proposedPrice.toInt()}';
+
+        final date = jobPost['createdAt'] != null
+            ? jobPost['createdAt'].toString().split('T').first
+            : '';
+
+        final jobStatusStr = jobPost['status'] ?? 'OPEN';
+        JobStatus status;
+        if (statusStr == 'ACCEPTED') {
+          if (jobStatusStr == 'COMPLETED') {
+            status = JobStatus.completed;
+          } else {
+            status = JobStatus.active;
+          }
+        } else {
+          status = JobStatus.pending;
+        }
+
+        final categoryMap = jobPost['category'];
+        final categoryName = categoryMap is Map ? (categoryMap['name'] ?? '') : (categoryMap ?? '');
+
+        jobsList.add(WorkerJob(
+          id: jobPostId,
+          title: title,
+          clientName: clientName,
+          location: location,
+          date: date,
+          budget: budgetStr,
+          status: status,
+          category: categoryName.isNotEmpty ? categoryName : null,
+        ));
+      }
+
+      state = state.copyWith(jobs: jobsList, isLoading: false);
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
+    }
+  }
+
+  /// Mark a job as completed (moves it to Done tab)
+  Future<void> markDone(String id) async {
+    try {
+      final dioClient = ref.read(dioClientProvider);
+      
+      // Update job timeline to COMPLETED
+      await dioClient.dio.put(
+        '/jobs/detail/$id/timeline',
+        queryParameters: {
+          'status': 'COMPLETED',
+          'note': 'Job completed by worker',
+        },
+      );
+
+      // Refresh the local job list and the worker home feed stats
+      await loadJobs();
+      ref.read(workerFeedProvider.notifier).refresh();
+    } catch (e) {
+      // Propagation of error can be handled in UI or log
+    }
+  }
+}
+
+// Public so the home screen can watch the live active count
+final workerJobsListProvider =
+    NotifierProvider<_WorkerJobsNotifier, WorkerJobsListState>(
+  _WorkerJobsNotifier.new,
+);
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
@@ -59,29 +249,6 @@ class _MyJobsScreenState extends ConsumerState<MyJobsScreen>
     Future.delayed(const Duration(milliseconds: 600), () {
       if (mounted) _tabController.animateTo(2);
     });
-  }
-
-  void _navigateToDetails(WorkerJob job) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => JobDetailsScreen(
-          // Worker already sent a quote (accepted) — hide Send Quote button
-          showSendQuote: false,
-          job: Job(
-            id: int.tryParse(job.id) ?? 0,
-            title: job.title,
-            description: 'No description available.',
-            location: job.location,
-            postedAt: job.date,
-            minBudget: 0,
-            maxBudget: 0,
-            isNew: false,
-            category: job.category ?? '',
-          ),
-        ),
-      ),
-    );
   }
 
   Widget _buildErrorView(String errorMsg) {
@@ -160,20 +327,32 @@ class _MyJobsScreenState extends ConsumerState<MyJobsScreen>
                             jobs: active,
                             emptyLabel: 'No active jobs right now',
                             onMarkDone: (id) => _handleMarkDone(id),
-                            onViewDetails: _navigateToDetails,
                           ),
                           // Pending tab
                           _JobList(
                             jobs: pending,
                             emptyLabel: 'No upcoming jobs scheduled',
-                            onViewDetails: _navigateToDetails,
+                            onViewDetails: (job) => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => JobDetailsScreen(
+                                  job: Job(
+                                    id: int.tryParse(job.id) ?? 0,
+                                    title: job.title,
+                                    description: 'No description available.',
+                                    location: job.location,
+                                    postedAt: job.date,
+                                    minBudget: 0,
+                                    maxBudget: 0,
+                                    isNew: false,
+                                    category: job.category ?? '',
+                                  ),
+                                ),
+                              ),
+                            ),
                           ),
                           // Done tab
-                          _JobList(
-                            jobs: completed,
-                            emptyLabel: 'No completed jobs yet',
-                            onViewDetails: _navigateToDetails,
-                          ),
+                          _JobList(jobs: completed, emptyLabel: 'No completed jobs yet'),
                         ],
                       ),
           ),
@@ -332,15 +511,12 @@ class _JobList extends StatelessWidget {
     return ListView.builder(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
       itemCount: jobs.length,
-      itemBuilder: (_, i) => GestureDetector(
-        onTap: onViewDetails == null ? null : () => onViewDetails!(jobs[i]),
-        child: _JobCard(
-          job: jobs[i],
-          onMarkDone:
-              onMarkDone == null ? null : () => onMarkDone!(jobs[i].id),
-          onViewDetails:
-              onViewDetails == null ? null : () => onViewDetails!(jobs[i]),
-        ),
+      itemBuilder: (_, i) => _JobCard(
+        job: jobs[i],
+        onMarkDone:
+            onMarkDone == null ? null : () => onMarkDone!(jobs[i].id),
+        onViewDetails:
+            onViewDetails == null ? null : () => onViewDetails!(jobs[i]),
       ),
     );
   }

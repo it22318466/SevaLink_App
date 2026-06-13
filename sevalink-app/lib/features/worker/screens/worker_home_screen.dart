@@ -7,13 +7,10 @@ import 'job_details_screen.dart';
 import 'my_jobs_screen.dart';
 import '../../chat/screens/chat_list_screen.dart';
 import '../../../data/models/job.dart';
-import '../../../data/models/notification_model.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/worker_feed_provider.dart';
 import '../../../providers/notification_provider.dart';
-import '../../../providers/worker_jobs_list_provider.dart';
 import '../../../core/themes/app_theme.dart';
-import '../../dashboard/widgets/notifications_drawer.dart';
 
 // (Mock data removed — now using real backend feed)
 
@@ -45,7 +42,7 @@ class _WorkerHomeScreenState extends ConsumerState<WorkerHomeScreen> {
 
     return Scaffold(
       backgroundColor: context.sevaColors.bodyBg,
-      endDrawer: const NotificationsDrawer(),
+      endDrawer: const _NotificationsDrawer(),
       body: _buildBody(),
       bottomNavigationBar: _BottomNav(
         selectedIndex: _selectedIndex,
@@ -86,7 +83,7 @@ class _WorkerHomeScreenState extends ConsumerState<WorkerHomeScreen> {
 }
 
 // ─── Home Content (connected to real backend) ─────────────────────────────────
-class _HomeContent extends ConsumerStatefulWidget {
+class _HomeContent extends ConsumerWidget {
   final VoidCallback? onGoToJobs;
   final VoidCallback? onGoToProfile;
   final String workerName;
@@ -100,60 +97,12 @@ class _HomeContent extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<_HomeContent> createState() => _HomeContentState();
-}
-
-class _HomeContentState extends ConsumerState<_HomeContent> {
-  final TextEditingController _searchController = TextEditingController();
-  String _searchQuery = '';
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final feedState = ref.watch(workerFeedProvider);
     final jobs = feedState.jobs;
     final isLoading = feedState.isLoading;
     final error = feedState.error;
     final newCount = jobs.where((j) => j.isNew).length;
-
-    // Auto-refresh the feeds when a quote status notification arrives.
-    // The notification provider polls every 15 s, so the feeds are updated
-    // automatically within 15 s of a client accepting/declining the quote.
-    ref.listen<NotificationState>(notificationProvider, (previous, next) {
-      final prevCount = previous?.notifications.length ?? 0;
-      final newNotifs = next.notifications.skip(prevCount);
-      
-      final hasDeclined = newNotifs.any(
-        (n) => n.title.toLowerCase().contains('declined') ||
-               n.title.toLowerCase().contains('denied') ||
-               n.title.toLowerCase().contains('rejected'),
-      );
-      
-      final hasAccepted = newNotifs.any(
-        (n) => n.title.toLowerCase().contains('accepted') ||
-               n.title.toLowerCase().contains('approved'),
-      );
-
-      if (hasDeclined || hasAccepted) {
-        ref.read(workerFeedProvider.notifier).refresh();
-        ref.read(workerJobsListProvider.notifier).loadJobs();
-      }
-    });
-
-    // Local filter (client side search)
-    final filteredJobs = jobs.where((job) {
-      if (_searchQuery.isEmpty) return true;
-      final q = _searchQuery.toLowerCase();
-      return job.title.toLowerCase().contains(q) ||
-          job.description.toLowerCase().contains(q) ||
-          job.location.toLowerCase().contains(q) ||
-          job.category.toLowerCase().contains(q);
-    }).toList();
 
     return RefreshIndicator(
       color: const Color(0xFF0F9B8E),
@@ -163,8 +112,8 @@ class _HomeContentState extends ConsumerState<_HomeContent> {
         slivers: [
           SliverToBoxAdapter(
             child: _Header(
-              workerName: widget.workerName,
-              hasNewNotifications: widget.hasNewNotifications,
+              workerName: workerName,
+              hasNewNotifications: hasNewNotifications,
               stats: feedState.stats,
             ),
           ),
@@ -172,8 +121,8 @@ class _HomeContentState extends ConsumerState<_HomeContent> {
             child: Transform.translate(
               offset: const Offset(0, -24),
               child: _QuickAccessSection(
-                onMyJobsTap: widget.onGoToJobs,
-                onProfileTap: widget.onGoToProfile,
+                onMyJobsTap: onGoToJobs,
+                onProfileTap: onGoToProfile,
               ),
             ),
           ),
@@ -219,72 +168,6 @@ class _HomeContentState extends ConsumerState<_HomeContent> {
               ),
             ),
           ),
-          // ── Search bar ────────────────────────────────────────────────────
-          if (!isLoading && error == null && jobs.isNotEmpty)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                child: Container(
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: context.sevaColors.cardBg,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: context.sevaColors.border,
-                      width: 1,
-                    ),
-                    boxShadow: context.isDark ? null : [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.04),
-                        blurRadius: 10,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: TextField(
-                    controller: _searchController,
-                    onChanged: (val) {
-                      setState(() {
-                        _searchQuery = val;
-                      });
-                    },
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: context.sevaColors.textPrimary,
-                    ),
-                    decoration: InputDecoration(
-                      hintText: 'Search jobs by title, description or location...',
-                      hintStyle: TextStyle(
-                        color: context.sevaColors.textSecondary.withValues(alpha: 0.6),
-                        fontSize: 14,
-                      ),
-                      prefixIcon: const Icon(
-                        Icons.search_rounded,
-                        color: Color(0xFF0F9B8E),
-                        size: 20,
-                      ),
-                      suffixIcon: _searchQuery.isNotEmpty
-                          ? GestureDetector(
-                              onTap: () {
-                                _searchController.clear();
-                                setState(() {
-                                  _searchQuery = '';
-                                });
-                              },
-                              child: Icon(
-                                Icons.close_rounded,
-                                color: context.sevaColors.textSecondary,
-                                size: 18,
-                              ),
-                            )
-                          : null,
-                      border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
-                  ),
-                ),
-              ),
-            ),
           // ── Loading state ─────────────────────────────────────────────────
           if (isLoading)
             const SliverFillRemaining(
@@ -330,45 +213,15 @@ class _HomeContentState extends ConsumerState<_HomeContent> {
                 ),
               ),
             )
-          // ── Search matching empty state ──────────────────────────────────
-          else if (filteredJobs.isEmpty)
-            SliverFillRemaining(
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.search_off_rounded,
-                        size: 64,
-                        color: context.sevaColors.textSecondary
-                            .withValues(alpha: 0.4)),
-                    const SizedBox(height: 12),
-                    Text(
-                      'No jobs match your search',
-                      style: TextStyle(
-                          color: context.sevaColors.textPrimary,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'Try typing something else',
-                      style: TextStyle(
-                          color: context.sevaColors.textSecondary,
-                          fontSize: 13),
-                    ),
-                  ],
-                ),
-              ),
-            )
           // ── Jobs list ─────────────────────────────────────────────────────
           else
             SliverList(
               delegate: SliverChildBuilderDelegate(
                 (context, index) => Padding(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
-                  child: _JobCard(job: filteredJobs[index]),
+                  child: _JobCard(job: jobs[index]),
                 ),
-                childCount: filteredJobs.length,
+                childCount: jobs.length,
               ),
             ),
           const SliverToBoxAdapter(child: SizedBox(height: 20)),
@@ -997,4 +850,140 @@ class _BottomNav extends StatelessWidget {
     );
   }
 }
-
+
+// ─── Notifications Drawer ─────────────────────────────────────────────────────
+class _NotificationsDrawer extends ConsumerWidget {
+  const _NotificationsDrawer();
+
+  void _handleNotificationTap(BuildContext context, WidgetRef ref, int notifId) {
+    ref.read(notificationProvider.notifier).markAsRead(notifId);
+    Navigator.pop(context);
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colors = context.sevaColors;
+    final notificationState = ref.watch(notificationProvider);
+    final notifications = notificationState.notifications;
+
+    return Drawer(
+      backgroundColor: colors.cardBg,
+      surfaceTintColor: Colors.transparent,
+      child: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Notifications',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: colors.textPrimary,
+                    ),
+                  ),
+                  if (notificationState.unreadCount > 0)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.redAccent,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        '${notificationState.unreadCount} New',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            Divider(height: 1, color: colors.divider),
+            Expanded(
+              child: notificationState.isLoading && notifications.isEmpty
+                  ? const Center(child: CircularProgressIndicator())
+                  : notifications.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.notifications_none_rounded,
+                                  size: 52, color: Colors.grey.shade300),
+                              const SizedBox(height: 12),
+                              const Text('No notifications yet',
+                                  style: TextStyle(color: Colors.grey, fontSize: 15)),
+                            ],
+                          ),
+                        )
+                      : ListView.builder(
+                          itemCount: notifications.length,
+                          itemBuilder: (context, index) {
+                            final notif = notifications[index];
+                            return InkWell(
+                              onTap: () => _handleNotificationTap(context, ref, notif.id),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                                decoration: BoxDecoration(
+                                  color: notif.isRead ? Colors.transparent : const Color(0xFF0F9B8E).withValues(alpha: 0.05),
+                                  border: Border(bottom: BorderSide(color: colors.divider)),
+                                ),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: notif.isRead ? Colors.grey.shade100 : const Color(0xFF0F9B8E).withValues(alpha: 0.1),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: Icon(
+                                        Icons.notifications_active,
+                                        color: notif.isRead ? Colors.grey.shade400 : const Color(0xFF0F9B8E),
+                                        size: 20,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            notif.title,
+                                            style: TextStyle(
+                                              fontWeight: notif.isRead ? FontWeight.normal : FontWeight.bold,
+                                              fontSize: 15,
+                                              color: colors.textPrimary,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            notif.message,
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              color: colors.textSecondary,
+                                              height: 1.3,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

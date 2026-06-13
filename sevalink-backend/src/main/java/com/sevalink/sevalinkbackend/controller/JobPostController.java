@@ -38,41 +38,10 @@ public class JobPostController {
         return jobPostService.getAllOpenJobs();
     }
 
-    // Worker feed — smart filtered: categoryId + nearby location fallback
-    // Optional workerId hides jobs the worker has already quoted (including denied quotes)
-    // GET http://localhost:8080/api/jobs/feed?categoryId=1&lat=6.92&lng=79.86&radius=15&workerId=3
+    // Worker feed — alias for getAllOpenJobs (used by worker app UI)
+    // GET http://localhost:8080/api/jobs/feed
     @GetMapping("/feed")
-    public List<JobPost> getWorkerFeed(
-            @RequestParam(required = false) Long categoryId,
-            @RequestParam(required = false) Double lat,
-            @RequestParam(required = false) Double lng,
-            @RequestParam(required = false) Double radius,
-            @RequestParam(required = false) Long workerId) {
-
-        // Worker ID provided — use quoted-jobs-excluded variants
-        if (workerId != null) {
-            if (lat != null && lng != null && categoryId != null) {
-                return jobPostService.getNearbyJobsByCategoryForWorker(lat, lng, radius, categoryId, workerId);
-            }
-            if (lat != null && lng != null) {
-                return jobPostService.getNearbyJobsForWorker(lat, lng, radius, workerId);
-            }
-            if (categoryId != null) {
-                return jobPostService.getOpenJobsByCategoryForWorker(categoryId, workerId);
-            }
-            return jobPostService.getAllOpenJobsForWorker(workerId);
-        }
-
-        // No workerId — fall back to standard queries (backwards compatible)
-        if (lat != null && lng != null && categoryId != null) {
-            return jobPostService.getNearbyJobsByCategory(lat, lng, radius, categoryId);
-        }
-        if (lat != null && lng != null) {
-            return jobPostService.getNearbyJobs(lat, lng, radius);
-        }
-        if (categoryId != null) {
-            return jobPostService.getOpenJobsByCategory(categoryId);
-        }
+    public List<JobPost> getWorkerFeed() {
         return jobPostService.getAllOpenJobs();
     }
 
@@ -130,22 +99,6 @@ public class JobPostController {
         try {
             JobPost cancelled = jobPostService.cancelJob(id);
             return ResponseEntity.ok(cancelled);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
-        }
-    }
-
-    // Delete a job
-    // PUT http://localhost:8080/api/jobs/1/delete?clientId=1
-    @PutMapping("/{id}/delete")
-    public ResponseEntity<?> deleteJob(
-            @PathVariable Long id,
-            @RequestParam Long clientId,
-            @RequestBody java.util.Map<String, String> payload) {
-        try {
-            String reason = payload.get("reason");
-            JobPost deleted = jobPostService.deleteJob(id, reason, clientId);
-            return ResponseEntity.ok(deleted);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }

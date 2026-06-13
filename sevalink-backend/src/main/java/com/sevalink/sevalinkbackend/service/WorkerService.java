@@ -144,4 +144,14 @@ public class WorkerService {
 
         return worker;
     }
+
+    // Update worker's live coordinates
+    @Transactional
+    public Worker updateWorkerLocation(Long workerId, Double latitude, Double longitude) {
+        Worker worker = workerRepository.findById(workerId)
+                .orElseThrow(() -> new RuntimeException("Worker not found"));
+        worker.setLatitude(latitude);
+        worker.setLongitude(longitude);
+        return workerRepository.save(worker);
+    }
 }

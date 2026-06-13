@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:dio/dio.dart';
 import '../../../data/models/job.dart';
 import '../../../core/themes/app_theme.dart';
 import '../../../providers/auth_provider.dart';
@@ -107,10 +108,21 @@ class _SendQuoteScreenState extends ConsumerState<SendQuoteScreen>
     } catch (e) {
       setState(() => _isSubmitting = false);
       if (!mounted) return;
+      String errorMessage = e.toString().replaceAll('Exception: ', '');
+      if (e is DioException && e.response?.data != null) {
+        final data = e.response?.data;
+        if (data is Map && data.containsKey('message')) {
+          errorMessage = data['message'].toString();
+        } else if (data is String && data.isNotEmpty) {
+          errorMessage = data;
+        } else {
+          errorMessage = 'Server Error: $data';
+        }
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            e.toString().replaceAll('Exception: ', ''),
+            errorMessage,
             style: const TextStyle(color: Colors.white),
           ),
           backgroundColor: const Color(0xFFDC2626),

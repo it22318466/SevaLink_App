@@ -1,71 +1,20 @@
+
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../data/models/job.dart';
 import '../../../core/themes/app_theme.dart';
-import '../../../providers/auth_provider.dart';
 
-class JobDetailsScreen extends ConsumerStatefulWidget {
+class JobDetailsScreen extends StatelessWidget {
   final Job job;
-  /// When false the "Send Quote" button is hidden (worker already sent a quote).
-  final bool showSendQuote;
 
-  const JobDetailsScreen({super.key, required this.job, this.showSendQuote = true});
+  const JobDetailsScreen({super.key, required this.job});
 
-  @override
-  ConsumerState<JobDetailsScreen> createState() => _JobDetailsScreenState();
-}
-
-class _JobDetailsScreenState extends ConsumerState<JobDetailsScreen> {
-  late Job _currentJob;
-  bool _isLoading = false;
-  String? _error;
-
-  @override
-  void initState() {
-    super.initState();
-    _currentJob = widget.job;
-    // Fetch details if we have partial information (description is default empty/mocked, or clientId is null)
-    if (_currentJob.description.isEmpty || 
-        _currentJob.description == 'No description available.' || 
-        _currentJob.clientId == null) {
-      _fetchDetails();
-    }
-  }
-
-  Future<void> _fetchDetails() async {
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
-    try {
-      final dio = ref.read(dioClientProvider).dio;
-      final response = await dio.get('/jobs/detail/${widget.job.id}');
-      if (mounted && response.statusCode == 200 && response.data != null) {
-        setState(() {
-          _currentJob = Job.fromJson(response.data);
-          _isLoading = false;
-        });
-      } else {
-        throw Exception('Failed to load job details');
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-          _error = e.toString();
-        });
-      }
-    }
-  }
-
-  Future<void> _openMap(double? lat, double? lng, String location, BuildContext context) async {
-    final query = (lat != null && lng != null) ? '$lat,$lng' : Uri.encodeComponent(location);
+  Future<void> _openMap(String location, BuildContext context) async {
     final Uri mapUrl = Uri.parse(
-        'https://www.google.com/maps/search/?api=1&query=$query');
+        'https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(location)}');
     try {
       await launchUrl(mapUrl, mode: LaunchMode.externalApplication);
     } catch (e) {
@@ -91,39 +40,6 @@ class _JobDetailsScreenState extends ConsumerState<JobDetailsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Show fetch-error banner when details failed to load
-                  if (_error != null)
-                    Container(
-                      margin: const EdgeInsets.fromLTRB(0, 16, 0, 0),
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: Colors.red.shade50,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.red.shade200),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.error_outline_rounded,
-                              color: Colors.red.shade400, size: 18),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'Could not load full details. Showing partial info.',
-                              style: TextStyle(
-                                  fontSize: 13, color: Colors.red.shade700),
-                            ),
-                          ),
-                          GestureDetector(
-                            onTap: _fetchDetails,
-                            child: Text('Retry',
-                                style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.red.shade700)),
-                          ),
-                        ],
-                      ),
-                    ),
                   const SizedBox(height: 24),
                   _buildStatusRow(context),
                   const SizedBox(height: 20),
@@ -133,25 +49,18 @@ class _JobDetailsScreenState extends ConsumerState<JobDetailsScreen> {
                     context: context,
                     title: 'Job Description',
                     icon: Icons.description_outlined,
-                    child: _isLoading && _currentJob.description == 'No description available.'
-                        ? const Center(
-                            child: Padding(
-                              padding: EdgeInsets.symmetric(vertical: 20),
-                              child: CircularProgressIndicator(color: Color(0xFFD3410A)),
-                            ),
-                          )
-                        : Text(
-                            _currentJob.description,
-                            style: TextStyle(
-                              fontSize: 15,
-                              color: colors.textSecondary,
-                              height: 1.7,
-                            ),
-                          ),
+                    child: Text(
+                      job.description,
+                      style: TextStyle(
+                        fontSize: 15,
+                        color: (Theme.of(context).extension<SevaLinkColors>() ?? SevaLinkColors.light).textSecondary,
+                        height: 1.7,
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 20),
                   GestureDetector(
-                    onTap: () => _openMap(_currentJob.latitude, _currentJob.longitude, _currentJob.location, context),
+                    onTap: () => _openMap(job.location, context),
                     child: _buildSection(
                       context: context,
                       title: 'Location',
@@ -176,11 +85,11 @@ class _JobDetailsScreenState extends ConsumerState<JobDetailsScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      _currentJob.location,
+                                      job.location,
                                       style: TextStyle(
                                         fontSize: 15,
                                         fontWeight: FontWeight.w600,
-                                        color: colors.textPrimary,
+                                        color: (Theme.of(context).extension<SevaLinkColors>() ?? SevaLinkColors.light).textPrimary,
                                       ),
                                     ),
                                     const SizedBox(height: 2),
@@ -196,11 +105,7 @@ class _JobDetailsScreenState extends ConsumerState<JobDetailsScreen> {
                           ),
                           const SizedBox(height: 16),
                           AbsorbPointer(
-                            child: _EmbeddedMap(
-                              location: _currentJob.location,
-                              latitude: _currentJob.latitude,
-                              longitude: _currentJob.longitude,
-                            ),
+                            child: _EmbeddedMap(location: job.location),
                           ),
                         ],
                       ),
@@ -214,16 +119,16 @@ class _JobDetailsScreenState extends ConsumerState<JobDetailsScreen> {
                     child: Column(
                       children: [
                         _buildDetailRow(context,
-                            Icons.category_outlined, 'Category', _currentJob.category),
+                            Icons.category_outlined, 'Category', job.category),
                         const SizedBox(height: 12),
                         _buildDetailRow(context,
-                            Icons.access_time_rounded, 'Posted', _currentJob.postedAt),
+                            Icons.access_time_rounded, 'Posted', job.postedAt),
                         const SizedBox(height: 12),
                         _buildDetailRow(
                             context,
                             Icons.new_releases_outlined,
                             'Status',
-                            _currentJob.isNew ? 'Newly Posted' : 'Active'),
+                            job.isNew ? 'Newly Posted' : 'Active'),
                       ],
                     ),
                   ),
@@ -286,7 +191,7 @@ class _JobDetailsScreenState extends ConsumerState<JobDetailsScreen> {
                 mainAxisAlignment: MainAxisAlignment.end,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (_currentJob.isNew)
+                  if (job.isNew)
                     Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 10, vertical: 4),
@@ -306,7 +211,7 @@ class _JobDetailsScreenState extends ConsumerState<JobDetailsScreen> {
                       ),
                     ),
                   Text(
-                    _currentJob.title,
+                    job.title,
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 24,
@@ -327,9 +232,9 @@ class _JobDetailsScreenState extends ConsumerState<JobDetailsScreen> {
     return Row(
       children: [
         _buildChip(context,
-            Icons.location_on_outlined, _currentJob.location, const Color(0xFFD3410A)),
+            Icons.location_on_outlined, job.location, const Color(0xFFD3410A)),
         const SizedBox(width: 10),
-        _buildChip(context, Icons.access_time_rounded, _currentJob.postedAt,
+        _buildChip(context, Icons.access_time_rounded, job.postedAt,
             const Color(0xFF6B7280)),
       ],
     );
@@ -406,7 +311,7 @@ class _JobDetailsScreenState extends ConsumerState<JobDetailsScreen> {
               ),
               const SizedBox(height: 4),
               Text(
-                '${_currentJob.minBudget} - ${_currentJob.maxBudget}',
+                '${job.minBudget} - ${job.maxBudget}',
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 22,
@@ -504,12 +409,7 @@ class _JobDetailsScreenState extends ConsumerState<JobDetailsScreen> {
 
   Widget _buildClientCard(BuildContext context) {
     final colors = Theme.of(context).extension<SevaLinkColors>() ?? SevaLinkColors.light;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    
-    final clientName = _currentJob.clientName ?? 'Client';
-    final avatarChar = clientName.isNotEmpty ? clientName[0].toUpperCase() : 'C';
-    final isPhoneVerified = _currentJob.clientPhone != null;
-    
+    final isDark  = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -527,32 +427,32 @@ class _JobDetailsScreenState extends ConsumerState<JobDetailsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          const Row(
             children: [
-              const Icon(Icons.person_outline_rounded,
+              Icon(Icons.person_outline_rounded,
                   size: 18, color: Color(0xFFD3410A)),
-              const SizedBox(width: 8),
+              SizedBox(width: 8),
               Text(
                 'Posted By',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: colors.textPrimary,
+                  color: Color(0xFF1F2937),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 16),
-          Divider(height: 1, color: colors.divider),
+          const Divider(height: 1, color: Color(0xFFF3F4F6)),
           const SizedBox(height: 16),
           Row(
             children: [
-              CircleAvatar(
+              const CircleAvatar(
                 radius: 26,
-                backgroundColor: const Color(0xFFE8EAF6),
+                backgroundColor: Color(0xFFE8EAF6),
                 child: Text(
-                  avatarChar,
-                  style: const TextStyle(
+                  'C',
+                  style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
                     color: Color(0xFFD3410A),
@@ -560,63 +460,48 @@ class _JobDetailsScreenState extends ConsumerState<JobDetailsScreen> {
                 ),
               ),
               const SizedBox(width: 14),
-              Expanded(
+              const Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      clientName,
+                      'Client',
                       style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: colors.textPrimary),
+                          color: Color(0xFF1F2937)),
                     ),
-                    const SizedBox(height: 3),
+                    SizedBox(height: 3),
                     Row(
                       children: [
-                        Icon(
-                          isPhoneVerified ? Icons.verified_outlined : Icons.info_outline,
-                          size: 14,
-                          color: const Color(0xFF006B5E),
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          isPhoneVerified ? 'Verified Client' : 'Client Profile',
-                          style: const TextStyle(
-                              fontSize: 12, color: Color(0xFF006B5E)),
-                        ),
+                        Icon(Icons.verified_outlined,
+                            size: 14, color: Color(0xFF006B5E)),
+                        SizedBox(width: 4),
+                        Text('Verified Client',
+                            style: TextStyle(
+                                fontSize: 12, color: Color(0xFF006B5E))),
                       ],
                     ),
                   ],
                 ),
               ),
-              if (_currentJob.clientId != null)
-                GestureDetector(
-                  onTap: () {
-                    context.push('/client/chat/${_currentJob.clientId}', extra: {
-                      'name': clientName,
-                      'jobTitle': _currentJob.title,
-                      'jobBudget': 'Rs. ${_currentJob.minBudget} - ${_currentJob.maxBudget}'
-                    });
-                  },
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF0FDF8),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                          color: const Color(0xFF006B5E), width: 1),
-                    ),
-                    child: const Text(
-                      'Message',
-                      style: TextStyle(
-                          fontSize: 13,
-                          color: Color(0xFF006B5E),
-                          fontWeight: FontWeight.w600),
-                    ),
-                  ),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF0FDF8),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                      color: const Color(0xFF006B5E), width: 1),
                 ),
+                child: const Text(
+                  'Message',
+                  style: TextStyle(
+                      fontSize: 13,
+                      color: Color(0xFF006B5E),
+                      fontWeight: FontWeight.w600),
+                ),
+              ),
             ],
           ),
         ],
@@ -643,9 +528,7 @@ class _JobDetailsScreenState extends ConsumerState<JobDetailsScreen> {
       ),
       child: Row(
         children: [
-          // Go Back button — always present
           Expanded(
-            flex: widget.showSendQuote ? 1 : 2,
             child: OutlinedButton(
               onPressed: () => context.pop(),
               style: OutlinedButton.styleFrom(
@@ -660,36 +543,33 @@ class _JobDetailsScreenState extends ConsumerState<JobDetailsScreen> {
                       fontWeight: FontWeight.bold, fontSize: 15)),
             ),
           ),
-          // Send Quote button — only shown when worker has not yet sent a quote
-          if (widget.showSendQuote) ...[
-            const SizedBox(width: 14),
-            Expanded(
-              flex: 2,
-              child: ElevatedButton(
-                onPressed: () {
-                  context.push('/worker/send-quote', extra: _currentJob);
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF006B5E),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 15),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14)),
-                  elevation: 0,
-                ),
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.send_rounded, size: 18),
-                    SizedBox(width: 8),
-                    Text('Send Quote',
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 15)),
-                  ],
-                ),
+          const SizedBox(width: 14),
+          Expanded(
+            flex: 2,
+            child: ElevatedButton(
+              onPressed: () {
+                context.push('/worker/send-quote', extra: job);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF006B5E),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 15),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14)),
+                elevation: 0,
+              ),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.send_rounded, size: 18),
+                  SizedBox(width: 8),
+                  Text('Send Quote',
+                      style: TextStyle(
+                          fontWeight: FontWeight.bold, fontSize: 15)),
+                ],
               ),
             ),
-          ],
+          ),
         ],
       ),
     );
@@ -698,14 +578,7 @@ class _JobDetailsScreenState extends ConsumerState<JobDetailsScreen> {
 
 class _EmbeddedMap extends StatefulWidget {
   final String location;
-  final double? latitude;
-  final double? longitude;
-
-  const _EmbeddedMap({
-    required this.location,
-    this.latitude,
-    this.longitude,
-  });
+  const _EmbeddedMap({required this.location});
 
   @override
   State<_EmbeddedMap> createState() => _EmbeddedMapState();
@@ -721,27 +594,7 @@ class _EmbeddedMapState extends State<_EmbeddedMap> {
     _loadCoordinates();
   }
 
-  @override
-  void didUpdateWidget(_EmbeddedMap oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.latitude != widget.latitude ||
-        oldWidget.longitude != widget.longitude ||
-        oldWidget.location != widget.location) {
-      _loadCoordinates();
-    }
-  }
-
   Future<void> _loadCoordinates() async {
-    if (widget.latitude != null && widget.longitude != null) {
-      if (mounted) {
-        setState(() {
-          _target = LatLng(widget.latitude!, widget.longitude!);
-          _isLoading = false;
-        });
-      }
-      return;
-    }
-
     try {
       final locations = await locationFromAddress(widget.location);
       if (locations.isNotEmpty) {
@@ -824,3 +677,4 @@ class _EmbeddedMapState extends State<_EmbeddedMap> {
     );
   }
 }
+
