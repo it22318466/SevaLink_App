@@ -95,7 +95,13 @@ class _WorkerJobsNotifier extends Notifier<WorkerJobsListState> {
         final workersResponse = await dioClient.dio.get('/workers');
         final List<dynamic> workersData = workersResponse.data;
         final workerEntry = workersData.firstWhere(
-          (w) => w['user'] != null && w['user']['id'] == user.id,
+          (w) {
+            if (w == null || w is! Map) return false;
+            final userMap = w['user'];
+            if (userMap == null || userMap is! Map) return false;
+            final userId = userMap['id'];
+            return userId != null && userId.toString() == user.id.toString();
+          },
           orElse: () => null,
         );
         if (workerEntry != null) {
@@ -374,6 +380,7 @@ class _MyJobsScreenState extends ConsumerState<MyJobsScreen>
             // Tabs
             TabBar(
               controller: _tabController,
+              dividerColor: Colors.transparent,
               indicatorColor: Colors.white,
               indicatorWeight: 3,
               indicatorSize: TabBarIndicatorSize.label,
