@@ -41,6 +41,10 @@ public class QuotationService {
         JobPost jobPost = jobPostRepository.findById(quotation.getJobPost().getId())
                 .orElseThrow(() -> new RuntimeException("Job not found"));
 
+        if (!"OPEN".equals(jobPost.getStatus())) {
+            throw new RuntimeException("Cannot send a quotation. This job is no longer open.");
+        }
+
         quotationRepository.findByJobPostIdAndWorkerId(
                 jobPost.getId(),
                 worker.getId())

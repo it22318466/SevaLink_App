@@ -50,4 +50,16 @@ class ClientJobsRepository {
       throw Exception('Error creating job: $e');
     }
   }
+
+  Future<void> deleteJob(int jobId) async {
+    try {
+      final response = await _dioClient.dio.delete('/jobs/$jobId');
+      if (response.statusCode == 200) {
+        return;
+      }
+      throw Exception('Failed to delete job');
+    } catch (e) {
+      throw Exception('Error deleting job: $e');
+    }
+  }
 }

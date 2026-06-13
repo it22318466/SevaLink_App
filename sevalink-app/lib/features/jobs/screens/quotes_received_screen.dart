@@ -62,14 +62,17 @@ class QuotesReceivedScreen extends ConsumerWidget {
               ),
             ),
             quotesAsync.when(
-              data: (quotes) => Text(
-                '${quotes.length} quotes for your job',
-                style: TextStyle(
-                  color: Colors.grey.shade600,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w400,
-                ),
-              ),
+              data: (quotes) {
+                final activeCount = quotes.where((q) => q.status != 'REJECTED').length;
+                return Text(
+                  '$activeCount quotes for your job',
+                  style: TextStyle(
+                    color: Colors.grey.shade600,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                  ),
+                );
+              },
               loading: () => const SizedBox(),
               error: (error, stack) => const SizedBox(),
             ),
@@ -83,7 +86,8 @@ class QuotesReceivedScreen extends ConsumerWidget {
           ),
           quotesAsync.when(
             data: (quotes) {
-              if (quotes.isEmpty) {
+              final activeQuotes = quotes.where((q) => q.status != 'REJECTED').toList();
+              if (activeQuotes.isEmpty) {
                 return SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.only(top: 60),
@@ -102,9 +106,9 @@ class QuotesReceivedScreen extends ConsumerWidget {
               return SliverList(
                 delegate: SliverChildBuilderDelegate(
                   (context, index) {
-                    return _buildQuoteCard(context, quotes[index]);
+                    return _buildQuoteCard(context, activeQuotes[index]);
                   },
-                  childCount: quotes.length,
+                  childCount: activeQuotes.length,
                 ),
               );
             },

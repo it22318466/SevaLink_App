@@ -113,6 +113,18 @@ public class JobPostController {
         }
     }
 
+    // Client deletes/removes a job post
+    // DELETE http://localhost:8080/api/jobs/1
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteJob(@PathVariable Long id) {
+        try {
+            jobPostService.deleteJob(id);
+            return ResponseEntity.ok(ApiResponse.success("Job post deleted successfully", null));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
     // Get job timeline
     // GET http://localhost:8080/api/jobs/1/timeline
     @GetMapping("/detail/{id}/timeline")

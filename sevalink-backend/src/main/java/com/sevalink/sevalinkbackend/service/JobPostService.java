@@ -155,6 +155,20 @@ public class JobPostService {
         return jobTimelineRepository.save(timeline);
     }
 
+    // Client deletes/removes a job post
+    @Transactional
+    public void deleteJob(Long jobId) {
+        JobPost job = jobPostRepository.findById(jobId)
+                .orElseThrow(() -> new RuntimeException("Job not found"));
+
+        complaintRepository.deleteByJobPostId(jobId);
+        jobTimelineRepository.deleteByJobPostId(jobId);
+        notificationRepository.deleteByJobPostId(jobId);
+        quotationRepository.deleteByJobPostId(jobId);
+
+        jobPostRepository.delete(job);
+    }
+
     // Confirm payment from Client or Worker
     @Transactional
     public JobPost confirmPayment(Long jobId, String email) {
@@ -257,7 +271,10 @@ public class JobPostService {
         }
 
         return jobs.stream().map(job -> {
-            long quoteCount = quotationRepository.findByJobPostIdOrderByProposedPriceAsc(job.getId()).size();
+            long quoteCount = quotationRepository.findByJobPostIdOrderByProposedPriceAsc(job.getId())
+                    .stream()
+                    .filter(q -> !"REJECTED".equals(q.getStatus()))
+                    .count();
             return ClientJobDto.builder()
                     .id(job.getId())
                     .title(job.getTitle())

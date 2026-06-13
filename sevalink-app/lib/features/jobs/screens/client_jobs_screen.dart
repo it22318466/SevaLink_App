@@ -47,6 +47,62 @@ class _ClientJobsScreenState extends ConsumerState<ClientJobsScreen> {
     }
   }
 
+  Future<void> _deleteJob(int jobId) async {
+    try {
+      final repository = ref.read(clientJobsRepositoryProvider);
+      await repository.deleteJob(jobId);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Job post deleted successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        // Invalidate stats and jobs providers
+        final user = ref.read(authProvider).user;
+        if (user != null) {
+          ref.invalidate(clientJobStatsProvider(user.id));
+          ref.invalidate(clientJobsProvider);
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: ${e.toString().replaceAll('Exception: ', '')}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  void _showDeleteConfirmationDialog(int jobId) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Remove Job Posted?'),
+        content: const Text(
+          'Are you sure you want to permanently remove this job post? This will delete all associated quotations and progress.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              _deleteJob(jobId);
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Remove', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(authProvider).user;
@@ -383,7 +439,28 @@ class _ClientJobsScreenState extends ConsumerState<ClientJobsScreen> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-
+                ),
+                PopupMenuButton<String>(
+                  icon: const Icon(Icons.more_vert, color: Colors.grey, size: 20),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  onSelected: (value) {
+                    if (value == 'delete') {
+                      _showDeleteConfirmationDialog(job['id']);
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    const PopupMenuItem(
+                      value: 'delete',
+                      child: Row(
+                        children: [
+                          Icon(Icons.delete_outline, color: Colors.red, size: 18),
+                          SizedBox(width: 8),
+                          Text('Remove Job', style: TextStyle(color: Colors.red)),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
