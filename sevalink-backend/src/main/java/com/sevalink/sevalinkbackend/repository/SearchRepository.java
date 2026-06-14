@@ -63,7 +63,7 @@ public interface SearchRepository extends JpaRepository<Worker, Long> {
 
     //  Full search — keyword + category + availability + location (nearest first)
     @Query("SELECT w FROM Worker w WHERE " +
-            "(LOWER(w.category.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+            "(:keyword = '' OR LOWER(w.category.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
             "LOWER(w.bio) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
             "LOWER(w.user.fullName) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
             "AND (:categoryName IS NULL OR LOWER(w.category.name) = LOWER(:categoryName)) " +
@@ -84,9 +84,9 @@ public interface SearchRepository extends JpaRepository<Worker, Long> {
             @Param("lng") Double lng,
             @Param("radiusKm") Double radiusKm);
 
-    //  Full search WITHOUT location to prevent Postgres NULL math errors
+    //  Full search WITHOUT location — keyword is optional (empty string = match all)
     @Query("SELECT w FROM Worker w WHERE " +
-            "(LOWER(w.category.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+            "(:keyword = '' OR LOWER(w.category.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
             "LOWER(w.bio) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
             "LOWER(w.user.fullName) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
             "AND (:categoryName IS NULL OR LOWER(w.category.name) = LOWER(:categoryName)) " +

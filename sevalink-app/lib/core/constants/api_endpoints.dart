@@ -11,8 +11,8 @@ class ApiEndpoints {
   static const ConnectionMode mode = ConnectionMode.wifi;
 
   // Enter your PC's local IP address here if mode is ConnectionMode.wifi:
-  static const String _wifiIp = '10.24.226.148';
-  //
+  static const String _wifiIp = '192.168.1.38';
+
 
   static String get _localIp {
     switch (mode) {
@@ -24,6 +24,8 @@ class ApiEndpoints {
         return _wifiIp;
     }
   }
+
+  static String get localIp => _localIp;
 
   static String get baseUrl {
     try {
@@ -44,4 +46,21 @@ class ApiEndpoints {
   static String get logout => '$baseUrl/auth/logout';
   static String get me => '$baseUrl/auth/me';
   static String get clientDashboard => '$baseUrl/client/dashboard';
+
+  /// Rewrites a URL that was built on the server (which may contain
+  /// "localhost" or "127.0.0.1") to use the correct host so that the
+  /// URL is reachable from a physical Android device.
+  static String rewriteImageUrl(String url) {
+    if (url.contains('/api/public/uploads/')) {
+      final index = url.indexOf('/api/public/uploads/');
+      final relativePath = url.substring(index);
+      // Construct the host portion from baseUrl (removing the '/api' suffix)
+      final host = baseUrl.replaceAll('/api', '');
+      return '$host$relativePath';
+    }
+    // Fallback replacement for other local URLs
+    return url
+        .replaceFirst('http://localhost:', 'http://$_localIp:')
+        .replaceFirst('http://127.0.0.1:', 'http://$_localIp:');
+  }
 }

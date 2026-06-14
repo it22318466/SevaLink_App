@@ -101,14 +101,14 @@ class AuthNotifier extends Notifier<AuthState> {
       final token = await _secureStorage.read(key: 'access_token');
       if (token != null) {
         final user = await _repository.getCurrentUser();
-
         await _restoreLocalProfileData(user);
       } else {
         state = state.copyWith(isLoading: false);
       }
     } catch (e) {
-      await logout();
-      state = state.copyWith(isLoading: false, error: e.toString());
+      // Clear tokens silently (avoid calling logout which makes another network request)
+      await _secureStorage.deleteAll();
+      state = AuthState();
     }
   }
 

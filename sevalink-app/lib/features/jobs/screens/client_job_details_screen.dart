@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/client_jobs_provider.dart';
 import '../../../providers/quotation_provider.dart';
+import '../../../core/constants/api_endpoints.dart';
 
 class ClientJobDetailsScreen extends ConsumerStatefulWidget {
   final Map<String, dynamic> job;
@@ -183,7 +184,7 @@ class _ClientJobDetailsScreenState extends ConsumerState<ClientJobDetailsScreen>
                             radius: 38,
                             backgroundColor: const Color(0xFFE64A19).withValues(alpha: 0.1),
                             backgroundImage: profileImageUrl != null
-                                ? NetworkImage(profileImageUrl.toString().replaceFirst('localhost', '10.0.2.2'))
+                                ? NetworkImage(profileImageUrl.toString().replaceFirst('localhost', ApiEndpoints.localIp))
                                 : null,
                             child: profileImageUrl == null
                                 ? Text(

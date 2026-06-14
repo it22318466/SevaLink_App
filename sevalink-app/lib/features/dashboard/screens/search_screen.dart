@@ -7,31 +7,38 @@ import '../../../providers/search_provider.dart';
 import '../../../data/models/worker_search_result.dart';
 import '../../../data/models/search_suggestion.dart';
 
-// ─────────────────────────────────────────────────────────────────────────────
+
 // CATEGORY DATA
-// ─────────────────────────────────────────────────────────────────────────────
+
 
 class _CategoryOption {
   final String label;
   final String apiValue;
   final IconData icon;
-  const _CategoryOption(this.label, this.apiValue, this.icon);
+  final Color iconColor;
+  const _CategoryOption(this.label, this.apiValue, this.icon, this.iconColor);
 }
 
 const _kCategories = [
-  _CategoryOption('Electrician', 'ELECTRICIAN', Icons.bolt_outlined),
-  _CategoryOption('Plumber',     'PLUMBER',     Icons.plumbing_outlined),
-  _CategoryOption('Carpenter',   'CARPENTER',   Icons.handyman_outlined),
-  _CategoryOption('Painter',     'PAINTER',     Icons.format_paint_outlined),
-  _CategoryOption('Cleaner',     'CLEANER',     Icons.auto_awesome_outlined),
-  _CategoryOption('Mechanic',    'MECHANIC',    Icons.settings_outlined),
-  _CategoryOption('Gardener',    'GARDENER',    Icons.eco_outlined),
-  _CategoryOption('Technician',  'TECHNICIAN',  Icons.laptop_chromebook_outlined),
+  _CategoryOption('Electrician', 'ELECTRICIAN', Icons.bolt, Color(0xFFFF9800)),
+  _CategoryOption('Plumber',     'PLUMBER',     Icons.plumbing, Color(0xFF9C27B0)),
+  _CategoryOption('Carpenter',   'CARPENTER',   Icons.handyman, Color(0xFF8D6E63)),
+  _CategoryOption('Painter',     'PAINTER',     Icons.palette, Color(0xFFE91E63)),
+  _CategoryOption('Cleaner',     'CLEANER',     Icons.cleaning_services, Color(0xFFFF7043)),
+  _CategoryOption('Mechanic',    'MECHANIC',    Icons.settings, Color(0xFF673AB7)),
+  _CategoryOption('Gardener',    'GARDENER',    Icons.eco, Color(0xFF4CAF50)),
+  _CategoryOption('Technician',  'TECHNICIAN',  Icons.laptop, Color(0xFF2196F3)),
 ];
 
-// ─────────────────────────────────────────────────────────────────────────────
+
 // ENUMS
-// ─────────────────────────────────────────────────────────────────────────────
+
+
+enum _ActivePanel { none, filters, sort }
+
+
+// ENUMS
+
 
 enum _SortOption { relevant, ratingHigh, mostReviews, priceLow, priceHigh, mostExperienced }
 
@@ -105,9 +112,8 @@ extension _PriceBandX on _PriceBand {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+
 // SEARCH SCREEN
-// ─────────────────────────────────────────────────────────────────────────────
 
 class SearchScreen extends ConsumerStatefulWidget {
   final String? initialCategory;
@@ -129,6 +135,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   _PriceBand  _priceBand   = _PriceBand.any;
   bool        _verifiedOnly = false;
   String?     _selectedCategory;
+  _ActivePanel _activePanel = _ActivePanel.none;
 
   // In-memory recent searches (most-recent first, max 5)
   final List<String> _recentSearches = [];
@@ -140,34 +147,17 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   static const _orange = Color(0xFFD3410A);
   static const _bg     = Color(0xFFF2F3F7);
 
-  // ── Helpers ────────────────────────────────────────────────────────────────
-
-  int get _activeFilterCount {
-    int n = 0;
-    if (_selectedCategory != null)    n++;
-    if (_minRating  != _MinRating.all)  n++;
-    if (_priceBand  != _PriceBand.any)  n++;
-    if (_verifiedOnly)                  n++;
-    return n;
-  }
+  //  Helpers
 
   /// Client-side filter + sort applied on top of the backend results.
   List<WorkerSearchResult> _applyFilters(List<WorkerSearchResult> raw) {
+    final isAvailableOnly = ref.watch(searchProvider).isAvailableOnly;
     final list = raw.where((w) {
+      if (isAvailableOnly && !w.isAvailable) return false;
       if (_verifiedOnly && !w.isVerified) return false;
       final minVal = _minRating.value;
       if (minVal != null && w.rating < minVal) return false;
       if (!_priceBand.matches(w.hourlyRate))    return false;
-      if (_selectedCategory != null) {
-        final cat = _kCategories.firstWhere(
-          (c) => c.apiValue == _selectedCategory,
-          orElse: () => const _CategoryOption('', '', Icons.search),
-        );
-        if (cat.label.isNotEmpty &&
-            !w.profession.toLowerCase().contains(cat.label.toLowerCase())) {
-          return false;
-        }
-      }
       return true;
     }).toList();
 
@@ -181,8 +171,14 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       case _SortOption.priceHigh:
         list.sort((a, b) => b.hourlyRate.compareTo(a.hourlyRate));
         break;
+      case _SortOption.mostReviews:
+        list.sort((a, b) => b.totalReviews.compareTo(a.totalReviews));
+        break;
+      case _SortOption.mostExperienced:
+        list.sort((a, b) => b.totalJobs.compareTo(a.totalJobs));
+        break;
       default:
-        break; // backend order for relevant / mostReviews / mostExperienced
+        break; // backend order for relevant
     }
     return list;
   }
@@ -210,12 +206,30 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     }
   }
 
-  // ── Lifecycle ──────────────────────────────────────────────────────────────
+  // Lifecycle 
 
   @override
   void initState() {
     super.initState();
     _focusNode.addListener(() { if (mounted) setState(() {}); });
+    
+    // Clear/reset search state fresh if we came here without pre-selected category
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (widget.initialCategory == null) {
+        ref.read(searchProvider.notifier).reset();
+        if (mounted) {
+          setState(() {
+            _controller.clear();
+            _selectedCategory = null;
+            _sortOption = _SortOption.relevant;
+            _minRating = _MinRating.all;
+            _priceBand = _PriceBand.any;
+            _verifiedOnly = false;
+          });
+        }
+      }
+    });
+
     _fetchLocation().then((_) {
       if (widget.initialCategory != null) {
         _selectedCategory = widget.initialCategory;
@@ -236,7 +250,6 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     _debounceSuggestions?.cancel();
     _controller.dispose();
     _focusNode.dispose();
-    ref.read(searchProvider.notifier).reset();
     super.dispose();
   }
 
@@ -256,7 +269,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     } catch (_) {}
   }
 
-  // ── Search actions ─────────────────────────────────────────────────────────
+  // Search actions 
 
   void _onQueryChanged(String value) {
     _debounceSuggestions?.cancel();
@@ -272,7 +285,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       final trimmed = value.trim().toUpperCase();
       final matchedCat = _kCategories.firstWhere(
         (c) => c.apiValue == trimmed || c.label.toUpperCase() == trimmed,
-        orElse: () => const _CategoryOption('', '', Icons.search),
+        orElse: () => const _CategoryOption('', '', Icons.search, Colors.grey),
       );
       if (matchedCat.apiValue.isNotEmpty) {
         setState(() => _selectedCategory = matchedCat.apiValue);
@@ -312,7 +325,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     ref.read(searchProvider.notifier).searchByCategory(cat.apiValue, lat: _lat, lng: _lng);
   }
 
-  // ── Build ──────────────────────────────────────────────────────────────────
+  // Build 
 
   @override
   Widget build(BuildContext context) {
@@ -330,7 +343,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     );
   }
 
-  // ── Top bar ────────────────────────────────────────────────────────────────
+  // Top bar 
 
   Widget _buildTopBar() {
     return Container(
@@ -402,7 +415,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     );
   }
 
-  // ── Body router ────────────────────────────────────────────────────────────
+  // Body router 
 
   Widget _buildBody(SearchState state) {
     // Suggestions overlay when typing
@@ -423,8 +436,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     }
   }
 
-  // ── Pre-search state ───────────────────────────────────────────────────────
-
+  //  Pre-search state 
   Widget _buildPreSearch() {
     return ListView(
       padding: const EdgeInsets.all(20),
@@ -502,8 +514,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     );
   }
 
-  // ── Suggestions ────────────────────────────────────────────────────────────
-
+  // Suggestions 
   Widget _buildSuggestions(List<SearchSuggestion> suggestions) {
     return Container(
       color: Colors.white,
@@ -542,7 +553,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 final mapped = _mapDbCategoryToApiValue(item.text);
                 final matched = _kCategories.firstWhere(
                   (c) => c.apiValue == mapped || c.label.toUpperCase() == item.text.toUpperCase() || c.apiValue == item.text.toUpperCase(),
-                  orElse: () => const _CategoryOption('', '', Icons.search),
+                  orElse: () => const _CategoryOption('', '', Icons.search, Colors.grey),
                 );
                 if (matched.apiValue.isNotEmpty) {
                   setState(() => _selectedCategory = matched.apiValue);
@@ -572,7 +583,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     ];
   }
 
-  // ── Results view ───────────────────────────────────────────────────────────
+  // Results view 
 
   Widget _buildResultsView(List<WorkerSearchResult> raw, List<WorkerSearchResult> filtered, String query) {
     if (_isEmptyResult(raw, filtered)) {
@@ -582,6 +593,14 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       children: [
         _buildFilterSortBar(raw.length, filtered.length),
         Divider(color: Colors.grey.shade200, height: 1),
+        if (_activePanel == _ActivePanel.filters) ...[
+          _buildFiltersPanel(),
+          Divider(color: Colors.grey.shade200, height: 1),
+        ],
+        if (_activePanel == _ActivePanel.sort) ...[
+          _buildSortPanel(),
+          Divider(color: Colors.grey.shade200, height: 1),
+        ],
         Expanded(
           child: ListView.separated(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
@@ -601,7 +620,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     return raw.isEmpty && filtered.isEmpty;
   }
 
-  // ── Filter / sort bar ──────────────────────────────────────────────────────
+  //  Filter / sort bar
 
   Widget _buildFilterSortBar(int total, int shown) {
     final countText = shown == total
@@ -617,15 +636,34 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           _ActionPill(
             icon: Icons.tune_rounded,
             label: 'Filters',
-            badge: _activeFilterCount > 0 ? '$_activeFilterCount' : null,
-            onTap: () => _showFilterSheet(isSortSheet: false),
+            isActive: _activePanel == _ActivePanel.filters,
+            onTap: () {
+              _focusNode.unfocus();
+              setState(() {
+                if (_activePanel == _ActivePanel.filters) {
+                  _activePanel = _ActivePanel.none;
+                } else {
+                  _activePanel = _ActivePanel.filters;
+                }
+              });
+            },
           ),
           const SizedBox(width: 10),
           // Sort button
           _ActionPill(
             icon: Icons.swap_vert_rounded,
             label: _sortOption.shortLabel,
-            onTap: () => _showFilterSheet(isSortSheet: true),
+            isActive: _activePanel == _ActivePanel.sort,
+            onTap: () {
+              _focusNode.unfocus();
+              setState(() {
+                if (_activePanel == _ActivePanel.sort) {
+                  _activePanel = _ActivePanel.none;
+                } else {
+                  _activePanel = _ActivePanel.sort;
+                }
+              });
+            },
           ),
           const Spacer(),
           // Result count
@@ -635,42 +673,382 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     );
   }
 
-  // ── Filter bottom sheet ────────────────────────────────────────────────────
+  //  Inline panels
 
-  void _showFilterSheet({required bool isSortSheet}) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: !isSortSheet,
-      backgroundColor: Colors.transparent,
-      builder: (_) => _FilterSheet(
-        initialSort:         _sortOption,
-        initialCategory:     _selectedCategory,
-        initialMinRating:    _minRating,
-        initialPriceBand:    _priceBand,
-        initialVerifiedOnly: _verifiedOnly,
-        initialAvailableOnly: ref.read(searchProvider).isAvailableOnly,
-        isSortSheet:         isSortSheet,
-        onApply: (sort, category, minRating, priceBand, verifiedOnly, availableOnly) {
-          setState(() {
-            _sortOption      = sort;
-            _selectedCategory = category;
-            _minRating       = minRating;
-            _priceBand       = priceBand;
-            _verifiedOnly    = verifiedOnly;
-          });
-          final currentAvailable = ref.read(searchProvider).isAvailableOnly;
-          if (availableOnly != currentAvailable) {
-            ref.read(searchProvider.notifier).toggleAvailabilityFilter(lat: _lat, lng: _lng);
-          } else {
-            final q = _controller.text;
-            ref.read(searchProvider.notifier).search(q, category: category, lat: _lat, lng: _lng);
-          }
-        },
+  Widget _buildFiltersPanel() {
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // CATEGORY
+          const Text(
+            'CATEGORY',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF3E4E68),
+              letterSpacing: 0.8,
+            ),
+          ),
+          const SizedBox(height: 10),
+          _buildCategoryChipsInline(),
+          const SizedBox(height: 16),
+
+          // MINIMUM RATING
+          const Text(
+            'MINIMUM RATING',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF3E4E68),
+              letterSpacing: 0.8,
+            ),
+          ),
+          const SizedBox(height: 10),
+          _buildRatingRowInline(),
+          const SizedBox(height: 16),
+
+          // HOURLY RATE
+          const Text(
+            'HOURLY RATE',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF3E4E68),
+              letterSpacing: 0.8,
+            ),
+          ),
+          const SizedBox(height: 10),
+          _buildPriceGridInline(),
+          const SizedBox(height: 16),
+
+          // TOGGLES (Verified Only, Available Now)
+          _buildTogglePillsInline(),
+          const SizedBox(height: 4),
+        ],
       ),
     );
   }
 
-  // ── Worker card ────────────────────────────────────────────────────────────
+  Widget _buildCategoryChipsInline() {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        // "All" chip
+        GestureDetector(
+          onTap: () {
+            setState(() {
+              _selectedCategory = null;
+            });
+            ref.read(searchProvider.notifier).search(_controller.text, category: null, lat: _lat, lng: _lng);
+          },
+          child: _filterChip('All', isActive: _selectedCategory == null, icon: null),
+        ),
+        ..._kCategories.map((cat) => GestureDetector(
+          onTap: () {
+            final nextCategory = _selectedCategory == cat.apiValue ? null : cat.apiValue;
+            setState(() {
+              _selectedCategory = nextCategory;
+            });
+            ref.read(searchProvider.notifier).search(_controller.text, category: nextCategory, lat: _lat, lng: _lng);
+          },
+          child: _filterChip(
+            cat.label,
+            isActive: _selectedCategory == cat.apiValue,
+            icon: cat.icon,
+            iconColor: cat.iconColor,
+          ),
+        )),
+      ],
+    );
+  }
+
+  Widget _filterChip(String label, {required bool isActive, IconData? icon, Color? iconColor}) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 150),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      decoration: BoxDecoration(
+        color: isActive ? const Color(0xFFD3410A) : Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isActive ? const Color(0xFFD3410A) : const Color(0xFFE5E7EB),
+          width: 1.2,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (icon != null) ...[
+            Icon(
+              icon,
+              size: 14,
+              color: isActive ? Colors.white : (iconColor ?? const Color(0xFF374151)),
+            ),
+            const SizedBox(width: 5),
+          ],
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: isActive ? Colors.white : const Color(0xFF374151),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRatingRowInline() {
+    return Row(
+      children: _MinRating.values.map((r) {
+        final active = _minRating == r;
+        return Padding(
+          padding: const EdgeInsets.only(right: 8),
+          child: GestureDetector(
+            onTap: () {
+              setState(() {
+                _minRating = r;
+              });
+            },
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 150),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: active ? const Color(0xFFD3410A) : Colors.white,
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: active ? const Color(0xFFD3410A) : const Color(0xFFE5E7EB),
+                  width: 1.2,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (r != _MinRating.all) ...[
+                    Icon(
+                      Icons.star_rounded,
+                      size: 14,
+                      color: active ? Colors.white : const Color(0xFFFFC107),
+                    ),
+                    const SizedBox(width: 4),
+                  ],
+                  Text(
+                    r.label,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: active ? Colors.white : const Color(0xFF374151),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildPriceGridInline() {
+    final bands = _PriceBand.values.skip(1).toList(); // skip 'any'
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(child: _priceChipInline(bands[0])),
+            const SizedBox(width: 10),
+            Expanded(child: _priceChipInline(bands[1])),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            Expanded(child: _priceChipInline(bands[2])),
+            const SizedBox(width: 10),
+            Expanded(child: _priceChipInline(bands[3])),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _priceChipInline(_PriceBand band) {
+    final active = _priceBand == band;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _priceBand = active ? _PriceBand.any : band;
+        });
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        height: 44,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: active ? const Color(0xFFD3410A) : Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: active ? const Color(0xFFD3410A) : const Color(0xFFE5E7EB),
+            width: 1.2,
+          ),
+        ),
+        child: Text(
+          band.label,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: active ? Colors.white : const Color(0xFF374151),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTogglePillsInline() {
+    final isAvailableOnly = ref.watch(searchProvider).isAvailableOnly;
+    return Row(
+      children: [
+        Expanded(
+          child: _toggleChipInline(
+            icon: Icons.check_circle_outline_rounded,
+            label: 'Verified Only',
+            active: _verifiedOnly,
+            onTap: () {
+              setState(() {
+                _verifiedOnly = !_verifiedOnly;
+              });
+            },
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: _toggleChipInline(
+            icon: Icons.access_time_rounded,
+            label: 'Available Now',
+            active: isAvailableOnly,
+            onTap: () {
+              ref.read(searchProvider.notifier).toggleAvailabilityFilter(lat: _lat, lng: _lng);
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _toggleChipInline({
+    required IconData icon,
+    required String label,
+    required bool active,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        height: 44,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        decoration: BoxDecoration(
+          color: active ? const Color(0xFFD3410A) : Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: active ? const Color(0xFFD3410A) : const Color(0xFFE5E7EB),
+            width: 1.2,
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              size: 16,
+              color: active ? Colors.white : const Color(0xFF374151),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: active ? Colors.white : const Color(0xFF374151),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSortPanel() {
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Expanded(child: _sortChipInline(_SortOption.relevant)),
+              const SizedBox(width: 10),
+              Expanded(child: _sortChipInline(_SortOption.ratingHigh)),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(child: _sortChipInline(_SortOption.mostReviews)),
+              const SizedBox(width: 10),
+              Expanded(child: _sortChipInline(_SortOption.priceLow)),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(child: _sortChipInline(_SortOption.priceHigh)),
+              const SizedBox(width: 10),
+              Expanded(child: _sortChipInline(_SortOption.mostExperienced)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _sortChipInline(_SortOption opt) {
+    final active = _sortOption == opt;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _sortOption = opt;
+        });
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        height: 48,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: active ? const Color(0xFFD3410A) : const Color(0xFFF2F3F7),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Text(
+          opt.label,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: active ? Colors.white : const Color(0xFF2C3E50),
+          ),
+        ),
+      ),
+    );
+  }
+
+
+
+  // Worker card 
 
   Widget _buildWorkerCard(WorkerSearchResult worker) {
     return Container(
@@ -738,10 +1116,50 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                   ],
                 ),
                 const SizedBox(height: 2),
-                // Profession
-                Text(
-                  worker.profession,
-                  style: TextStyle(fontSize: 13, color: Colors.grey.shade600, fontWeight: FontWeight.w500),
+                // Profession & Availability
+                Row(
+                  children: [
+                    Text(
+                      worker.profession,
+                      style: TextStyle(fontSize: 13, color: Colors.grey.shade600, fontWeight: FontWeight.w500),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: worker.isAvailable
+                            ? const Color(0xFFE8F5E9)
+                            : const Color(0xFFECEFF1),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 6,
+                            height: 6,
+                            decoration: BoxDecoration(
+                              color: worker.isAvailable
+                                  ? const Color(0xFF4CAF50)
+                                  : const Color(0xFF90A4AE),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            worker.isAvailable ? 'Available' : 'Busy',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: worker.isAvailable
+                                  ? const Color(0xFF2E7D32)
+                                  : const Color(0xFF546E7A),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
                 // Location
                 if (worker.location.isNotEmpty) ...[
@@ -809,7 +1227,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     );
   }
 
-  // ── Worker details sheet ───────────────────────────────────────────────────
+  //Worker details sheet
 
   void _showWorkerDetails(BuildContext context, WorkerSearchResult worker) {
     showModalBottomSheet(
@@ -939,7 +1357,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     );
   }
 
-  // ── Loading ────────────────────────────────────────────────────────────────
+  // Loading 
 
   Widget _buildLoading() {
     return ListView.separated(
@@ -976,8 +1394,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     decoration: BoxDecoration(color: Colors.grey.shade200, borderRadius: BorderRadius.circular(6)),
   );
 
-  // ── Error ──────────────────────────────────────────────────────────────────
-
+  //  Error 
   Widget _buildError(String message) {
     return Center(
       child: Padding(
@@ -999,7 +1416,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     );
   }
 
-  // ── Empty ──────────────────────────────────────────────────────────────────
+  //  Empty 
 
   Widget _buildEmpty(String query, String? category) {
     final label = category != null
@@ -1038,376 +1455,51 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+
 // ACTION PILL (Filters / Sort buttons)
-// ─────────────────────────────────────────────────────────────────────────────
 
 class _ActionPill extends StatelessWidget {
   final IconData icon;
   final String label;
-  final String? badge;
+  final bool isActive;
   final VoidCallback onTap;
 
-  static const _orange = Color(0xFFD3410A);
-
-  const _ActionPill({required this.icon, required this.label, this.badge, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: _orange,
-          borderRadius: BorderRadius.circular(24),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, color: Colors.white, size: 15),
-            const SizedBox(width: 6),
-            Text(label, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
-            if (badge != null) ...[
-              const SizedBox(width: 6),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10)),
-                child: Text(badge!, style: const TextStyle(color: _orange, fontSize: 11, fontWeight: FontWeight.bold)),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// FILTER SHEET
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _FilterSheet extends StatefulWidget {
-  final _SortOption initialSort;
-  final String? initialCategory;
-  final _MinRating initialMinRating;
-  final _PriceBand initialPriceBand;
-  final bool initialVerifiedOnly;
-  final bool initialAvailableOnly;
-  final bool isSortSheet;
-  final void Function(_SortOption, String?, _MinRating, _PriceBand, bool, bool) onApply;
-
-  const _FilterSheet({
-    required this.initialSort,
-    required this.initialCategory,
-    required this.initialMinRating,
-    required this.initialPriceBand,
-    required this.initialVerifiedOnly,
-    required this.initialAvailableOnly,
-    required this.isSortSheet,
-    required this.onApply,
+  const _ActionPill({
+    required this.icon,
+    required this.label,
+    required this.isActive,
+    required this.onTap,
   });
 
   @override
-  State<_FilterSheet> createState() => _FilterSheetState();
-}
-
-class _FilterSheetState extends State<_FilterSheet> {
-  late _SortOption _sort;
-  String?     _category;
-  late _MinRating  _minRating;
-  late _PriceBand  _priceBand;
-  late bool        _verifiedOnly;
-  late bool        _availableOnly;
-
-  static const _orange = Color(0xFFD3410A);
-
-  @override
-  void initState() {
-    super.initState();
-    _sort         = widget.initialSort;
-    _category     = widget.initialCategory;
-    _minRating    = widget.initialMinRating;
-    _priceBand    = widget.initialPriceBand;
-    _verifiedOnly = widget.initialVerifiedOnly;
-    _availableOnly = widget.initialAvailableOnly;
-  }
-
-  @override
   Widget build(BuildContext context) {
-    if (widget.isSortSheet) {
-      return Container(
-        decoration: const BoxDecoration(
-          color: Color(0xFFF8F9FA),
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        padding: const EdgeInsets.fromLTRB(16, 14, 16, 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 40, height: 4,
-                decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
-              ),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'SORT BY',
-              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF9E9E9E), letterSpacing: 1.0),
-            ),
-            const SizedBox(height: 16),
-            _buildSortGrid(),
-            const SizedBox(height: 24),
-            _buildApplyButton(),
-          ],
-        ),
-      );
-    }
-
-    return DraggableScrollableSheet(
-      initialChildSize: 0.88,
-      maxChildSize: 0.95,
-      minChildSize: 0.5,
-      builder: (_, controller) => Container(
-        decoration: const BoxDecoration(
-          color: Color(0xFFF8F9FA),
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: Column(
-          children: [
-            // Drag handle + title
-            Container(
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-              ),
-              padding: const EdgeInsets.fromLTRB(20, 14, 20, 16),
-              child: Column(
-                children: [
-                  Center(
-                    child: Container(
-                      width: 40, height: 4,
-                      decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: ListView(
-                controller: controller,
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-                children: [
-                  _buildSection('CATEGORY', _buildCategoryChips()),
-                  const SizedBox(height: 20),
-                  _buildSection('MINIMUM RATING', _buildRatingRow()),
-                  const SizedBox(height: 20),
-                  _buildSection('HOURLY RATE', _buildPriceGrid()),
-                  const SizedBox(height: 20),
-                  _buildTogglePills(),
-                  const SizedBox(height: 28),
-                  _buildApplyButton(),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSection(String title, Widget content) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF9E9E9E), letterSpacing: 1.0),
-        ),
-        const SizedBox(height: 12),
-        content,
-      ],
-    );
-  }
-
-  // Sort — 2-column grid
-  Widget _buildSortGrid() {
-    return GridView.count(
-      crossAxisCount: 2,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      mainAxisSpacing: 10,
-      crossAxisSpacing: 10,
-      childAspectRatio: 3.4,
-      children: _SortOption.values.map((opt) {
-        final active = _sort == opt;
-        return GestureDetector(
-          onTap: () => setState(() => _sort = opt),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 180),
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: active ? _orange : Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: active ? _orange : Colors.grey.shade200, width: 1.5),
-            ),
-            child: Text(
-              opt.label,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: active ? Colors.white : const Color(0xFF1A1A1A),
-              ),
-            ),
-          ),
-        );
-      }).toList(),
-    );
-  }
-
-  // Category chips
-  Widget _buildCategoryChips() {
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: [
-        // "All" chip
-        GestureDetector(
-          onTap: () => setState(() => _category = null),
-          child: _chip('All', isActive: _category == null, icon: null),
-        ),
-        ..._kCategories.map((cat) => GestureDetector(
-          onTap: () => setState(() => _category = _category == cat.apiValue ? null : cat.apiValue),
-          child: _chip(cat.label, isActive: _category == cat.apiValue, icon: cat.icon),
-        )),
-      ],
-    );
-  }
-
-  // Min rating row
-  Widget _buildRatingRow() {
-    return Row(
-      children: _MinRating.values.map((r) {
-        final active = _minRating == r;
-        return Padding(
-          padding: const EdgeInsets.only(right: 8),
-          child: GestureDetector(
-            onTap: () => setState(() => _minRating = r),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              decoration: BoxDecoration(
-                color: active ? _orange : Colors.white,
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: active ? _orange : Colors.grey.shade300, width: 1.5),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (r != _MinRating.all) ...[
-                    Icon(Icons.star_rounded, size: 14, color: active ? Colors.white : const Color(0xFFFFC107)),
-                    const SizedBox(width: 4),
-                  ],
-                  Text(
-                    r.label,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: active ? Colors.white : const Color(0xFF1A1A1A),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      }).toList(),
-    );
-  }
-
-  // Price bands — 2x2 grid
-  Widget _buildPriceGrid() {
-    final bands = _PriceBand.values.skip(1).toList(); // skip 'any'
-    return GridView.count(
-      crossAxisCount: 2,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      mainAxisSpacing: 10,
-      crossAxisSpacing: 10,
-      childAspectRatio: 3.4,
-      children: bands.map((band) {
-        final active = _priceBand == band;
-        return GestureDetector(
-          onTap: () => setState(() => _priceBand = active ? _PriceBand.any : band),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 180),
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: active ? _orange : Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: active ? _orange : Colors.grey.shade300, width: 1.5),
-            ),
-            child: Text(
-              band.label,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: active ? Colors.white : const Color(0xFF1A1A1A),
-              ),
-            ),
-          ),
-        );
-      }).toList(),
-    );
-  }
-
-  // Verified + Available toggle pills
-  Widget _buildTogglePills() {
-    return Row(
-      children: [
-        _togglePill(
-          icon: Icons.verified_rounded,
-          label: 'Verified Only',
-          active: _verifiedOnly,
-          onTap: () => setState(() => _verifiedOnly = !_verifiedOnly),
-        ),
-        const SizedBox(width: 10),
-        _togglePill(
-          icon: Icons.access_time_rounded,
-          label: 'Available Now',
-          active: _availableOnly,
-          onTap: () => setState(() => _availableOnly = !_availableOnly),
-        ),
-      ],
-    );
-  }
-
-  Widget _togglePill({required IconData icon, required String label, required bool active, required VoidCallback onTap}) {
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: active ? _orange : Colors.white,
+          color: isActive ? const Color(0xFFD3410A) : Colors.white,
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: active ? _orange : Colors.grey.shade300, width: 1.5),
+          border: isActive
+              ? Border.all(color: const Color(0xFFD3410A), width: 1.5)
+              : Border.all(color: const Color(0xFFE5E7EB), width: 1.5),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 16, color: active ? Colors.white : Colors.grey.shade600),
+            Icon(
+              icon,
+              color: isActive ? Colors.white : const Color(0xFF374151),
+              size: 16,
+            ),
             const SizedBox(width: 6),
             Text(
               label,
               style: TextStyle(
+                color: isActive ? Colors.white : const Color(0xFF374151),
                 fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: active ? Colors.white : const Color(0xFF1A1A1A),
+                fontWeight: FontWeight.bold,
               ),
             ),
           ],
@@ -1415,54 +1507,6 @@ class _FilterSheetState extends State<_FilterSheet> {
       ),
     );
   }
-
-  // Apply button
-  Widget _buildApplyButton() {
-    return SizedBox(
-      width: double.infinity,
-      height: 54,
-      child: ElevatedButton(
-        onPressed: () {
-          Navigator.pop(context);
-          widget.onApply(_sort, _category, _minRating, _priceBand, _verifiedOnly, _availableOnly);
-        },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: _orange,
-          foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          elevation: 0,
-        ),
-        child: const Text('Apply Filters', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-      ),
-    );
-  }
-
-  Widget _chip(String label, {required bool isActive, IconData? icon}) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 180),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-      decoration: BoxDecoration(
-        color: isActive ? _orange : Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: isActive ? _orange : Colors.grey.shade300, width: 1.5),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (icon != null) ...[
-            Icon(icon, size: 14, color: isActive ? Colors.white : Colors.grey.shade600),
-            const SizedBox(width: 6),
-          ],
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: isActive ? Colors.white : const Color(0xFF1A1A1A),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
+
+

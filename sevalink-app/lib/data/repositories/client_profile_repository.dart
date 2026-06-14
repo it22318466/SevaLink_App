@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import '../../core/network/dio_client.dart';
+import '../../core/constants/api_endpoints.dart';
 
 class ClientProfile {
   final String fullName;
@@ -19,12 +20,15 @@ class ClientProfile {
   });
 
   factory ClientProfile.fromJson(Map<String, dynamic> json) {
+    final rawImageUrl = json['profileImageUrl'] as String?;
     return ClientProfile(
       fullName: json['fullName'] ?? '',
       email: json['email'] ?? '',
       phoneNumber: json['phoneNumber'] ?? '',
       location: json['location'],
-      profileImageUrl: json['profileImageUrl'],
+      profileImageUrl: rawImageUrl != null && rawImageUrl.isNotEmpty
+          ? ApiEndpoints.rewriteImageUrl(rawImageUrl)
+          : null,
       createdAt: json['createdAt'] ?? '',
     );
   }

@@ -1,8 +1,9 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../core/constants/api_endpoints.dart';
 
 class ApiService {
-  static const String baseUrl = "http://10.0.2.2:8080";
+  static String get baseUrl => ApiEndpoints.baseUrl.replaceFirst('/api', '');
 
   // Example: GET request
   static Future<List<dynamic>> getWorkers() async {

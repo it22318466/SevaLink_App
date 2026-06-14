@@ -37,11 +37,21 @@ public class SearchService {
             "cleaning",     "Cleaning"
     );
 
+    // Secondary alias map for categories that don't fit in Map.of() (10-entry limit)
+    private static final Map<String, String> CATEGORY_ALIAS_EXT = Map.of(
+            "mechanic",     "Mechanic",
+            "gardener",     "Gardener",
+            "gardening",    "Gardener",
+            "technician",   "Technician"
+    );
+
     /** Normalise a raw category value sent from the client app to the DB name. */
     private String normalizeCategory(String raw) {
         if (raw == null) return null;
-        String normalized = CATEGORY_ALIAS.get(raw.trim().toLowerCase());
-        // Fall back to the original value if no alias found (e.g. "General", "Mechanic")
+        String key = raw.trim().toLowerCase();
+        String normalized = CATEGORY_ALIAS.get(key);
+        if (normalized == null) normalized = CATEGORY_ALIAS_EXT.get(key);
+        // Fall back to capitalized original value if no alias found
         return (normalized != null) ? normalized : capitalize(raw.trim());
     }
 
@@ -50,40 +60,57 @@ public class SearchService {
         return Character.toUpperCase(s.charAt(0)) + s.substring(1).toLowerCase();
     }
 
+    /**
+     * Attempts to infer a canonical category name from a free-text keyword.
+     * Returns null if no category match is found.
+     * Side-effect: returns the remaining keyword (after stripping the alias) via
+     * the single-element String array kwHolder (index 0).
+     */
+    private String inferCategoryFromKeyword(String kw, String[] kwHolder) {
+        String lowercaseKw = kw.toLowerCase();
+        // Check primary alias map
+        for (Map.Entry<String, String> entry : CATEGORY_ALIAS.entrySet()) {
+            String alias = entry.getKey();
+            if (lowercaseKw.equals(alias)) {
+                kwHolder[0] = "";
+                return entry.getValue();
+            } else if (lowercaseKw.contains(alias)) {
+                kwHolder[0] = kw.replaceAll("(?i)\\b" + alias + "\\b", "").trim();
+                return entry.getValue();
+            }
+        }
+        // Check extension alias map
+        for (Map.Entry<String, String> entry : CATEGORY_ALIAS_EXT.entrySet()) {
+            String alias = entry.getKey();
+            if (lowercaseKw.equals(alias)) {
+                kwHolder[0] = "";
+                return entry.getValue();
+            } else if (lowercaseKw.contains(alias)) {
+                kwHolder[0] = kw.replaceAll("(?i)\\b" + alias + "\\b", "").trim();
+                return entry.getValue();
+            }
+        }
+        return null;
+    }
+
     // Basic keyword search
     public List<Worker> search(String keyword) {
         if (keyword == null || keyword.trim().isEmpty()) {
             return searchRepository.findAll();
         }
-        
-        String kw = keyword.trim();
-        String inferredCategory = null;
-        
-        String lowercaseKw = kw.toLowerCase();
-        for (Map.Entry<String, String> entry : CATEGORY_ALIAS.entrySet()) {
-            String alias = entry.getKey();
-            String canonicalCategory = entry.getValue();
-            
-            if (lowercaseKw.equals(alias)) {
-                inferredCategory = canonicalCategory;
-                kw = "";
-                break;
-            } else if (lowercaseKw.contains(alias)) {
-                inferredCategory = canonicalCategory;
-                kw = kw.replaceAll("(?i)\\b" + alias + "\\b", "").trim();
-                break;
-            }
-        }
-        
+
+        String[] kwHolder = { keyword.trim() };
+        String inferredCategory = inferCategoryFromKeyword(kwHolder[0], kwHolder);
+
         if (inferredCategory != null) {
-            if (kw.isEmpty()) {
+            if (kwHolder[0].isEmpty()) {
                 return searchRepository.searchByCategory(inferredCategory);
             } else {
-                return searchRepository.searchWithoutLocation(kw, inferredCategory, null);
+                return searchRepository.searchWithoutLocation(kwHolder[0], inferredCategory, null);
             }
         }
-        
-        return searchRepository.searchByKeyword(kw);
+
+        return searchRepository.searchByKeyword(kwHolder[0]);
     }
 
     // Category filter
@@ -111,34 +138,30 @@ public class SearchService {
                                    Double lng,
                                    Double radiusKm) {
 
-        String kw = (keyword == null || keyword.trim().isEmpty()) ? "" : keyword.trim();
+        String[] kwHolder = { (keyword == null || keyword.trim().isEmpty()) ? "" : keyword.trim() };
         String normalizedCategory = normalizeCategory(categoryName);
-        double radius = (radiusKm != null) ? radiusKm : 15.0;
+        double radius = (radiusKm != null) ? radiusKm : 50.0;
 
         // If no category filter is explicitly selected, try to infer it from the keyword
-        if (normalizedCategory == null && !kw.isEmpty()) {
-            String lowercaseKw = kw.toLowerCase();
-            for (Map.Entry<String, String> entry : CATEGORY_ALIAS.entrySet()) {
-                String alias = entry.getKey();
-                String canonicalCategory = entry.getValue();
-                
-                if (lowercaseKw.equals(alias)) {
-                    normalizedCategory = canonicalCategory;
-                    kw = ""; // clear keyword to match all workers in this category
-                    break;
-                } else if (lowercaseKw.contains(alias)) {
-                    normalizedCategory = canonicalCategory;
-                    kw = kw.replaceAll("(?i)\\b" + alias + "\\b", "").trim();
-                    break;
-                }
-            }
+        if (normalizedCategory == null && !kwHolder[0].isEmpty()) {
+            normalizedCategory = inferCategoryFromKeyword(kwHolder[0], kwHolder);
         }
 
         if (lat == null || lng == null) {
-            return searchRepository.searchWithoutLocation(kw, normalizedCategory, available);
+            return searchRepository.searchWithoutLocation(kwHolder[0], normalizedCategory, available);
         }
 
-        return searchRepository.fullSearch(kw, normalizedCategory, available, lat, lng, radius);
+        // Try location-based search first (sorted by proximity)
+        List<Worker> locationResults = searchRepository.fullSearch(
+                kwHolder[0], normalizedCategory, available, lat, lng, radius);
+
+        // If no workers have GPS coordinates or none are within radius, fall back
+        // to showing all matching workers sorted by rating
+        if (locationResults.isEmpty()) {
+            return searchRepository.searchWithoutLocation(kwHolder[0], normalizedCategory, available);
+        }
+
+        return locationResults;
     }
 
     public List<SearchSuggestion> getSuggestions(String query) {
