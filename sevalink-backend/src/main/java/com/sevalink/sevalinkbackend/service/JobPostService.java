@@ -89,8 +89,17 @@ public class JobPostService {
         return saved;
     }
 
-    // Get all open jobs (worker feed — unfiltered, or filtered by worker)
+    // Get all open jobs (worker feed — auto-filtered by worker's trade category)
     public List<JobPost> getAllOpenJobs() {
+        // If the caller is a logged-in worker, restrict results to their category
+        User caller = getCurrentAuthenticatedUser();
+        if (caller != null && UserRole.WORKER.equals(caller.getRole())) {
+            Optional<Worker> workerOpt = workerRepository.findByUserId(caller.getId());
+            if (workerOpt.isPresent() && workerOpt.get().getCategory() != null) {
+                Long categoryId = workerOpt.get().getCategory().getId();
+                return jobPostRepository.findByStatusAndCategoryIdOrderByCreatedAtDesc("OPEN", categoryId);
+            }
+        }
         return jobPostRepository.findByStatusOrderByCreatedAtDesc("OPEN");
     }
 
@@ -109,9 +118,18 @@ public class JobPostService {
         return jobPostRepository.findOpenJobsByCategoryExcludingWorkerQuotes(categoryId, workerId);
     }
 
-    // Worker sees nearby jobs
+    // Worker sees nearby jobs (auto-filtered by worker's trade category)
     public List<JobPost> getNearbyJobs(Double lat, Double lng, Double radius) {
         double r = (radius != null) ? radius : 10.0;
+        // If the caller is a logged-in worker, restrict results to their category
+        User caller = getCurrentAuthenticatedUser();
+        if (caller != null && UserRole.WORKER.equals(caller.getRole())) {
+            Optional<Worker> workerOpt = workerRepository.findByUserId(caller.getId());
+            if (workerOpt.isPresent() && workerOpt.get().getCategory() != null) {
+                Long categoryId = workerOpt.get().getCategory().getId();
+                return jobPostRepository.findNearbyJobsByCategory(lat, lng, r, categoryId);
+            }
+        }
         return jobPostRepository.findNearbyJobs(lat, lng, r);
     }
 
