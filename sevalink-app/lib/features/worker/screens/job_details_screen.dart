@@ -92,6 +92,14 @@ class JobDetailsScreen extends StatelessWidget {
                                         color: (Theme.of(context).extension<SevaLinkColors>() ?? SevaLinkColors.light).textPrimary,
                                       ),
                                     ),
+                                    if (job.distanceKm != null) ...[
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        '${job.distanceKm!.toStringAsFixed(1)} km away from you',
+                                        style: const TextStyle(
+                                            fontSize: 13, color: Colors.grey),
+                                      ),
+                                    ],
                                     const SizedBox(height: 2),
                                     const Text(
                                       'Tap to view on full map',
@@ -231,8 +239,11 @@ class JobDetailsScreen extends StatelessWidget {
   Widget _buildStatusRow(BuildContext context) {
     return Row(
       children: [
-        _buildChip(context,
-            Icons.location_on_outlined, job.location, const Color(0xFFD3410A)),
+        _buildChip(
+            context,
+            Icons.location_on_outlined,
+            job.location + (job.distanceKm != null ? ' (${job.distanceKm!.toStringAsFixed(1)} km)' : ''),
+            const Color(0xFFD3410A)),
         const SizedBox(width: 10),
         _buildChip(context, Icons.access_time_rounded, job.postedAt,
             const Color(0xFF6B7280)),

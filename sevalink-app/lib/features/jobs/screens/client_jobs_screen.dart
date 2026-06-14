@@ -326,165 +326,199 @@ class _ClientJobsScreenState extends ConsumerState<ClientJobsScreen> {
         statusTextColor = Colors.grey.shade700;
     }
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Title + Status badge
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Text(
-                  job['title'] ?? 'Electrical Wiring for New Kitchen',
-                  style: const TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF1F2937),
-                    height: 1.3,
+    return GestureDetector(
+      onTap: () {
+        if (job['id'] != null) {
+          if (status == 'OPEN') {
+            context.push('/client/jobs/${job['id']}/quotes', extra: job);
+          } else {
+            context.push('/client/jobs/${job['id']}/timeline');
+          }
+        }
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Title + Status badge
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Text(
+                    job['title'] ?? 'Electrical Wiring for New Kitchen',
+                    style: const TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1F2937),
+                      height: 1.3,
+                    ),
                   ),
                 ),
+                const SizedBox(width: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: statusBgColor,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    status == 'ASSIGNED' ? 'Active' : status[0] + status.substring(1).toLowerCase(),
+                    style: TextStyle(
+                      color: statusTextColor,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                PopupMenuButton<String>(
+                  icon: const Icon(Icons.more_vert, color: Colors.grey, size: 20),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  onSelected: (value) {
+                    if (value == 'delete') {
+                      _showDeleteConfirmationDialog(job['id']);
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    const PopupMenuItem(
+                      value: 'delete',
+                      child: Row(
+                        children: [
+                          Icon(Icons.delete_outline, color: Colors.red, size: 18),
+                          SizedBox(width: 8),
+                          Text('Remove Job', style: TextStyle(color: Colors.red)),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+  
+            // Category
+            Text(
+              job['categoryName'] ?? 'Electrician',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey.shade600,
               ),
-              const SizedBox(width: 12),
+            ),
+            const SizedBox(height: 14),
+  
+            // Description
+            Text(
+              job['description'] ?? 'Need complete electrical wiring for newly renovated kitchen including lights, power...',
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey.shade600,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 16),
+  
+            // Urgency badge
+            if (urgency == 'URGENT')
               Container(
+                margin: const EdgeInsets.only(bottom: 16),
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: statusBgColor,
-                  borderRadius: BorderRadius.circular(20),
+                  color: const Color(0xFFFEE2E2),
+                  borderRadius: BorderRadius.circular(16),
                 ),
-                child: Text(
-                  status == 'ASSIGNED' ? 'Active' : status[0] + status.substring(1).toLowerCase(),
+                child: const Text(
+                  'Urgent',
                   style: TextStyle(
-                    color: statusTextColor,
+                    color: Color(0xFFDC2626),
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 6),
-
-          // Category
-          Text(
-            job['categoryName'] ?? 'Electrician',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey.shade600,
-            ),
-          ),
-          const SizedBox(height: 14),
-
-          // Description
-          Text(
-            job['description'] ?? 'Need complete electrical wiring for newly renovated kitchen including lights, power...',
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey.shade600,
-              height: 1.5,
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Urgency badge
-          if (urgency == 'URGENT')
-            Container(
-              margin: const EdgeInsets.only(bottom: 16),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFEE2E2),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: const Text(
-                'Urgent',
-                style: TextStyle(
-                  color: Color(0xFFDC2626),
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-            
-          Divider(color: Colors.grey.shade100, height: 1),
-          const SizedBox(height: 16),
-
-          // Budget + Time + Quotes
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Expanded(
-                child: Text(
-                  'Rs. ${_formatBudget(budgetMin ?? 25000)} - Rs. ${_formatBudget(budgetMax ?? 35000)}',
-                  style: const TextStyle(
-                    color: Color(0xFFD3410A), // Orange text
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
+              
+            Divider(color: Colors.grey.shade100, height: 1),
+            const SizedBox(height: 16),
+  
+            // Budget + Time + Quotes
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: Text(
+                    'Rs. ${_formatBudget(budgetMin ?? 25000)} - Rs. ${_formatBudget(budgetMax ?? 35000)}',
+                    style: const TextStyle(
+                      color: Color(0xFFD3410A), // Orange text
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              Container(width: 4, height: 4, decoration: BoxDecoration(color: Colors.grey.shade400, shape: BoxShape.circle)),
-              const SizedBox(width: 8),
-              Text(
-                createdAt != null ? _timeAgo(createdAt) : '2 hours ago',
-                style: TextStyle(
-                  color: Colors.grey.shade500,
-                  fontSize: 13,
+                const SizedBox(width: 8),
+                Container(width: 4, height: 4, decoration: BoxDecoration(color: Colors.grey.shade400, shape: BoxShape.circle)),
+                const SizedBox(width: 8),
+                Text(
+                  createdAt != null ? _timeAgo(createdAt) : '2 hours ago',
+                  style: TextStyle(
+                    color: Colors.grey.shade500,
+                    fontSize: 13,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              Container(width: 6, height: 6, decoration: const BoxDecoration(color: Color(0xFF16A34A), shape: BoxShape.circle)),
-              const SizedBox(width: 6),
-              GestureDetector(
-                onTap: () {
-                  if (job['id'] != null) {
-                    context.push('/client/jobs/${job['id']}/quotes', extra: job);
-                  }
-                },
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Text(
-                      '$quoteCount',
-                      style: const TextStyle(
-                        color: Color(0xFF16A34A),
-                        fontSize: 13,
-                        fontWeight: FontWeight.bold,
-                        height: 1.0,
+                const SizedBox(width: 8),
+                Container(width: 6, height: 6, decoration: const BoxDecoration(color: Color(0xFF16A34A), shape: BoxShape.circle)),
+                const SizedBox(width: 6),
+                GestureDetector(
+                  onTap: () {
+                    if (job['id'] != null) {
+                      context.push('/client/jobs/${job['id']}/quotes', extra: job);
+                    }
+                  },
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Text(
+                        '$quoteCount',
+                        style: const TextStyle(
+                          color: Color(0xFF16A34A),
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          height: 1.0,
+                        ),
                       ),
-                    ),
-                    const Text(
-                      'Quotes',
-                      style: TextStyle(
-                        color: Color(0xFF16A34A),
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        height: 1.0,
+                      const Text(
+                        'Quotes',
+                        style: TextStyle(
+                          color: Color(0xFF16A34A),
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          height: 1.0,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            ],
-          ),
-        ],
+              ],
+            ),
+          ],
+        ),
       ),
     );
+
   }
 
   String _formatBudget(dynamic amount) {

@@ -11,6 +11,9 @@ class Job extends Equatable {
   final int maxBudget;
   final bool isNew;
   final String category;
+  final double? distanceKm;
+  final String clientName;
+  final String? clientPhone;
 
   const Job({
     required this.id,
@@ -22,6 +25,7 @@ class Job extends Equatable {
     required this.maxBudget,
     required this.isNew,
     required this.category,
+    this.distanceKm,
   });
 
   factory Job.fromJson(Map<String, dynamic> json) {
@@ -53,6 +57,7 @@ class Job extends Equatable {
       maxBudget: (json['budgetMax'] ?? json['maxBudget'] ?? 0).toInt(),
       isNew: json['isNew'] ?? (json['status'] == 'OPEN'),
       category: json['category'] is Map ? (json['category']['name'] ?? '') : (json['category'] ?? ''),
+      distanceKm: json['distanceKm'] != null ? (json['distanceKm'] as num).toDouble() : null,
     );
   }
 
@@ -66,9 +71,10 @@ class Job extends Equatable {
         'maxBudget': maxBudget,
         'isNew': isNew,
         'category': category,
+        'distanceKm': distanceKm,
       };
 
   @override
   List<Object?> get props =>
-      [id, title, description, location, postedAt, minBudget, maxBudget, isNew, category];
+      [id, title, description, location, postedAt, minBudget, maxBudget, isNew, category, distanceKm];
 }

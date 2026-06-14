@@ -22,6 +22,8 @@ class WorkerStats {
   final double? latitude;
   final double? longitude;
 
+  final bool isAvailable;
+
   const WorkerStats({
     this.totalJobs = 0,
     this.rating = 0.0,
@@ -37,6 +39,7 @@ class WorkerStats {
     this.categoryName,
     this.latitude,
     this.longitude,
+    this.isAvailable = true,
   });
 
   WorkerStats copyWith({
@@ -54,6 +57,7 @@ class WorkerStats {
     String? categoryName,
     double? latitude,
     double? longitude,
+    bool? isAvailable,
     bool clearProfileImageUrl = false,
   }) {
     return WorkerStats(
@@ -71,6 +75,7 @@ class WorkerStats {
       categoryName: categoryName ?? this.categoryName,
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,
+      isAvailable: isAvailable ?? this.isAvailable,
     );
   }
 }
@@ -145,7 +150,13 @@ class WorkerFeedNotifier extends Notifier<WorkerFeedState> {
 
           // Find worker entry where worker.user.id == current user id
           final workerEntry = workersData.firstWhere(
-            (w) => w['user'] != null && w['user']['id'].toString() == user.id.toString(),
+            (w) {
+              if (w == null || w is! Map) return false;
+              final userMap = w['user'];
+              if (userMap == null || userMap is! Map) return false;
+              final userId = userMap['id'];
+              return userId != null && userId.toString() == user.id.toString();
+            },
             orElse: () => null,
           );
           debugPrint('loadFeed: matched worker entry: $workerEntry');
@@ -174,6 +185,7 @@ class WorkerFeedNotifier extends Notifier<WorkerFeedState> {
               categoryName: workerEntry['category']?['name'],
               latitude: workerEntry['latitude'] != null ? (workerEntry['latitude'] as num).toDouble() : null,
               longitude: workerEntry['longitude'] != null ? (workerEntry['longitude'] as num).toDouble() : null,
+              isAvailable: workerEntry['isAvailable'] ?? workerEntry['available'] ?? true,
             );
           }
         }
@@ -285,6 +297,42 @@ class WorkerFeedNotifier extends Notifier<WorkerFeedState> {
     } else {
       throw Exception('Failed to upload profile image');
     }
+  }
+
+  Future<void> updateAvailability(bool available) async {
+    final workerId = state.stats.workerId;
+    if (workerId == null) return;
+
+    final dio = ref.read(dioClientProvider).dio;
+    final response = await dio.put(
+      '/workers/$workerId/availability',
+      queryParameters: {'status': available},
+    );
+
+    if (response.statusCode == 200) {
+      state = state.copyWith(
+        stats: state.stats.copyWith(isAvailable: available),
+      );
+    }
+  }
+
+  Future<void> updateLocation({
+    required String location,
+    double? latitude,
+    double? longitude,
+  }) async {
+    final stats = state.stats;
+    await updateWorkerProfile(
+      fullName: stats.fullName,
+      phoneNumber: stats.phoneNumber,
+      location: location,
+      bio: stats.bio,
+      skills: stats.skills,
+      hourlyRate: stats.hourlyRate,
+      categoryId: stats.categoryId,
+      latitude: latitude,
+      longitude: longitude,
+    );
   }
 
   /// Pull-to-refresh

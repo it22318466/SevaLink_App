@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../core/themes/app_theme.dart';
 
@@ -23,6 +24,9 @@ class _ClientJobTimelineScreenState extends ConsumerState<ClientJobTimelineScree
 
   Timer? _pollingTimer;
   GoogleMapController? _mapController;
+
+  List<LatLng> _routePoints = [];
+  bool _isFetchingRoute = false;
 
   @override
   void initState() {
@@ -47,6 +51,73 @@ class _ClientJobTimelineScreenState extends ConsumerState<ClientJobTimelineScree
   void _stopPolling() {
     _pollingTimer?.cancel();
     _pollingTimer = null;
+  }
+
+  Future<void> _makeCall(String phoneNumber) async {
+    final Uri launchUri = Uri(
+      scheme: 'tel',
+      path: phoneNumber,
+    );
+    try {
+      if (await canLaunchUrl(launchUri)) {
+        await launchUrl(launchUri);
+      }
+    } catch (e) {
+      debugPrint('Failed to launch dialer: $e');
+    }
+  }
+
+  Future<void> _fetchRoutePoints() async {
+    if (_isFetchingRoute) return;
+    if (_assignedWorker?['latitude'] == null ||
+        _assignedWorker?['longitude'] == null ||
+        _jobDetails?['latitude'] == null ||
+        _jobDetails?['longitude'] == null) {
+      return;
+    }
+    final double jobLat = (_jobDetails!['latitude'] as num).toDouble();
+    final double jobLng = (_jobDetails!['longitude'] as num).toDouble();
+    final double workerLat = (_assignedWorker!['latitude'] as num).toDouble();
+    final double workerLng = (_assignedWorker!['longitude'] as num).toDouble();
+
+    _isFetchingRoute = true;
+    try {
+      final dio = ref.read(dioClientProvider).dio;
+      final url = 'https://router.project-osrm.org/route/v1/driving/$workerLng,$workerLat;$jobLng,$jobLat?overview=full&geometries=geojson';
+      final response = await dio.get(url);
+      if (response.statusCode == 200 && response.data != null) {
+        final routes = response.data['routes'] as List<dynamic>?;
+        if (routes != null && routes.isNotEmpty) {
+          final geometry = routes[0]['geometry'] as Map<String, dynamic>?;
+          if (geometry != null) {
+            final coordinates = geometry['coordinates'] as List<dynamic>?;
+            if (coordinates != null) {
+              final List<LatLng> points = coordinates.map((coord) {
+                final double lng = (coord[0] as num).toDouble();
+                final double lat = (coord[1] as num).toDouble();
+                return LatLng(lat, lng);
+              }).toList();
+              if (mounted) {
+                setState(() {
+                  _routePoints = points;
+                });
+              }
+              _isFetchingRoute = false;
+              return;
+            }
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Failed to fetch road route from OSRM: $e');
+    }
+    _isFetchingRoute = false;
+    // Fallback to straight line
+    if (mounted && _routePoints.isEmpty) {
+      setState(() {
+        _routePoints = [LatLng(workerLat, workerLng), LatLng(jobLat, jobLng)];
+      });
+    }
   }
 
   Future<void> _fetchData({bool background = false}) async {
@@ -92,26 +163,28 @@ class _ClientJobTimelineScreenState extends ConsumerState<ClientJobTimelineScree
         // Trigger map camera update if worker location changed and en route
         final hasArrived = _isStepCompleted('WORKER_ARRIVED');
         final isEnRoute = _isStepCompleted('WORKER_EN_ROUTE') && !hasArrived;
-        if (isEnRoute &&
-            _mapController != null &&
-            _assignedWorker?['latitude'] != null &&
-            _assignedWorker?['longitude'] != null &&
-            _jobDetails?['latitude'] != null &&
-            _jobDetails?['longitude'] != null) {
-          final jobLatLng = LatLng(_jobDetails!['latitude'], _jobDetails!['longitude']);
-          final workerLatLng = LatLng(_assignedWorker!['latitude'], _assignedWorker!['longitude']);
-          
-          final bounds = LatLngBounds(
-            southwest: LatLng(
-              jobLatLng.latitude < workerLatLng.latitude ? jobLatLng.latitude : workerLatLng.latitude,
-              jobLatLng.longitude < workerLatLng.longitude ? jobLatLng.longitude : workerLatLng.longitude,
-            ),
-            northeast: LatLng(
-              jobLatLng.latitude > workerLatLng.latitude ? jobLatLng.latitude : workerLatLng.latitude,
-              jobLatLng.longitude > workerLatLng.longitude ? jobLatLng.longitude : workerLatLng.longitude,
-            ),
-          );
-          _mapController!.animateCamera(CameraUpdate.newLatLngBounds(bounds, 50));
+        if (isEnRoute) {
+          _fetchRoutePoints();
+          if (_mapController != null &&
+              _assignedWorker?['latitude'] != null &&
+              _assignedWorker?['longitude'] != null &&
+              _jobDetails?['latitude'] != null &&
+              _jobDetails?['longitude'] != null) {
+            final jobLatLng = LatLng(_jobDetails!['latitude'], _jobDetails!['longitude']);
+            final workerLatLng = LatLng(_assignedWorker!['latitude'], _assignedWorker!['longitude']);
+            
+            final bounds = LatLngBounds(
+              southwest: LatLng(
+                jobLatLng.latitude < workerLatLng.latitude ? jobLatLng.latitude : workerLatLng.latitude,
+                jobLatLng.longitude < workerLatLng.longitude ? jobLatLng.longitude : workerLatLng.longitude,
+              ),
+              northeast: LatLng(
+                jobLatLng.latitude > workerLatLng.latitude ? jobLatLng.latitude : workerLatLng.latitude,
+                jobLatLng.longitude > workerLatLng.longitude ? jobLatLng.longitude : workerLatLng.longitude,
+              ),
+            );
+            _mapController!.animateCamera(CameraUpdate.newLatLngBounds(bounds, 50));
+          }
         }
       }
     } catch (e) {
@@ -399,7 +472,7 @@ class _ClientJobTimelineScreenState extends ConsumerState<ClientJobTimelineScree
           polylines: {
             Polyline(
               polylineId: const PolylineId('route'),
-              points: [jobLatLng, workerLatLng],
+              points: _routePoints.isNotEmpty ? _routePoints : [jobLatLng, workerLatLng],
               color: const Color(0xFFD3410A),
               width: 4,
             ),
@@ -453,6 +526,19 @@ class _ClientJobTimelineScreenState extends ConsumerState<ClientJobTimelineScree
               ],
             ),
           ),
+          if (phone.isNotEmpty) ...[
+            const SizedBox(width: 12),
+            Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFF006B5E).withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: IconButton(
+                icon: const Icon(Icons.phone, color: Color(0xFF006B5E)),
+                onPressed: () => _makeCall(phone),
+              ),
+            ),
+          ],
         ],
       ),
     );

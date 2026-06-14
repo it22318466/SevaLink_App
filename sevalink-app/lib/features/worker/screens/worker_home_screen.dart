@@ -11,6 +11,8 @@ import '../../../providers/auth_provider.dart';
 import '../../../providers/worker_feed_provider.dart';
 import '../../../providers/notification_provider.dart';
 import '../../../core/themes/app_theme.dart';
+import '../../jobs/screens/job_location_picker_screen.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 // (Mock data removed — now using real backend feed)
 
@@ -111,19 +113,21 @@ class _HomeContent extends ConsumerWidget {
         physics: const AlwaysScrollableScrollPhysics(),
         slivers: [
           SliverToBoxAdapter(
-            child: _Header(
-              workerName: workerName,
-              hasNewNotifications: hasNewNotifications,
-              stats: feedState.stats,
-            ),
-          ),
-          SliverToBoxAdapter(
-            child: Transform.translate(
-              offset: const Offset(0, -24),
-              child: _QuickAccessSection(
-                onMyJobsTap: onGoToJobs,
-                onProfileTap: onGoToProfile,
-              ),
+            child: Column(
+              children: [
+                _Header(
+                  workerName: workerName,
+                  hasNewNotifications: hasNewNotifications,
+                  stats: feedState.stats,
+                ),
+                Transform.translate(
+                  offset: const Offset(0, -24),
+                  child: _QuickAccessSection(
+                    onMyJobsTap: onGoToJobs,
+                    onProfileTap: onGoToProfile,
+                  ),
+                ),
+              ],
             ),
           ),
           SliverToBoxAdapter(
@@ -280,7 +284,7 @@ class _ErrorView extends StatelessWidget {
 
 //  Header
 
-class _Header extends StatelessWidget {
+class _Header extends ConsumerWidget {
   final String workerName;
   final bool hasNewNotifications;
   final WorkerStats stats;
@@ -292,7 +296,7 @@ class _Header extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final topPadding = MediaQuery.of(context).padding.top;
     return Container(
       decoration: const BoxDecoration(
@@ -306,7 +310,7 @@ class _Header extends StatelessWidget {
           bottomRight: Radius.circular(36),
         ),
       ),
-      padding: EdgeInsets.fromLTRB(20, topPadding + 20, 20, 56),
+      padding: EdgeInsets.fromLTRB(20, topPadding + 20, 20, 80),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -319,14 +323,14 @@ class _Header extends StatelessWidget {
                   children: [
                     const Text(
                       'Welcome back,',
-                      style: TextStyle(color: Colors.white70, fontSize: 14),
+                      style: TextStyle(color: Colors.white70, fontSize: 13),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       workerName,
                       style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 22,
+                        fontSize: 24,
                         fontWeight: FontWeight.bold,
                       ),
                       maxLines: 1,
@@ -373,7 +377,113 @@ class _Header extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 18),
+          // Location & Availability Selector Row
+          Row(
+            children: [
+              Expanded(
+                child: InkWell(
+                  onTap: () async {
+                    final currentLatLng = (stats.latitude != null && stats.longitude != null)
+                        ? LatLng(stats.latitude!, stats.longitude!)
+                        : null;
+                    final result = await Navigator.push<Map<String, dynamic>>(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => JobLocationPickerScreen(
+                          initialLocation: currentLatLng,
+                        ),
+                      ),
+                    );
+
+                    if (result != null) {
+                      final lat = result['latitude'] as double?;
+                      final lng = result['longitude'] as double?;
+                      final address = result['address'] as String? ?? '';
+                      if (address.isNotEmpty) {
+                        await ref.read(workerFeedProvider.notifier).updateLocation(
+                          location: address,
+                          latitude: lat,
+                          longitude: lng,
+                        );
+                      }
+                    }
+                  },
+                  borderRadius: BorderRadius.circular(20),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.location_on, color: Colors.white, size: 16),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            stats.location.isNotEmpty ? stats.location : 'Set Location',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        const Icon(Icons.chevron_right, color: Colors.white70, size: 16),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              // Availability status pill (Tap to toggle)
+              InkWell(
+                onTap: () async {
+                  await ref.read(workerFeedProvider.notifier).updateAvailability(!stats.isAvailable);
+                },
+                borderRadius: BorderRadius.circular(20),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: stats.isAvailable
+                        ? const Color(0xFF27AE60).withValues(alpha: 0.2)
+                        : Colors.white.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: stats.isAvailable ? const Color(0xFF27AE60) : Colors.white24,
+                      width: 1.5,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: stats.isAvailable ? const Color(0xFF2EC76E) : Colors.grey,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        stats.isAvailable ? 'Available' : 'Busy',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
           Row(
             children: [
               Expanded(
@@ -392,8 +502,11 @@ class _Header extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 10),
-              const Expanded(
-                child: _StatChip(value: 'Active', label: 'Status'),
+              Expanded(
+                child: _StatChip(
+                  value: stats.isAvailable ? 'Available' : 'Busy',
+                  label: 'Status',
+                ),
               ),
             ],
           ),
