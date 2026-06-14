@@ -23,6 +23,8 @@ import '../features/jobs/screens/quotes_received_screen.dart';
 import '../features/jobs/screens/quote_details_screen.dart';
 import '../features/chat/screens/chat_list_screen.dart';
 import '../features/chat/screens/chat_screen.dart';
+import '../features/jobs/screens/client_job_timeline_screen.dart';
+import '../features/worker/screens/worker_job_timeline_screen.dart';
 import '../data/models/job.dart';
 import '../data/models/quotation_model.dart';
 
@@ -129,6 +131,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const PostJobScreen(),
       ),
       GoRoute(
+        path: '/client/jobs/:jobId/timeline',
+        builder: (context, state) {
+          final jobId = int.tryParse(state.pathParameters['jobId'] ?? '0') ?? 0;
+          return ClientJobTimelineScreen(jobId: jobId);
+        },
+      ),
+      GoRoute(
         path: '/client/jobs/:jobId/quotes',
         builder: (context, state) {
           final job = state.extra as Map<String, dynamic>? ?? {};
@@ -185,6 +194,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/worker/profile',
         builder: (context, state) =>
             const WorkerProfileScreen(showBackButton: true),
+      ),
+      GoRoute(
+        path: '/worker/jobs/:jobId/timeline',
+        builder: (context, state) {
+          final jobId = int.tryParse(state.pathParameters['jobId'] ?? '0') ?? 0;
+          return WorkerJobTimelineScreen(jobId: jobId);
+        },
       ),
     ],
   );

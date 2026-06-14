@@ -2,7 +2,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import '../data/models/job.dart';
+import '../core/constants/api_endpoints.dart';
 import 'auth_provider.dart';
+
 
 // ─── Worker Stats (from GET /api/workers/{id}) ───────────────────────────────
 
@@ -180,7 +182,9 @@ class WorkerFeedNotifier extends Notifier<WorkerFeedState> {
               bio: workerEntry['bio'] ?? '',
               skills: parsedSkills,
               hourlyRate: workerEntry['hourlyRate']?.toString() ?? '',
-              profileImageUrl: userEntry['profileImageUrl'],
+              profileImageUrl: userEntry['profileImageUrl'] != null
+                  ? ApiEndpoints.rewriteImageUrl(userEntry['profileImageUrl'] as String)
+                  : null,
               categoryId: workerEntry['category']?['id'],
               categoryName: workerEntry['category']?['name'],
               latitude: workerEntry['latitude'] != null ? (workerEntry['latitude'] as num).toDouble() : null,
@@ -258,7 +262,9 @@ class WorkerFeedNotifier extends Notifier<WorkerFeedState> {
           bio: updatedWorker['bio'] ?? '',
           skills: parsedSkills,
           hourlyRate: updatedWorker['hourlyRate']?.toString() ?? '',
-          profileImageUrl: userEntry['profileImageUrl'],
+          profileImageUrl: userEntry['profileImageUrl'] != null
+              ? ApiEndpoints.rewriteImageUrl(userEntry['profileImageUrl'] as String)
+              : null,
           categoryId: updatedWorker['category']?['id'],
           categoryName: updatedWorker['category']?['name'],
           latitude: updatedWorker['latitude'] != null ? (updatedWorker['latitude'] as num).toDouble() : null,
@@ -291,7 +297,9 @@ class WorkerFeedNotifier extends Notifier<WorkerFeedState> {
 
       state = state.copyWith(
         stats: state.stats.copyWith(
-          profileImageUrl: userEntry['profileImageUrl'],
+          profileImageUrl: userEntry['profileImageUrl'] != null
+              ? ApiEndpoints.rewriteImageUrl(userEntry['profileImageUrl'] as String)
+              : null,
         ),
       );
     } else {
