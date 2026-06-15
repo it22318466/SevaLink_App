@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../providers/auth_provider.dart';
+import '../../../providers/client_jobs_provider.dart';
 import '../../../core/themes/app_theme.dart';
 
 class ClientJobTimelineScreen extends ConsumerStatefulWidget {
@@ -380,7 +381,11 @@ class _ClientJobTimelineScreenState extends ConsumerState<ClientJobTimelineScree
         title: Text(jobTitle, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.go('/client/jobs'),
+          onPressed: () {
+            // Invalidate so ClientJobsScreen gets fresh data on return
+            ref.invalidate(clientJobsProvider);
+            context.go('/client/jobs');
+          },
         ),
       ),
       body: SingleChildScrollView(

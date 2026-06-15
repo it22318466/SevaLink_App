@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/worker_feed_provider.dart';
 import '../../../core/themes/app_theme.dart';
+import 'my_jobs_screen.dart' show workerJobsListProvider;
 
 class WorkerJobTimelineScreen extends ConsumerStatefulWidget {
   final int jobId;
@@ -108,6 +109,13 @@ class _WorkerJobTimelineScreenState extends ConsumerState<WorkerJobTimelineScree
           }
         } else {
           _stopLocationTracking();
+        }
+
+        // If job is COMPLETED, refresh the jobs list provider so MyJobsScreen
+        // auto-switches to the Completed tab
+        final jobStatus = newJobDetails?['status'] ?? '';
+        if (jobStatus == 'COMPLETED') {
+          ref.read(workerJobsListProvider.notifier).loadJobs();
         }
       }
     } catch (e) {
@@ -487,7 +495,15 @@ class _WorkerJobTimelineScreenState extends ConsumerState<WorkerJobTimelineScree
         title: Text(jobTitle, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.go('/worker/home'),
+          onPressed: () {
+            // Refresh jobs list so MyJobsScreen Completed tab updates
+            ref.read(workerJobsListProvider.notifier).loadJobs();
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+            } else {
+              context.go('/worker/home');
+            }
+          },
         ),
       ),
       body: SingleChildScrollView(

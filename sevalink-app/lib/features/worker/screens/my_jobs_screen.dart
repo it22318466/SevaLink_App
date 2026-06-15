@@ -208,17 +208,28 @@ class MyJobsScreen extends ConsumerStatefulWidget {
 }
 
 class _MyJobsScreenState extends ConsumerState<MyJobsScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late TabController _tabController;
+  int _prevCompletedCount = 0;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Refresh list whenever app comes back to foreground
+    if (state == AppLifecycleState.resumed) {
+      ref.read(workerJobsListProvider.notifier).loadJobs();
+    }
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _tabController.dispose();
     super.dispose();
   }
@@ -306,6 +317,18 @@ class _MyJobsScreenState extends ConsumerState<MyJobsScreen>
     final cancelled = _byStatus(jobs, JobStatus.cancelled);   // Cancelled
     final colors    = Theme.of(context).extension<SevaLinkColors>()!;
 
+    // Auto-switch to Completed tab when a job finishes
+    if (!isLoading && completed.length > _prevCompletedCount && _prevCompletedCount >= 0) {
+      _prevCompletedCount = completed.length;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _tabController.index != 1) {
+          _tabController.animateTo(1);
+        }
+      });
+    } else {
+      _prevCompletedCount = completed.length;
+    }
+
     return Scaffold(
       backgroundColor: colors.bodyBg,
       body: Column(
@@ -328,7 +351,6 @@ class _MyJobsScreenState extends ConsumerState<MyJobsScreen>
                           _JobList(
                             jobs: active,
                             emptyLabel: 'No in-progress jobs right now',
-                            onMarkDone: (id) => _handleMarkDone(id),
                             onRefresh: () => ref.read(workerJobsListProvider.notifier).loadJobs(),
                           ),
                           // Completed tab (formerly Done)
@@ -709,21 +731,7 @@ class _JobCard extends StatelessWidget {
 
     switch (job.status) {
       case JobStatus.active:
-        return ElevatedButton.icon(
-          onPressed: onMarkDone,
-          icon: const Icon(Icons.check_rounded, size: 15, color: Colors.white),
-          label: const Text('Mark Done',
-              style: TextStyle(color: Colors.white, fontSize: 13)),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF0F9B8E),
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            elevation: 0,
-            minimumSize: Size.zero,
-            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          ),
-        );
+        return const SizedBox.shrink();
 
       case JobStatus.completed:
         return Container(

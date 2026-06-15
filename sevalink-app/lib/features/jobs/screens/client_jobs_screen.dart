@@ -11,10 +11,12 @@ class ClientJobsScreen extends ConsumerStatefulWidget {
   ConsumerState<ClientJobsScreen> createState() => _ClientJobsScreenState();
 }
 
-class _ClientJobsScreenState extends ConsumerState<ClientJobsScreen> {
+class _ClientJobsScreenState extends ConsumerState<ClientJobsScreen>
+    with WidgetsBindingObserver {
   final int _currentNavIndex = 1; // Jobs tab
   int _selectedTabIndex = 0;
   final List<String> _statusFilters = ['OPEN', 'ASSIGNED', 'COMPLETED', 'CANCELLED'];
+  int _prevCompletedCount = 0;
 
   void _onNavTapped(int index) {
     if (index == _currentNavIndex) return;
@@ -30,6 +32,33 @@ class _ClientJobsScreenState extends ConsumerState<ClientJobsScreen> {
       case 3:
         context.go('/client/profile');
         break;
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _refreshJobs();
+    }
+  }
+
+  void _refreshJobs() {
+    final user = ref.read(authProvider).user;
+    if (user != null) {
+      ref.invalidate(clientJobStatsProvider(user.id));
+      ref.invalidate(clientJobsProvider);
     }
   }
 
@@ -112,6 +141,25 @@ class _ClientJobsScreenState extends ConsumerState<ClientJobsScreen> {
       clientId: clientId,
       status: _statusFilters[_selectedTabIndex],
     )));
+
+    // Watch completed count to auto-switch tab when a job finishes
+    final completedAsync = ref.watch(clientJobsProvider(ClientJobsParams(
+      clientId: clientId,
+      status: 'COMPLETED',
+    )));
+    completedAsync.whenData((completedJobs) {
+      final count = completedJobs.length;
+      if (count > _prevCompletedCount) {
+        _prevCompletedCount = count;
+        if (_selectedTabIndex != 2) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) setState(() => _selectedTabIndex = 2);
+          });
+        }
+      } else {
+        _prevCompletedCount = count;
+      }
+    });
 
     return Scaffold(
       backgroundColor: const Color(0xFFE64A19), // Deep orange background for top
