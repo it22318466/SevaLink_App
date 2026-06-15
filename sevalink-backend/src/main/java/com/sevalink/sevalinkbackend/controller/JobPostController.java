@@ -151,4 +151,57 @@ public class JobPostController {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
+
+    // Confirm payment (Client or Worker)
+    // POST http://localhost:8080/api/jobs/1/confirm-payment
+    @PostMapping("/{id}/confirm-payment")
+    public ResponseEntity<?> confirmPayment(@PathVariable Long id) {
+        try {
+            // Determine caller email from Spring Security context
+            org.springframework.security.core.Authentication auth =
+                    org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+            if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getPrincipal())) {
+                return ResponseEntity.status(401).body(ApiResponse.error("Unauthorized"));
+            }
+            String email = auth.getName();
+            JobPost updated = jobPostService.confirmPayment(id, email);
+            return ResponseEntity.ok(updated);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+    // File a complaint
+    // POST http://localhost:8080/api/jobs/1/complaint
+    @PostMapping("/{id}/complaint")
+    public ResponseEntity<?> fileComplaint(
+            @PathVariable Long id,
+            @RequestBody java.util.Map<String, String> body) {
+        try {
+            org.springframework.security.core.Authentication auth =
+                    org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+            if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getPrincipal())) {
+                return ResponseEntity.status(401).body(ApiResponse.error("Unauthorized"));
+            }
+            String email = auth.getName();
+            String description = body.getOrDefault("description", "");
+            com.sevalink.sevalinkbackend.model.Complaint complaint =
+                    jobPostService.fileComplaint(id, email, description);
+            return ResponseEntity.ok(complaint);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+    // Get assigned worker for a job (client tracking)
+    // GET http://localhost:8080/api/jobs/1/assigned-worker
+    @GetMapping("/{id}/assigned-worker")
+    public ResponseEntity<?> getAssignedWorker(@PathVariable Long id) {
+        try {
+            com.sevalink.sevalinkbackend.model.Worker worker = jobPostService.getAssignedWorker(id);
+            return ResponseEntity.ok(worker);
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
 }
