@@ -141,9 +141,9 @@ class _ClientDashboardScreenState extends ConsumerState<ClientDashboardScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       endDrawer: NotificationsDrawer(
-        onNotificationTap: (notif) {
+        onNotificationTap: (NotificationModel notif) {
           if (notif.relatedJobId != null) {
-            context.go('/client/jobs');
+            context.push('/client/jobs/${notif.relatedJobId}/timeline');
           }
         },
       ),

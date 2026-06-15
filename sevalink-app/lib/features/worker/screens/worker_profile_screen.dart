@@ -8,7 +8,6 @@ import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../../providers/auth_provider.dart';
-import '../../../providers/theme_provider.dart';
 import '../../../core/themes/app_theme.dart';
 import '../../../providers/worker_feed_provider.dart';
 import '../../../providers/worker_jobs_list_provider.dart';
@@ -481,8 +480,6 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
                         const SizedBox(height: 12),
                         _buildCancelButton(),
                       ] else ...[
-                        _buildThemeToggleCard(),
-                        const SizedBox(height: 12),
                         _buildLogoutButton(),
                       ],
                       const SizedBox(height: 50),
@@ -1178,84 +1175,7 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
     );
   }
 
-  // THEME TOGGLE CARD
-  Widget _buildThemeToggleCard() {
-    final themeMode = ref.watch(themeProvider);
-    final isDark    = themeMode == ThemeMode.dark;
-    final colors    = Theme.of(context).extension<SevaLinkColors>() ?? SevaLinkColors.light;
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      decoration: BoxDecoration(
-        color: colors.cardBg,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: colors.border, width: 1),
-        boxShadow: isDark
-            ? null
-            : [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.04),
-                  blurRadius: 12,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-      ),
-      child: Row(
-        children: [
-          // Icon
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: isDark
-                  ? const Color(0xFFD3410A).withValues(alpha: 0.2)
-                  : const Color(0xFFEFF6FF),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
-              color: isDark ? const Color(0xFFFDBA74) : const Color(0xFFD3410A),
-              size: 20,
-            ),
-          ),
-          const SizedBox(width: 14),
-          // Label
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  isDark ? 'Dark Mode' : 'Light Mode',
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: colors.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  isDark ? 'Switch to light theme' : 'Switch to dark theme',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: colors.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // Toggle
-          Switch(
-            value: isDark,
-            onChanged: (_) =>
-                ref.read(themeProvider.notifier).toggleTheme(),
-            activeThumbColor: const Color(0xFFD3410A),
-            activeTrackColor: const Color(0xFFD3410A).withValues(alpha: 0.3),
-            inactiveThumbColor: Colors.white,
-            inactiveTrackColor: const Color(0xFFE5E7EB),
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildLogoutButton() {
     return SizedBox(

@@ -10,6 +10,7 @@ import '../../../data/models/job.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/worker_feed_provider.dart';
 import '../../../providers/notification_provider.dart';
+import '../../../data/models/notification_model.dart';
 import '../../../core/themes/app_theme.dart';
 import '../../jobs/screens/job_location_picker_screen.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -975,9 +976,12 @@ class _BottomNav extends StatelessWidget {
 class _NotificationsDrawer extends ConsumerWidget {
   const _NotificationsDrawer();
 
-  void _handleNotificationTap(BuildContext context, WidgetRef ref, int notifId) {
-    ref.read(notificationProvider.notifier).markAsRead(notifId);
+  void _handleNotificationTap(BuildContext context, WidgetRef ref, NotificationModel notif) {
+    ref.read(notificationProvider.notifier).markAsRead(notif.id);
     Navigator.pop(context);
+    if (notif.relatedJobId != null) {
+      context.push('/worker/jobs/${notif.relatedJobId}/timeline');
+    }
   }
 
   @override
@@ -1047,7 +1051,7 @@ class _NotificationsDrawer extends ConsumerWidget {
                           itemBuilder: (context, index) {
                             final notif = notifications[index];
                             return InkWell(
-                              onTap: () => _handleNotificationTap(context, ref, notif.id),
+                              onTap: () => _handleNotificationTap(context, ref, notif),
                               child: Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                                 decoration: BoxDecoration(
