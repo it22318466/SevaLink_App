@@ -601,7 +601,7 @@ class _QuickAccessSection extends ConsumerWidget {
               child: _QuickCard(
                 label: 'Profile',
                 sublabel: 'Edit details',
-                color: const Color(0xFF8B2FC9),
+                color: const Color(0xFF2A9134),
                 icon: Icons.person_outline,
                 onTap: onProfileTap ?? () {},
               ),

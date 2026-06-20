@@ -332,7 +332,7 @@ class _WorkerDashboardScreenState
                 emoji: '👤',
                 title: 'Profile',
                 subtitle: 'Edit details',
-                color: const Color(0xFF7B1FA2),
+                color: const Color(0xFF137547),
                 onTap: () {},
               ),
             ),

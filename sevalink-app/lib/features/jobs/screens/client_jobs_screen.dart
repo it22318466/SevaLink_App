@@ -414,12 +414,12 @@ class _ClientJobsScreenState extends ConsumerState<ClientJobsScreen>
     Color statusTextColor;
     switch (status) {
       case 'OPEN':
-        statusBgColor = const Color(0xFFE0E7FF); // Light blue
+        statusBgColor = const Color(0xFFE8F8EE); // Light blue
         statusTextColor = const Color(0xFF4338CA); // Blue
         break;
       case 'ASSIGNED':
-        statusBgColor = const Color(0xFFFEF3C7); // Light amber
-        statusTextColor = const Color(0xFFD97706); // Amber
+        statusBgColor = const Color(0xFFE8F8EE); // Light amber
+        statusTextColor = const Color(0xFF2A9134); // Amber
         break;
       case 'COMPLETED':
         statusBgColor = const Color(0xFFDCFCE7); // Light green

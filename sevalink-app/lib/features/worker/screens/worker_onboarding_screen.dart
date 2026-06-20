@@ -24,11 +24,11 @@ class _WorkerOnboardingScreenState extends ConsumerState<WorkerOnboardingScreen>
   String? _selectedCategoryName;
 
   final List<Map<String, dynamic>> _categories = [
-    {'id': 1, 'name': 'Electrical', 'icon': Icons.bolt_rounded, 'color': Color(0xFFEFF6FF), 'iconColor': Color(0xFF3B82F6)},
+    {'id': 1, 'name': 'Electrical', 'icon': Icons.bolt_rounded, 'color': Color(0xFFE8F8EE), 'iconColor': Color(0xFF2A9134)},
     {'id': 2, 'name': 'Plumbing', 'icon': Icons.water_drop_rounded, 'color': Color(0xFFECFDF5), 'iconColor': Color(0xFF10B981)},
-    {'id': 3, 'name': 'Carpentry', 'icon': Icons.handyman_rounded, 'color': Color(0xFFFFF7ED), 'iconColor': Color(0xFFF97316)},
-    {'id': 4, 'name': 'Cleaning', 'icon': Icons.cleaning_services_rounded, 'color': Color(0xFFF5F3FF), 'iconColor': Color(0xFF8B5CF6)},
-    {'id': 5, 'name': 'Painting', 'icon': Icons.format_paint_rounded, 'color': Color(0xFFFDF2F8), 'iconColor': Color(0xFFEC4899)},
+    {'id': 3, 'name': 'Carpentry', 'icon': Icons.handyman_rounded, 'color': Color(0xFFE8F8EE), 'iconColor': Color(0xFF5BBA6F)},
+    {'id': 4, 'name': 'Cleaning', 'icon': Icons.cleaning_services_rounded, 'color': Color(0xFFE8F8EE), 'iconColor': Color(0xFF2A9134)},
+    {'id': 5, 'name': 'Painting', 'icon': Icons.format_paint_rounded, 'color': Color(0xFFE8F8EE), 'iconColor': Color(0xFF3FA34D)},
     {'id': 6, 'name': 'General', 'icon': Icons.miscellaneous_services_rounded, 'color': Color(0xFFF3F4F6), 'iconColor': Color(0xFF6B7280)},
   ];
 

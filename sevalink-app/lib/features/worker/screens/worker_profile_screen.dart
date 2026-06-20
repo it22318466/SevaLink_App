@@ -180,7 +180,7 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
                   leading: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFEFF6FF),
+                      color: const Color(0xFFE8F8EE),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: const Icon(Icons.visibility_rounded,
@@ -222,7 +222,7 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
                 leading: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFEFF6FF),
+                    color: const Color(0xFFE8F8EE),
                     borderRadius: BorderRadius.circular(10),
                   ),
                     child: const Icon(Icons.camera_alt_rounded,
@@ -701,7 +701,7 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
                     ),
                     const SizedBox(width: 8),
                     const Icon(Icons.star_rounded,
-                        color: Color(0xFFF59E0B), size: 15),
+                        color: Color(0xFF5BBA6F), size: 15),
                     Text(
                       stats.rating > 0 ? ' ${stats.rating.toStringAsFixed(1)}' : ' —',
                       style: TextStyle(

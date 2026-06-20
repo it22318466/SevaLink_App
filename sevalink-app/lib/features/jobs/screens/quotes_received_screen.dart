@@ -268,7 +268,7 @@ class QuotesReceivedScreen extends ConsumerWidget {
                     const SizedBox(height: 6),
                     Row(
                       children: [
-                        const Icon(Icons.star, color: Color(0xFFFACC15), size: 16),
+                        const Icon(Icons.star, color: Color(0xFF5BBA6F), size: 16),
                         const SizedBox(width: 4),
                         Text(
                           quote.workerRating.toStringAsFixed(1),
@@ -291,7 +291,7 @@ class QuotesReceivedScreen extends ConsumerWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFFFF7ED),
+                        color: const Color(0xFFE8F8EE),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(

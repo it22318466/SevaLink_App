@@ -20,14 +20,14 @@ class _CategoryOption {
 }
 
 const _kCategories = [
-  _CategoryOption('Electrician', 'ELECTRICIAN', Icons.bolt, Color(0xFFFF9800)),
-  _CategoryOption('Plumber',     'PLUMBER',     Icons.plumbing, Color(0xFF9C27B0)),
+  _CategoryOption('Electrician', 'ELECTRICIAN', Icons.bolt, Color(0xFF5BBA6F)),
+  _CategoryOption('Plumber',     'PLUMBER',     Icons.plumbing, Color(0xFF2A9134)),
   _CategoryOption('Carpenter',   'CARPENTER',   Icons.handyman, Color(0xFF8D6E63)),
-  _CategoryOption('Painter',     'PAINTER',     Icons.palette, Color(0xFFE91E63)),
+  _CategoryOption('Painter',     'PAINTER',     Icons.palette, Color(0xFF3FA34D)),
   _CategoryOption('Cleaner',     'CLEANER',     Icons.cleaning_services, Color(0xFF5BBA6F)),
-  _CategoryOption('Mechanic',    'MECHANIC',    Icons.settings, Color(0xFF673AB7)),
+  _CategoryOption('Mechanic',    'MECHANIC',    Icons.settings, Color(0xFF137547)),
   _CategoryOption('Gardener',    'GARDENER',    Icons.eco, Color(0xFF4CAF50)),
-  _CategoryOption('Technician',  'TECHNICIAN',  Icons.laptop, Color(0xFF2196F3)),
+  _CategoryOption('Technician',  'TECHNICIAN',  Icons.laptop, Color(0xFF2A9134)),
 ];
 
 
@@ -829,7 +829,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                     Icon(
                       Icons.star_rounded,
                       size: 14,
-                      color: active ? Colors.white : const Color(0xFFFFC107),
+                      color: active ? Colors.white : const Color(0xFF5BBA6F),
                     ),
                     const SizedBox(width: 4),
                   ],
@@ -1188,7 +1188,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                       } else {
                         ico = Icons.star_outline_rounded;
                       }
-                      return Icon(ico, color: const Color(0xFFFFC107), size: 15);
+                      return Icon(ico, color: const Color(0xFF5BBA6F), size: 15);
                     }),
                     const SizedBox(width: 5),
                     Text(
@@ -1213,7 +1213,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     return Container(
       width: 80, height: 80,
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF0E5),
+        color: const Color(0xFFE8F8EE),
         borderRadius: BorderRadius.circular(14),
       ),
       alignment: Alignment.center,
@@ -1268,14 +1268,14 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                       const SizedBox(height: 8),
                       Row(
                         children: [
-                          const Icon(Icons.star_rounded, color: Color(0xFFFFC107), size: 18),
+                          const Icon(Icons.star_rounded, color: Color(0xFF5BBA6F), size: 18),
                           const SizedBox(width: 4),
                           Text(worker.rating.toStringAsFixed(1), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF1F2937))),
                           if (worker.isVerified) ...[
                             const SizedBox(width: 12),
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                              decoration: BoxDecoration(color: const Color(0xFFFFF0E5), borderRadius: BorderRadius.circular(8)),
+                              decoration: BoxDecoration(color: const Color(0xFFE8F8EE), borderRadius: BorderRadius.circular(8)),
                               child: const Row(
                                 children: [
                                   Icon(Icons.verified_outlined, color: _orange, size: 12),
@@ -1530,7 +1530,7 @@ class _MagnifyingGlassPainter extends CustomPainter {
 
     // Handle Paint (bottom right)
     final handlePaint = Paint()
-      ..color = const Color(0xFF6B4EA7) // Purple handle
+      ..color = const Color(0xFF137547) // Purple handle
       ..style = PaintingStyle.fill;
 
     // Save canvas, rotate to draw handle at 45 degrees
@@ -1540,7 +1540,7 @@ class _MagnifyingGlassPainter extends CustomPainter {
 
     // Draw the neck of the handle
     final neckPaint = Paint()
-      ..color = const Color(0xFF563B8C) // Darker purple neck
+      ..color = const Color(0xFF137547) // Darker purple neck
       ..style = PaintingStyle.fill;
     
     canvas.drawRRect(
@@ -1563,7 +1563,7 @@ class _MagnifyingGlassPainter extends CustomPainter {
 
     // Frame Paint (Outer border of the lens)
     final framePaint = Paint()
-      ..color = const Color(0xFF563B8C) // Darker purple frame
+      ..color = const Color(0xFF137547) // Darker purple frame
       ..style = PaintingStyle.stroke
       ..strokeWidth = size.width * 0.07;
 
@@ -1576,8 +1576,8 @@ class _MagnifyingGlassPainter extends CustomPainter {
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: [
-          Color(0xFF60D3FF), // Bright cyan
-          Color(0xFF3897F5), // Vibrant blue
+          Color(0xFF5BBA6F), // Bright cyan
+          Color(0xFF2A9134), // Vibrant blue
         ],
       ).createShader(Rect.fromCircle(center: center, radius: radius))
       ..style = PaintingStyle.fill;

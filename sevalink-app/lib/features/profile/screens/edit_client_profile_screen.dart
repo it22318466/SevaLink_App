@@ -277,7 +277,7 @@ class _EditClientProfileScreenState extends ConsumerState<EditClientProfileScree
                                   child: Container(
                                     padding: const EdgeInsets.all(6),
                                     decoration: BoxDecoration(
-                                      color: _isUploadingProfileImage ? Colors.grey.shade400 : const Color(0xFF1A73E8),
+                                      color: _isUploadingProfileImage ? Colors.grey.shade400 : const Color(0xFF2A9134),
                                       shape: BoxShape.circle,
                                       border: Border.all(color: Colors.white, width: 2),
                                     ),

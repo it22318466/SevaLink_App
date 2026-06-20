@@ -364,9 +364,9 @@ class _QuoteDetailsScreenState extends ConsumerState<QuoteDetailsScreen> {
                           width: double.infinity,
                           padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFFFF7ED),
+                            color: const Color(0xFFE8F8EE),
                             borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: const Color(0xFFFFEDD5)),
+                            border: Border.all(color: const Color(0xFFE8F8EE)),
                           ),
                           child: Column(
                             children: [
@@ -488,10 +488,10 @@ class _QuoteDetailsScreenState extends ConsumerState<QuoteDetailsScreen> {
                                   Container(
                                     padding: const EdgeInsets.all(8),
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFFF3E8FF), // Light purple
+                                      color: const Color(0xFFE8F8EE), // Light purple
                                       borderRadius: BorderRadius.circular(8),
                                     ),
-                                    child: const Icon(Icons.chat_bubble_outline, color: Color(0xFF7E22CE), size: 20),
+                                    child: const Icon(Icons.chat_bubble_outline, color: Color(0xFF137547), size: 20),
                                   ),
                                   const SizedBox(width: 16),
                                   const Text(
@@ -647,13 +647,13 @@ class _QuoteDetailsScreenState extends ConsumerState<QuoteDetailsScreen> {
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFF0F9FF), // Light blue
+                            color: const Color(0xFFE8F8EE), // Light blue
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: RichText(
                             text: const TextSpan(
                               style: TextStyle(
-                                color: Color(0xFF0369A1),
+                                color: Color(0xFF137547),
                                 fontSize: 13,
                                 height: 1.5,
                               ),

@@ -47,8 +47,8 @@ class RoleSelectionScreen extends StatelessWidget {
               const SizedBox(height: 16),
               _RoleCard(
                 icon: LucideIcons.briefcase,
-                iconColor: const Color(0xFF2563EB),
-                iconBgColor: const Color(0xFFDBEAFE),
+                iconColor: const Color(0xFF2A9134),
+                iconBgColor: const Color(0xFFE8F8EE),
                 title: "I'm a Worker",
                 subtitle: 'Offering my services',
                 onTap: () => context.push('/auth/signup?role=WORKER'),

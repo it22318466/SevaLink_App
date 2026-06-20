@@ -78,11 +78,11 @@ class _ClientDashboardScreenState extends ConsumerState<ClientDashboardScreen> {
 
   // --- Static Data Provisioning to Match Design Specifications ---
   final List<ServiceCategory> _categories = const [
-    ServiceCategory(title: 'Electrician', icon: Icons.bolt_outlined, bgColor: Color(0xFFFEF5E5), iconColor: Color(0xFFD49A00)),
-    ServiceCategory(title: 'Plumber', icon: Icons.plumbing_outlined, bgColor: Color(0xFFE8F1FE), iconColor: Color(0xFF2962FF)),
-    ServiceCategory(title: 'Carpenter', icon: Icons.handyman_outlined, bgColor: Color(0xFFFEF0E5), iconColor: Color(0xFFE65C00)),
-    ServiceCategory(title: 'Painter', icon: Icons.format_paint_outlined, bgColor: Color(0xFFF4EBFE), iconColor: Color(0xFF9C27B0)),
-    ServiceCategory(title: 'Cleaner', icon: Icons.auto_awesome_outlined, bgColor: Color(0xFFFEE8F0), iconColor: Color(0xFFE91E63)),
+    ServiceCategory(title: 'Electrician', icon: Icons.bolt_outlined, bgColor: Color(0xFFE8F8EE), iconColor: Color(0xFF2A9134)),
+    ServiceCategory(title: 'Plumber', icon: Icons.plumbing_outlined, bgColor: Color(0xFFE8F8EE), iconColor: Color(0xFF2A9134)),
+    ServiceCategory(title: 'Carpenter', icon: Icons.handyman_outlined, bgColor: Color(0xFFE8F8EE), iconColor: Color(0xFFE65C00)),
+    ServiceCategory(title: 'Painter', icon: Icons.format_paint_outlined, bgColor: Color(0xFFE8F8EE), iconColor: Color(0xFF2A9134)),
+    ServiceCategory(title: 'Cleaner', icon: Icons.auto_awesome_outlined, bgColor: Color(0xFFE8F8EE), iconColor: Color(0xFF3FA34D)),
     ServiceCategory(title: 'Mechanic', icon: Icons.settings_outlined, bgColor: Color(0xFFF0F4F8), iconColor: Color(0xFF455A64)),
     ServiceCategory(title: 'Gardener', icon: Icons.eco_outlined, bgColor: Color(0xFFE8F8EE), iconColor: Color(0xFF2E7D32)),
     ServiceCategory(title: 'Technician', icon: Icons.laptop_chromebook_outlined, bgColor: Color(0xFFE8EAF6), iconColor: Color(0xFF3F51B5)),
@@ -394,11 +394,11 @@ class _ClientDashboardScreenState extends ConsumerState<ClientDashboardScreen> {
               child: Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF2962FF), // High-contrast blue for separation of intent
+                  color: const Color(0xFF2A9134), // High-contrast blue for separation of intent
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF2962FF).withValues(alpha: 0.3),
+                      color: const Color(0xFF2A9134).withValues(alpha: 0.3),
                       blurRadius: 15,
                       offset: const Offset(0, 8),
                     ),
@@ -615,7 +615,7 @@ class _ClientDashboardScreenState extends ConsumerState<ClientDashboardScreen> {
                                   } else {
                                     iconData = Icons.star_outline_rounded;
                                   }
-                                  return Icon(iconData, color: const Color(0xFFFFC107), size: 18);
+                                  return Icon(iconData, color: const Color(0xFF5BBA6F), size: 18);
                                 }),
                               ),
                               const SizedBox(width: 8),
@@ -636,7 +636,7 @@ class _ClientDashboardScreenState extends ConsumerState<ClientDashboardScreen> {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFFFF0E5), // Subtle tint of brand primary
+                                color: const Color(0xFFE8F8EE), // Subtle tint of brand primary
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: const Row(
@@ -674,11 +674,11 @@ class _ClientDashboardScreenState extends ConsumerState<ClientDashboardScreen> {
       child: Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: const Color(0xFF1A56DB), // Deep trust blue
+          color: const Color(0xFF137547), // Deep trust blue
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF1A56DB).withValues(alpha: 0.3),
+              color: const Color(0xFF137547).withValues(alpha: 0.3),
               blurRadius: 15,
               offset: const Offset(0, 8),
             ),

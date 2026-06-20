@@ -157,8 +157,8 @@ class NotificationsDrawer extends ConsumerWidget {
       iconColor = const Color(0xFFE65C00); 
     } else if (lowerTitle.contains('message') || lowerTitle.contains('chat')) {
       icon = Icons.chat_bubble_outline;
-      bgColor = const Color(0xFFE3F2FD); 
-      iconColor = const Color(0xFF1976D2); 
+      bgColor = const Color(0xFFE8F8EE); 
+      iconColor = const Color(0xFF2A9134); 
     } else {
       icon = Icons.info_outline;
       bgColor = Colors.grey.shade100;
