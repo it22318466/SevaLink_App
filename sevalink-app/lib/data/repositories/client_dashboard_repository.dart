@@ -21,7 +21,9 @@ class ClientDashboardRepository {
           rating: (json['rating'] as num).toDouble(),
           reviewCount: json['reviewCount'],
           isVerified: json['isVerified'],
-          imageUrl: json['imageUrl'] ?? 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?q=80&w=300&auto=format&fit=crop', // default if null
+          imageUrl: json['imageUrl'] != null && (json['imageUrl'] as String).isNotEmpty
+              ? ApiEndpoints.rewriteImageUrl(json['imageUrl'] as String)
+              : 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?q=80&w=300&auto=format&fit=crop', // default if null
         )).toList();
       }
       return [];

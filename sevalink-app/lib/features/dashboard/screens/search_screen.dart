@@ -586,9 +586,6 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   // Results view 
 
   Widget _buildResultsView(List<WorkerSearchResult> raw, List<WorkerSearchResult> filtered, String query) {
-    if (_isEmptyResult(raw, filtered)) {
-      return _buildEmpty(query, _selectedCategory);
-    }
     return Column(
       children: [
         _buildFilterSortBar(raw.length, filtered.length),
@@ -602,23 +599,23 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           Divider(color: Colors.grey.shade200, height: 1),
         ],
         Expanded(
-          child: ListView.separated(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-            itemCount: filtered.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 12),
-            itemBuilder: (ctx, i) => GestureDetector(
-              onTap: () => _showWorkerDetails(ctx, filtered[i]),
-              child: _buildWorkerCard(filtered[i]),
-            ),
-          ),
+          child: filtered.isEmpty
+              ? _buildEmpty(query, _selectedCategory)
+              : ListView.separated(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                  itemCount: filtered.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 12),
+                  itemBuilder: (ctx, i) => GestureDetector(
+                    onTap: () => _showWorkerDetails(ctx, filtered[i]),
+                    child: _buildWorkerCard(filtered[i]),
+                  ),
+                ),
         ),
       ],
     );
   }
 
-  bool _isEmptyResult(List<WorkerSearchResult> raw, List<WorkerSearchResult> filtered) {
-    return raw.isEmpty && filtered.isEmpty;
-  }
+
 
   //  Filter / sort bar
 
@@ -1419,36 +1416,36 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   //  Empty 
 
   Widget _buildEmpty(String query, String? category) {
-    final label = category != null
-        ? 'No "$category" workers found'
-        : query.isNotEmpty
-            ? 'No results for "$query"'
-            : 'No results found';
     return Center(
       child: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 60),
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            Container(
-              width: 110, height: 110,
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFF3EE),
-                shape: BoxShape.circle,
-                boxShadow: [BoxShadow(color: _orange.withValues(alpha: 0.15), blurRadius: 24, spreadRadius: 4)],
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const MagnifyingGlassIllustration(size: 110),
+              const SizedBox(height: 24),
+              const Text(
+                'No results found',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1E293B),
+                  letterSpacing: -0.2,
+                ),
               ),
-              child: const Center(child: Text('🔍', style: TextStyle(fontSize: 48))),
-            ),
-            const SizedBox(height: 24),
-            const Text('Results Not Found', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF1A1A1A), letterSpacing: 0.2)),
-            const SizedBox(height: 10),
-            Text(label, textAlign: TextAlign.center, style: TextStyle(fontSize: 15, color: Colors.grey.shade600, fontWeight: FontWeight.w500)),
-            const SizedBox(height: 8),
-            Text(
-              'Try a different keyword, category,\nor adjust your filters.',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 13, color: Colors.grey.shade400, height: 1.5),
-            ),
-          ]),
+              const SizedBox(height: 10),
+              const Text(
+                'Try different keywords or clear some filters',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 15,
+                  color: Color(0xFF64748B),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -1507,6 +1504,106 @@ class _ActionPill extends StatelessWidget {
       ),
     );
   }
+}
+
+class MagnifyingGlassIllustration extends StatelessWidget {
+  final double size;
+  const MagnifyingGlassIllustration({super.key, this.size = 110});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: size,
+      height: size,
+      child: CustomPaint(
+        painter: _MagnifyingGlassPainter(),
+      ),
+    );
+  }
+}
+
+class _MagnifyingGlassPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width * 0.44, size.height * 0.44);
+    final radius = size.width * 0.26;
+
+    // Handle Paint (bottom right)
+    final handlePaint = Paint()
+      ..color = const Color(0xFF6B4EA7) // Purple handle
+      ..style = PaintingStyle.fill;
+
+    // Save canvas, rotate to draw handle at 45 degrees
+    canvas.save();
+    canvas.translate(center.dx, center.dy);
+    canvas.rotate(0.785398); // 45 degrees in radians (pi/4)
+
+    // Draw the neck of the handle
+    final neckPaint = Paint()
+      ..color = const Color(0xFF563B8C) // Darker purple neck
+      ..style = PaintingStyle.fill;
+    
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(-size.width * 0.035, radius - 2, size.width * 0.07, size.height * 0.08),
+        const Radius.circular(3),
+      ),
+      neckPaint,
+    );
+
+    // Draw the main handle body (capsule shape)
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(-size.width * 0.065, radius + size.height * 0.06, size.width * 0.13, size.height * 0.32),
+        Radius.circular(size.width * 0.065),
+      ),
+      handlePaint,
+    );
+    canvas.restore();
+
+    // Frame Paint (Outer border of the lens)
+    final framePaint = Paint()
+      ..color = const Color(0xFF563B8C) // Darker purple frame
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = size.width * 0.07;
+
+    // Draw outer frame
+    canvas.drawCircle(center, radius, framePaint);
+
+    // Lens Paint (Cyan-blue gradient)
+    final lensPaint = Paint()
+      ..shader = const LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          Color(0xFF60D3FF), // Bright cyan
+          Color(0xFF3897F5), // Vibrant blue
+        ],
+      ).createShader(Rect.fromCircle(center: center, radius: radius))
+      ..style = PaintingStyle.fill;
+
+    // Draw lens fill (slightly smaller than radius so frame doesn't get overlapped)
+    canvas.drawCircle(center, radius - (size.width * 0.03), lensPaint);
+
+    // Highlight (White crescent on the top-left)
+    final highlightPaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.55)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = size.width * 0.045
+      ..strokeCap = StrokeCap.round;
+
+    final highlightPath = Path()
+      ..addArc(
+        Rect.fromCircle(center: center, radius: radius * 0.62),
+        3.14159 + 0.3, // start angle
+        1.1, // sweep angle
+      );
+
+    canvas.drawPath(highlightPath, highlightPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 

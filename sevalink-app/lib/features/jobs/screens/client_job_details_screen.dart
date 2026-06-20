@@ -184,7 +184,7 @@ class _ClientJobDetailsScreenState extends ConsumerState<ClientJobDetailsScreen>
                             radius: 38,
                             backgroundColor: const Color(0xFFE64A19).withValues(alpha: 0.1),
                             backgroundImage: profileImageUrl != null
-                                ? NetworkImage(profileImageUrl.toString().replaceFirst('localhost', ApiEndpoints.localIp))
+                                ? NetworkImage(ApiEndpoints.rewriteImageUrl(profileImageUrl.toString()))
                                 : null,
                             child: profileImageUrl == null
                                 ? Text(

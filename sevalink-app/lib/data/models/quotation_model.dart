@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import '../../core/constants/api_endpoints.dart';
 
 class Quotation extends Equatable {
   final int id;
@@ -55,7 +56,9 @@ class Quotation extends Equatable {
       jobTitle: jobJson['title'] ?? '',
       workerId: workerJson['id'] ?? 0,
       workerName: userJson['fullName'] ?? 'Unknown Worker',
-      workerAvatar: userJson['profileImageUrl'] ?? '',
+      workerAvatar: (userJson['profileImageUrl'] != null && (userJson['profileImageUrl'] as String).isNotEmpty)
+          ? ApiEndpoints.rewriteImageUrl(userJson['profileImageUrl'] as String)
+          : '',
       workerProfession: workerJson['category'] is Map ? (workerJson['category']['name'] ?? 'Professional') : 'Professional',
       workerRating: (workerJson['rating'] ?? 0.0).toDouble(),
       workerReviewCount: workerJson['totalJobs'] ?? 0,

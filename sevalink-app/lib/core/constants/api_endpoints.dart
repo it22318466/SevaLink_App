@@ -11,7 +11,7 @@ class ApiEndpoints {
   static const ConnectionMode mode = ConnectionMode.wifi;
 
   // Enter your PC's local IP address here if mode is ConnectionMode.wifi:
-  static const String _wifiIp = '10.24.226.148';
+  static const String _wifiIp = '192.168.1.38';
 
 
   static String get _localIp {

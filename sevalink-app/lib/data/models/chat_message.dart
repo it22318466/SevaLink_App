@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import '../../core/constants/api_endpoints.dart';
 
 class ChatMessageModel extends Equatable {
   final int id;
@@ -64,7 +65,9 @@ class ChatConversation extends Equatable {
     return ChatConversation(
       partnerId: json['partnerId'] ?? 0,
       partnerName: json['partnerName'] ?? '',
-      partnerProfileImageUrl: json['partnerProfileImageUrl'],
+      partnerProfileImageUrl: json['partnerProfileImageUrl'] != null && (json['partnerProfileImageUrl'] as String).isNotEmpty
+          ? ApiEndpoints.rewriteImageUrl(json['partnerProfileImageUrl'] as String)
+          : null,
       lastMessage: json['lastMessage'] ?? '',
       lastMessageTime: json['lastMessageTime'],
       unreadCount: json['unreadCount'] ?? 0,
