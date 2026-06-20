@@ -60,11 +60,17 @@ class _ClientJobTimelineScreenState extends ConsumerState<ClientJobTimelineScree
       path: phoneNumber,
     );
     try {
-      if (await canLaunchUrl(launchUri)) {
-        await launchUrl(launchUri);
-      }
+      await launchUrl(launchUri, mode: LaunchMode.externalApplication);
     } catch (e) {
       debugPrint('Failed to launch dialer: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Could not open dialer for $phoneNumber'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 

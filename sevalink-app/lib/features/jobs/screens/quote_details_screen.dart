@@ -669,14 +669,30 @@ class _QuoteDetailsScreenState extends ConsumerState<QuoteDetailsScreen> {
                         // View Profile link
                         GestureDetector(
                           onTap: () {
-                            // Can add navigation to worker public profile
+                            context.push('/client/worker/${quote.workerId}');
                           },
-                          child: Text(
-                            'View Full Worker Profile →',
-                            style: TextStyle(
-                              color: const Color(0xFFE64A19),
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: const Color(0xFFE64A19)),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.person_outline, color: Color(0xFFE64A19), size: 18),
+                                SizedBox(width: 8),
+                                Text(
+                                  'View Full Worker Profile',
+                                  style: TextStyle(
+                                    color: Color(0xFFE64A19),
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                SizedBox(width: 6),
+                                Icon(Icons.arrow_forward_ios, color: Color(0xFFE64A19), size: 14),
+                              ],
                             ),
                           ),
                         ),

@@ -25,6 +25,7 @@ import '../features/chat/screens/chat_list_screen.dart';
 import '../features/chat/screens/chat_screen.dart';
 import '../features/jobs/screens/client_job_timeline_screen.dart';
 import '../features/worker/screens/worker_job_timeline_screen.dart';
+import '../features/worker/screens/public_worker_profile_screen.dart';
 import '../data/models/job.dart';
 import '../data/models/quotation_model.dart';
 
@@ -200,6 +201,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final jobId = int.tryParse(state.pathParameters['jobId'] ?? '0') ?? 0;
           return WorkerJobTimelineScreen(jobId: jobId);
+        },
+      ),
+      GoRoute(
+        path: '/client/worker/:workerId',
+        builder: (context, state) {
+          final workerId = int.tryParse(state.pathParameters['workerId'] ?? '0') ?? 0;
+          return PublicWorkerProfileScreen(workerId: workerId);
         },
       ),
     ],
