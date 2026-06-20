@@ -56,14 +56,14 @@ class _PublicWorkerProfileScreenState
   Widget build(BuildContext context) {
     if (_isLoading) {
       return const Scaffold(
-        body: Center(child: CircularProgressIndicator(color: Color(0xFFE64A19))),
+        body: Center(child: CircularProgressIndicator(color: Color(0xFF2A9134))),
       );
     }
 
     if (_error != null || _worker == null) {
       return Scaffold(
         appBar: AppBar(
-          backgroundColor: const Color(0xFFE64A19),
+          backgroundColor: const Color(0xFF2A9134),
           foregroundColor: Colors.white,
           title: const Text('Worker Profile'),
         ),
@@ -116,7 +116,7 @@ class _PublicWorkerProfileScreenState
             child: Container(
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Color(0xFFE64A19), Color(0xFFFF7043)],
+                  colors: [Color(0xFF2A9134), Color(0xFF5BBA6F)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -207,7 +207,7 @@ class _PublicWorkerProfileScreenState
                                             padding: const EdgeInsets.all(2),
                                             child: const Icon(
                                               Icons.verified,
-                                              color: Color(0xFFE64A19),
+                                              color: Color(0xFF2A9134),
                                               size: 22,
                                             ),
                                           ),
@@ -233,13 +233,13 @@ class _PublicWorkerProfileScreenState
                                               padding: const EdgeInsets.symmetric(
                                                   horizontal: 10, vertical: 3),
                                               decoration: BoxDecoration(
-                                                color: const Color(0xFFFFF3E0),
+                                                color: const Color(0xFFE8F8EE),
                                                 borderRadius: BorderRadius.circular(12),
                                               ),
                                               child: Text(
                                                 categoryName,
                                                 style: const TextStyle(
-                                                  color: Color(0xFFE64A19),
+                                                  color: Color(0xFF2A9134),
                                                   fontSize: 12,
                                                   fontWeight: FontWeight.w600,
                                                 ),
@@ -250,7 +250,7 @@ class _PublicWorkerProfileScreenState
                                           Row(
                                             children: [
                                               const Icon(Icons.star,
-                                                  color: Color(0xFFE64A19), size: 16),
+                                                  color: Color(0xFF2A9134), size: 16),
                                               const SizedBox(width: 4),
                                               Text(
                                                 rating.toStringAsFixed(1),
@@ -312,7 +312,7 @@ class _PublicWorkerProfileScreenState
                                             fontWeight: FontWeight.bold),
                                       ),
                                       style: ElevatedButton.styleFrom(
-                                        backgroundColor: const Color(0xFF006B5E),
+                                        backgroundColor: const Color(0xFF054A29),
                                         padding: const EdgeInsets.symmetric(vertical: 14),
                                         shape: RoundedRectangleBorder(
                                           borderRadius: BorderRadius.circular(12),
@@ -367,16 +367,16 @@ class _PublicWorkerProfileScreenState
                                         padding: const EdgeInsets.symmetric(
                                             horizontal: 12, vertical: 6),
                                         decoration: BoxDecoration(
-                                          color: const Color(0xFFFFF3E0),
+                                          color: const Color(0xFFE8F8EE),
                                           borderRadius: BorderRadius.circular(20),
                                           border: Border.all(
-                                              color: const Color(0xFFFFCC80)),
+                                              color: const Color(0xFF5BBA6F)),
                                         ),
                                         child: Text(
                                           s,
                                           style: const TextStyle(
                                             fontSize: 13,
-                                            color: Color(0xFFE64A19),
+                                            color: Color(0xFF2A9134),
                                             fontWeight: FontWeight.w500,
                                           ),
                                         ),
@@ -410,7 +410,7 @@ class _PublicWorkerProfileScreenState
                             Row(
                               children: [
                                 const Icon(Icons.email_outlined,
-                                    color: Color(0xFFE64A19), size: 18),
+                                    color: Color(0xFF2A9134), size: 18),
                                 const SizedBox(width: 10),
                                 Text(email,
                                     style: TextStyle(
@@ -438,7 +438,7 @@ class _PublicWorkerProfileScreenState
       height: size,
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [Color(0xFFE64A19), Color(0xFF006B5E)],
+          colors: [Color(0xFF2A9134), Color(0xFF054A29)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -473,7 +473,7 @@ class _PublicWorkerProfileScreenState
         ),
         child: Column(
           children: [
-            Icon(icon, color: const Color(0xFFE64A19), size: 22),
+            Icon(icon, color: const Color(0xFF2A9134), size: 22),
             const SizedBox(height: 6),
             Text(value,
                 style: const TextStyle(

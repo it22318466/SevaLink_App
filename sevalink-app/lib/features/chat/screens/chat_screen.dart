@@ -312,7 +312,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     child: Container(
                       padding: const EdgeInsets.all(12),
                       decoration: const BoxDecoration(
-                        color: Color(0xFFD3410A),
+                        color: Color(0xFF2A9134),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(

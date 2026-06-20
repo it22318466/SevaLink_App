@@ -377,7 +377,7 @@ class _MyJobsScreenState extends ConsumerState<MyJobsScreen>
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [Color(0xFFD3410A), Color(0xFFE8520B)],
+          colors: [Color(0xFF2A9134), Color(0xFF3FA34D)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -691,14 +691,14 @@ class _JobCard extends StatelessWidget {
                       horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
                     color: isDark
-                        ? const Color(0xFF006B5E).withValues(alpha: 0.2)
+                        ? const Color(0xFF054A29).withValues(alpha: 0.2)
                         : const Color(0xFFE8F5F2),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text(
                     job.budget,
                     style: const TextStyle(
-                        color: Color(0xFF006B5E),
+                        color: Color(0xFF054A29),
                         fontWeight: FontWeight.w700,
                         fontSize: 13),
                   ),

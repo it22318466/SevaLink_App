@@ -182,7 +182,7 @@ class _ClientJobDetailsScreenState extends ConsumerState<ClientJobDetailsScreen>
                         children: [
                           CircleAvatar(
                             radius: 38,
-                            backgroundColor: const Color(0xFFE64A19).withValues(alpha: 0.1),
+                            backgroundColor: const Color(0xFF2A9134).withValues(alpha: 0.1),
                             backgroundImage: profileImageUrl != null
                                 ? NetworkImage(ApiEndpoints.rewriteImageUrl(profileImageUrl.toString()))
                                 : null,
@@ -192,7 +192,7 @@ class _ClientJobDetailsScreenState extends ConsumerState<ClientJobDetailsScreen>
                                     style: const TextStyle(
                                       fontSize: 28,
                                       fontWeight: FontWeight.bold,
-                                      color: Color(0xFFE64A19),
+                                      color: Color(0xFF2A9134),
                                     ),
                                   )
                                 : null,
@@ -211,12 +211,12 @@ class _ClientJobDetailsScreenState extends ConsumerState<ClientJobDetailsScreen>
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFFE64A19).withValues(alpha: 0.1),
+                                      color: const Color(0xFF2A9134).withValues(alpha: 0.1),
                                       borderRadius: BorderRadius.circular(20),
                                     ),
                                     child: Text(
                                       category,
-                                      style: const TextStyle(color: Color(0xFFE64A19), fontSize: 12, fontWeight: FontWeight.w600),
+                                      style: const TextStyle(color: Color(0xFF2A9134), fontSize: 12, fontWeight: FontWeight.w600),
                                     ),
                                   ),
                                 ],
@@ -260,7 +260,7 @@ class _ClientJobDetailsScreenState extends ConsumerState<ClientJobDetailsScreen>
                           ),
                           child: Row(
                             children: [
-                              const Icon(Icons.phone_outlined, color: Color(0xFFE64A19)),
+                              const Icon(Icons.phone_outlined, color: Color(0xFF2A9134)),
                               const SizedBox(width: 12),
                               Text(phone, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 16)),
                             ],
@@ -302,7 +302,7 @@ class _ClientJobDetailsScreenState extends ConsumerState<ClientJobDetailsScreen>
       backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
         title: const Text('Job Details'),
-        backgroundColor: const Color(0xFFE64A19),
+        backgroundColor: const Color(0xFF2A9134),
         foregroundColor: Colors.white,
       ),
       body: _isLoading
@@ -354,7 +354,7 @@ class _ClientJobDetailsScreenState extends ConsumerState<ClientJobDetailsScreen>
                               crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
                                 const Text('Budget', style: TextStyle(fontWeight: FontWeight.bold)),
-                                Text('Rs. ${widget.job['budgetMin']} - ${widget.job['budgetMax']}', style: const TextStyle(color: Color(0xFFE64A19), fontWeight: FontWeight.bold)),
+                                Text('Rs. ${widget.job['budgetMin']} - ${widget.job['budgetMax']}', style: const TextStyle(color: Color(0xFF2A9134), fontWeight: FontWeight.bold)),
                               ],
                             ),
                           ],
@@ -398,10 +398,10 @@ class _ClientJobDetailsScreenState extends ConsumerState<ClientJobDetailsScreen>
                                 }
                               }
                             },
-                            icon: const Icon(Icons.person_outline, color: Color(0xFFE64A19)),
-                            label: const Text('View Worker Details', style: TextStyle(color: Color(0xFFE64A19), fontSize: 15)),
+                            icon: const Icon(Icons.person_outline, color: Color(0xFF2A9134)),
+                            label: const Text('View Worker Details', style: TextStyle(color: Color(0xFF2A9134), fontSize: 15)),
                             style: OutlinedButton.styleFrom(
-                              side: const BorderSide(color: Color(0xFFE64A19)),
+                              side: const BorderSide(color: Color(0xFF2A9134)),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             ),
                           ),

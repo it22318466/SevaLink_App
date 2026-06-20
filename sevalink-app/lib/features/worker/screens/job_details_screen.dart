@@ -77,7 +77,7 @@ class JobDetailsScreen extends StatelessWidget {
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: const Icon(Icons.map_outlined,
-                                    color: Color(0xFF006B5E), size: 22),
+                                    color: Color(0xFF054A29), size: 22),
                               ),
                               const SizedBox(width: 12),
                               Expanded(
@@ -104,7 +104,7 @@ class JobDetailsScreen extends StatelessWidget {
                                     const Text(
                                       'Tap to view on full map',
                                       style: TextStyle(
-                                          fontSize: 13, color: Color(0xFF006B5E)),
+                                          fontSize: 13, color: Color(0xFF054A29)),
                                     ),
                                   ],
                                 ),
@@ -156,7 +156,7 @@ class JobDetailsScreen extends StatelessWidget {
     return SliverAppBar(
       expandedHeight: 200,
       pinned: true,
-      backgroundColor: const Color(0xFFD3410A),
+      backgroundColor: const Color(0xFF2A9134),
       leading: GestureDetector(
         onTap: () => context.pop(),
         child: Container(
@@ -189,7 +189,7 @@ class JobDetailsScreen extends StatelessWidget {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [Color(0xFFD3410A), Color(0xFFE8520B)],
+              colors: [Color(0xFF2A9134), Color(0xFF3FA34D)],
             ),
           ),
           child: SafeArea(
@@ -243,7 +243,7 @@ class JobDetailsScreen extends StatelessWidget {
             context,
             Icons.location_on_outlined,
             job.location + (job.distanceKm != null ? ' (${job.distanceKm!.toStringAsFixed(1)} km)' : ''),
-            const Color(0xFFD3410A)),
+            const Color(0xFF2A9134)),
         const SizedBox(width: 10),
         _buildChip(context, Icons.access_time_rounded, job.postedAt,
             const Color(0xFF6B7280)),
@@ -289,14 +289,14 @@ class JobDetailsScreen extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF006B5E), Color(0xFF00897B)],
+          colors: [Color(0xFF054A29), Color(0xFF00897B)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF006B5E).withValues(alpha: 0.35),
+            color: const Color(0xFF054A29).withValues(alpha: 0.35),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -363,7 +363,7 @@ class JobDetailsScreen extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(icon, size: 18, color: const Color(0xFFD3410A)),
+              Icon(icon, size: 18, color: const Color(0xFF2A9134)),
               const SizedBox(width: 8),
               Text(
                 title,
@@ -441,7 +441,7 @@ class JobDetailsScreen extends StatelessWidget {
           const Row(
             children: [
               Icon(Icons.person_outline_rounded,
-                  size: 18, color: Color(0xFFD3410A)),
+                  size: 18, color: Color(0xFF2A9134)),
               SizedBox(width: 8),
               Text(
                 'Posted By',
@@ -466,7 +466,7 @@ class JobDetailsScreen extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFFD3410A),
+                    color: Color(0xFF2A9134),
                   ),
                 ),
               ),
@@ -486,11 +486,11 @@ class JobDetailsScreen extends StatelessWidget {
                     Row(
                       children: [
                         Icon(Icons.verified_outlined,
-                            size: 14, color: Color(0xFF006B5E)),
+                            size: 14, color: Color(0xFF054A29)),
                         SizedBox(width: 4),
                         Text('Verified Client',
                             style: TextStyle(
-                                fontSize: 12, color: Color(0xFF006B5E))),
+                                fontSize: 12, color: Color(0xFF054A29))),
                       ],
                     ),
                   ],
@@ -503,13 +503,13 @@ class JobDetailsScreen extends StatelessWidget {
                   color: const Color(0xFFF0FDF8),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                      color: const Color(0xFF006B5E), width: 1),
+                      color: const Color(0xFF054A29), width: 1),
                 ),
                 child: const Text(
                   'Message',
                   style: TextStyle(
                       fontSize: 13,
-                      color: Color(0xFF006B5E),
+                      color: Color(0xFF054A29),
                       fontWeight: FontWeight.w600),
                 ),
               ),
@@ -543,8 +543,8 @@ class JobDetailsScreen extends StatelessWidget {
             child: OutlinedButton(
               onPressed: () => context.pop(),
               style: OutlinedButton.styleFrom(
-                foregroundColor: const Color(0xFFD3410A),
-                side: const BorderSide(color: Color(0xFFD3410A), width: 1.5),
+                foregroundColor: const Color(0xFF2A9134),
+                side: const BorderSide(color: Color(0xFF2A9134), width: 1.5),
                 padding: const EdgeInsets.symmetric(vertical: 15),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14)),
@@ -562,7 +562,7 @@ class JobDetailsScreen extends StatelessWidget {
                 context.push('/worker/send-quote', extra: job);
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF006B5E),
+                backgroundColor: const Color(0xFF054A29),
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 15),
                 shape: RoundedRectangleBorder(
@@ -636,7 +636,7 @@ class _EmbeddedMapState extends State<_EmbeddedMap> {
     if (_isLoading) {
       return const SizedBox(
         height: 150,
-        child: Center(child: CircularProgressIndicator(color: Color(0xFF006B5E))),
+        child: Center(child: CircularProgressIndicator(color: Color(0xFF054A29))),
       );
     }
     

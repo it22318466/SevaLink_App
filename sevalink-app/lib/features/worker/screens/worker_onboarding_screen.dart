@@ -249,13 +249,13 @@ class _WorkerOnboardingScreenState extends ConsumerState<WorkerOnboardingScreen>
                       color: isSelected ? Colors.white : cat['color'] as Color,
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                        color: isSelected ? const Color(0xFFD3410A) : Colors.transparent,
+                        color: isSelected ? const Color(0xFF2A9134) : Colors.transparent,
                         width: 2,
                       ),
                       boxShadow: [
                         BoxShadow(
                           color: isSelected 
-                              ? const Color(0xFFD3410A).withValues(alpha: 0.1)
+                              ? const Color(0xFF2A9134).withValues(alpha: 0.1)
                               : Colors.black.withValues(alpha: 0.02),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
@@ -268,7 +268,7 @@ class _WorkerOnboardingScreenState extends ConsumerState<WorkerOnboardingScreen>
                         Icon(
                           cat['icon'] as IconData,
                           size: 36,
-                          color: isSelected ? const Color(0xFFD3410A) : cat['iconColor'] as Color,
+                          color: isSelected ? const Color(0xFF2A9134) : cat['iconColor'] as Color,
                         ),
                         const SizedBox(height: 12),
                         Text(
@@ -276,7 +276,7 @@ class _WorkerOnboardingScreenState extends ConsumerState<WorkerOnboardingScreen>
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
-                            color: isSelected ? const Color(0xFFD3410A) : const Color(0xFF1F2937),
+                            color: isSelected ? const Color(0xFF2A9134) : const Color(0xFF1F2937),
                           ),
                         ),
                       ],
@@ -293,7 +293,7 @@ class _WorkerOnboardingScreenState extends ConsumerState<WorkerOnboardingScreen>
                   ? null
                   : () => setState(() => _currentStep = 2),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFD3410A),
+                backgroundColor: const Color(0xFF2A9134),
                 disabledBackgroundColor: Colors.grey.shade300,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
@@ -373,13 +373,13 @@ class _WorkerOnboardingScreenState extends ConsumerState<WorkerOnboardingScreen>
               decoration: InputDecoration(
                 hintText: _isLoadingLocation ? 'Retrieving current location...' : 'Tap to select location',
                 hintStyle: TextStyle(color: Colors.grey.shade600, fontSize: 14),
-                prefixIcon: const Icon(Icons.location_on_outlined, color: Color(0xFFD3410A), size: 20),
+                prefixIcon: const Icon(Icons.location_on_outlined, color: Color(0xFF2A9134), size: 20),
                 suffixIcon: _isLoadingLocation
                     ? const Padding(
                         padding: EdgeInsets.all(12.0),
                         child: SizedBox(
                           width: 16, height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFD3410A)),
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF2A9134)),
                         ),
                       )
                     : null,
@@ -388,11 +388,11 @@ class _WorkerOnboardingScreenState extends ConsumerState<WorkerOnboardingScreen>
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
-                  borderSide: const BorderSide(color: Color(0xFFD3410A), width: 1.0),
+                  borderSide: const BorderSide(color: Color(0xFF2A9134), width: 1.0),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
-                  borderSide: const BorderSide(color: Color(0xFFD3410A), width: 2.0),
+                  borderSide: const BorderSide(color: Color(0xFF2A9134), width: 2.0),
                 ),
                 errorBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
@@ -420,17 +420,17 @@ class _WorkerOnboardingScreenState extends ConsumerState<WorkerOnboardingScreen>
               decoration: InputDecoration(
                 hintText: 'e.g., 2,500',
                 hintStyle: TextStyle(color: Colors.grey.shade600, fontSize: 14),
-                prefixIcon: const Icon(Icons.payments_outlined, color: Color(0xFFD3410A), size: 20),
+                prefixIcon: const Icon(Icons.payments_outlined, color: Color(0xFF2A9134), size: 20),
                 filled: true,
                 fillColor: Colors.white,
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
-                  borderSide: const BorderSide(color: Color(0xFFD3410A), width: 1.0),
+                  borderSide: const BorderSide(color: Color(0xFF2A9134), width: 1.0),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
-                  borderSide: const BorderSide(color: Color(0xFFD3410A), width: 2.0),
+                  borderSide: const BorderSide(color: Color(0xFF2A9134), width: 2.0),
                 ),
                 errorBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
@@ -458,17 +458,17 @@ class _WorkerOnboardingScreenState extends ConsumerState<WorkerOnboardingScreen>
               decoration: InputDecoration(
                 hintText: 'Describe your skills, work experience, and expertise...',
                 hintStyle: TextStyle(color: Colors.grey.shade600, fontSize: 14),
-                prefixIcon: const Icon(Icons.notes_rounded, color: Color(0xFFD3410A), size: 20),
+                prefixIcon: const Icon(Icons.notes_rounded, color: Color(0xFF2A9134), size: 20),
                 filled: true,
                 fillColor: Colors.white,
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
-                  borderSide: const BorderSide(color: Color(0xFFD3410A), width: 1.0),
+                  borderSide: const BorderSide(color: Color(0xFF2A9134), width: 1.0),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
-                  borderSide: const BorderSide(color: Color(0xFFD3410A), width: 2.0),
+                  borderSide: const BorderSide(color: Color(0xFF2A9134), width: 2.0),
                 ),
               ),
             ),
@@ -480,7 +480,7 @@ class _WorkerOnboardingScreenState extends ConsumerState<WorkerOnboardingScreen>
               child: ElevatedButton(
                 onPressed: _isSaving ? null : _saveOnboardingDetails,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF006B5E),
+                  backgroundColor: const Color(0xFF054A29),
                   disabledBackgroundColor: Colors.grey.shade300,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),

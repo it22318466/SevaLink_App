@@ -75,9 +75,9 @@ class _EditClientProfileScreenState extends ConsumerState<EditClientProfileScree
       uiSettings: [
         AndroidUiSettings(
           toolbarTitle: 'Crop Photo',
-          toolbarColor: const Color(0xFFD3410A),
+          toolbarColor: const Color(0xFF2A9134),
           toolbarWidgetColor: Colors.white,
-          activeControlsWidgetColor: const Color(0xFFD3410A),
+          activeControlsWidgetColor: const Color(0xFF2A9134),
           initAspectRatio: CropAspectRatioPreset.square,
           lockAspectRatio: true,
           hideBottomControls: false,
@@ -158,7 +158,7 @@ class _EditClientProfileScreenState extends ConsumerState<EditClientProfileScree
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: [Color(0xFFD3410A), Color(0xFFE8520B)],
+                colors: [Color(0xFF2A9134), Color(0xFF3FA34D)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -224,7 +224,7 @@ class _EditClientProfileScreenState extends ConsumerState<EditClientProfileScree
                                   width: 90,
                                   height: 90,
                                   decoration: const BoxDecoration(
-                                    color: Color(0xFFE8520B),
+                                    color: Color(0xFF3FA34D),
                                     shape: BoxShape.circle,
                                   ),
                                   child: ClipOval(
@@ -388,7 +388,7 @@ class _EditClientProfileScreenState extends ConsumerState<EditClientProfileScree
                           ),
                         ),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFD3410A),
+                          backgroundColor: const Color(0xFF2A9134),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(30),
                           ),
@@ -472,7 +472,7 @@ class _EditClientProfileScreenState extends ConsumerState<EditClientProfileScree
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFFD3410A), width: 1.5),
+              borderSide: const BorderSide(color: Color(0xFF2A9134), width: 1.5),
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),

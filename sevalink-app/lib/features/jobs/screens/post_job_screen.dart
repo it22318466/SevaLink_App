@@ -184,15 +184,15 @@ class _PostJobScreenState extends ConsumerState<PostJobScreen> {
                     decoration: InputDecoration(
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Color(0xFFD3410A), width: 1.0),
+                        borderSide: const BorderSide(color: Color(0xFF2A9134), width: 1.0),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Color(0xFFD3410A), width: 1.0),
+                        borderSide: const BorderSide(color: Color(0xFF2A9134), width: 1.0),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Color(0xFFD3410A), width: 2.0),
+                        borderSide: const BorderSide(color: Color(0xFF2A9134), width: 2.0),
                       ),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                       filled: true,
@@ -366,7 +366,7 @@ class _PostJobScreenState extends ConsumerState<PostJobScreen> {
                   child: ElevatedButton(
                     onPressed: _isLoading ? null : _submitJob,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF006D5B),
+                      backgroundColor: const Color(0xFF054A29),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),
@@ -438,15 +438,15 @@ class _PostJobScreenState extends ConsumerState<PostJobScreen> {
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFFD3410A), width: 1.0),
+        borderSide: const BorderSide(color: Color(0xFF2A9134), width: 1.0),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFFD3410A), width: 1.0),
+        borderSide: const BorderSide(color: Color(0xFF2A9134), width: 1.0),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFFD3410A), width: 2.0),
+        borderSide: const BorderSide(color: Color(0xFF2A9134), width: 2.0),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),

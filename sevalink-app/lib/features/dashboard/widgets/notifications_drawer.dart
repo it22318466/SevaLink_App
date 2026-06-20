@@ -62,7 +62,7 @@ class NotificationsDrawer extends ConsumerWidget {
                         child: const Text(
                           'Mark all as read',
                           style: TextStyle(
-                            color: Color(0xFFD3410A),
+                            color: Color(0xFF2A9134),
                             fontWeight: FontWeight.w600,
                             fontSize: 13,
                           ),
@@ -153,7 +153,7 @@ class NotificationsDrawer extends ConsumerWidget {
       iconColor = const Color(0xFF2E7D32); 
     } else if (lowerTitle.contains('completed') || lowerTitle.contains('accepted')) {
       icon = Icons.check_circle_outline;
-      bgColor = const Color(0xFFFFF3E0); 
+      bgColor = const Color(0xFFE8F8EE); 
       iconColor = const Color(0xFFE65C00); 
     } else if (lowerTitle.contains('message') || lowerTitle.contains('chat')) {
       icon = Icons.chat_bubble_outline;

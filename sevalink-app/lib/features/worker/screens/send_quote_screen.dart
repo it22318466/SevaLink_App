@@ -189,7 +189,7 @@ class _SendQuoteScreenState extends ConsumerState<SendQuoteScreen>
   Widget _buildAppBar(BuildContext context) {
     return SliverAppBar(
       pinned: true,
-      backgroundColor: const Color(0xFF006B5E),
+      backgroundColor: const Color(0xFF054A29),
       leading: GestureDetector(
         onTap: () => context.pop(),
         child: Container(
@@ -227,14 +227,14 @@ class _SendQuoteScreenState extends ConsumerState<SendQuoteScreen>
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFFD3410A), Color(0xFFE8520B)],
+          colors: [Color(0xFF2A9134), Color(0xFF3FA34D)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFD3410A).withValues(alpha: 0.3),
+            color: const Color(0xFF2A9134).withValues(alpha: 0.3),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -336,7 +336,7 @@ class _SendQuoteScreenState extends ConsumerState<SendQuoteScreen>
       focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide:
-              const BorderSide(color: Color(0xFF006B5E), width: 2)),
+              const BorderSide(color: Color(0xFF054A29), width: 2)),
       errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide:
@@ -362,7 +362,7 @@ class _SendQuoteScreenState extends ConsumerState<SendQuoteScreen>
       decoration: _fieldDecoration('Enter your quote amount').copyWith(
         prefixText: 'Rs. ',
         prefixStyle: const TextStyle(
-          color: Color(0xFF006B5E),
+          color: Color(0xFF054A29),
           fontWeight: FontWeight.bold,
           fontSize: 16,
         ),
@@ -432,7 +432,7 @@ class _SendQuoteScreenState extends ConsumerState<SendQuoteScreen>
                       horizontal: 14, vertical: 10),
                   decoration: BoxDecoration(
                     color: selected
-                        ? const Color(0xFF006B5E)
+                        ? const Color(0xFF054A29)
                         : Colors.transparent,
                     borderRadius: BorderRadius.circular(10),
                   ),
@@ -556,10 +556,10 @@ class _SendQuoteScreenState extends ConsumerState<SendQuoteScreen>
       child: ElevatedButton(
         onPressed: _isSubmitting ? null : _submitQuote,
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF006B5E),
+          backgroundColor: const Color(0xFF054A29),
           foregroundColor: Colors.white,
           disabledBackgroundColor:
-              const Color(0xFF006B5E).withValues(alpha: 0.6),
+              const Color(0xFF054A29).withValues(alpha: 0.6),
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -615,7 +615,7 @@ class _SendQuoteScreenState extends ConsumerState<SendQuoteScreen>
                   ),
                   child: const Icon(
                     Icons.check_circle_rounded,
-                    color: Color(0xFF006B5E),
+                    color: Color(0xFF054A29),
                     size: 70,
                   ),
                 ),
@@ -626,7 +626,7 @@ class _SendQuoteScreenState extends ConsumerState<SendQuoteScreen>
                 style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF006B5E),
+                  color: Color(0xFF054A29),
                 ),
               ),
               const SizedBox(height: 12),
@@ -653,7 +653,7 @@ class _SendQuoteScreenState extends ConsumerState<SendQuoteScreen>
                 child: ElevatedButton(
                   onPressed: () => context.go('/worker/home'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF006B5E),
+                    backgroundColor: const Color(0xFF054A29),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
@@ -673,7 +673,7 @@ class _SendQuoteScreenState extends ConsumerState<SendQuoteScreen>
                 child: const Text(
                   'View My Jobs',
                   style: TextStyle(
-                      color: Color(0xFF006B5E),
+                      color: Color(0xFF054A29),
                       fontWeight: FontWeight.w600,
                       fontSize: 15),
                 ),
@@ -696,7 +696,7 @@ class _SendQuoteScreenState extends ConsumerState<SendQuoteScreen>
       ),
       child: Row(
         children: [
-          Icon(icon, color: const Color(0xFF006B5E), size: 22),
+          Icon(icon, color: const Color(0xFF054A29), size: 22),
           const SizedBox(width: 14),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,

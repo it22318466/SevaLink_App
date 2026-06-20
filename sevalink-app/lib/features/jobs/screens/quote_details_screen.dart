@@ -99,7 +99,7 @@ class _QuoteDetailsScreenState extends ConsumerState<QuoteDetailsScreen> {
             right: 0,
             height: 200,
             child: Container(
-              color: const Color(0xFFE64A19),
+              color: const Color(0xFF2A9134),
             ),
           ),
           
@@ -185,7 +185,7 @@ class _QuoteDetailsScreenState extends ConsumerState<QuoteDetailsScreen> {
                                             shape: BoxShape.circle,
                                           ),
                                           padding: const EdgeInsets.all(2),
-                                          child: const Icon(Icons.verified, color: Color(0xFFE64A19), size: 24),
+                                          child: const Icon(Icons.verified, color: Color(0xFF2A9134), size: 24),
                                         ),
                                       ),
                                     ],
@@ -214,7 +214,7 @@ class _QuoteDetailsScreenState extends ConsumerState<QuoteDetailsScreen> {
                                         const SizedBox(height: 8),
                                         Row(
                                           children: [
-                                            const Icon(Icons.star, color: Color(0xFFE64A19), size: 18),
+                                            const Icon(Icons.star, color: Color(0xFF2A9134), size: 18),
                                             const SizedBox(width: 4),
                                             Text(
                                               quote.workerRating.toStringAsFixed(1),
@@ -259,7 +259,7 @@ class _QuoteDetailsScreenState extends ConsumerState<QuoteDetailsScreen> {
                               const SizedBox(height: 12),
                               Row(
                                 children: [
-                                  const Icon(Icons.trending_up, color: Color(0xFFE64A19), size: 20),
+                                  const Icon(Icons.trending_up, color: Color(0xFF2A9134), size: 20),
                                   const SizedBox(width: 8),
                                   Text(
                                     'Experience: ',
@@ -375,7 +375,7 @@ class _QuoteDetailsScreenState extends ConsumerState<QuoteDetailsScreen> {
                                 style: TextStyle(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w600,
-                                  color: const Color(0xFFC2410C),
+                                  color: const Color(0xFF137547),
                                 ),
                               ),
                               const SizedBox(height: 8),
@@ -384,20 +384,20 @@ class _QuoteDetailsScreenState extends ConsumerState<QuoteDetailsScreen> {
                                 style: const TextStyle(
                                   fontSize: 36,
                                   fontWeight: FontWeight.bold,
-                                  color: Color(0xFFC2410C),
+                                  color: Color(0xFF137547),
                                 ),
                               ),
                               const SizedBox(height: 8),
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  const Icon(Icons.access_time, color: Color(0xFFC2410C), size: 16),
+                                  const Icon(Icons.access_time, color: Color(0xFF137547), size: 16),
                                   const SizedBox(width: 6),
                                   Text(
                                     'Estimated Time: ${quote.eta}',
                                     style: const TextStyle(
                                       fontSize: 14,
-                                      color: Color(0xFFC2410C),
+                                      color: Color(0xFF137547),
                                     ),
                                   ),
                                 ],
@@ -674,24 +674,24 @@ class _QuoteDetailsScreenState extends ConsumerState<QuoteDetailsScreen> {
                           child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
                             decoration: BoxDecoration(
-                              border: Border.all(color: const Color(0xFFE64A19)),
+                              border: Border.all(color: const Color(0xFF2A9134)),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: const Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.person_outline, color: Color(0xFFE64A19), size: 18),
+                                Icon(Icons.person_outline, color: Color(0xFF2A9134), size: 18),
                                 SizedBox(width: 8),
                                 Text(
                                   'View Full Worker Profile',
                                   style: TextStyle(
-                                    color: Color(0xFFE64A19),
+                                    color: Color(0xFF2A9134),
                                     fontSize: 14,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
                                 SizedBox(width: 6),
-                                Icon(Icons.arrow_forward_ios, color: Color(0xFFE64A19), size: 14),
+                                Icon(Icons.arrow_forward_ios, color: Color(0xFF2A9134), size: 14),
                               ],
                             ),
                           ),

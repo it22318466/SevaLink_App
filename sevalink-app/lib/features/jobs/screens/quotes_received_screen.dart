@@ -80,7 +80,7 @@ class QuotesReceivedScreen extends ConsumerWidget {
         ),
       ),
       body: RefreshIndicator(
-        color: const Color(0xFFE64A19),
+        color: const Color(0xFF2A9134),
         onRefresh: () async {
           ref.invalidate(jobQuotationsProvider(jobId));
         },
@@ -121,7 +121,7 @@ class QuotesReceivedScreen extends ConsumerWidget {
               loading: () => const SliverToBoxAdapter(
                 child: Padding(
                   padding: EdgeInsets.only(top: 60),
-                  child: Center(child: CircularProgressIndicator(color: Color(0xFFE64A19))),
+                  child: Center(child: CircularProgressIndicator(color: Color(0xFF2A9134))),
                 ),
               ),
               error: (e, _) => SliverToBoxAdapter(
@@ -297,7 +297,7 @@ class QuotesReceivedScreen extends ConsumerWidget {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.verified, color: Color(0xFFE64A19), size: 14),
+                          const Icon(Icons.verified, color: Color(0xFF2A9134), size: 14),
                           const SizedBox(width: 4),
                           Flexible(
                             child: Text(
@@ -305,7 +305,7 @@ class QuotesReceivedScreen extends ConsumerWidget {
                               overflow: TextOverflow.ellipsis,
                               maxLines: 1,
                               style: TextStyle(
-                                color: const Color(0xFFE64A19),
+                                color: const Color(0xFF2A9134),
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -325,7 +325,7 @@ class QuotesReceivedScreen extends ConsumerWidget {
                     style: const TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF0F766E), // Teal color
+                      color: Color(0xFF054A29), // Teal color
                     ),
                   ),
                   Text(
@@ -415,7 +415,7 @@ class QuotesReceivedScreen extends ConsumerWidget {
                     context.push('/client/quote-details', extra: quote);
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFE64A19),
+                    backgroundColor: const Color(0xFF2A9134),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     elevation: 0,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

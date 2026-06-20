@@ -24,7 +24,7 @@ const _kCategories = [
   _CategoryOption('Plumber',     'PLUMBER',     Icons.plumbing, Color(0xFF9C27B0)),
   _CategoryOption('Carpenter',   'CARPENTER',   Icons.handyman, Color(0xFF8D6E63)),
   _CategoryOption('Painter',     'PAINTER',     Icons.palette, Color(0xFFE91E63)),
-  _CategoryOption('Cleaner',     'CLEANER',     Icons.cleaning_services, Color(0xFFFF7043)),
+  _CategoryOption('Cleaner',     'CLEANER',     Icons.cleaning_services, Color(0xFF5BBA6F)),
   _CategoryOption('Mechanic',    'MECHANIC',    Icons.settings, Color(0xFF673AB7)),
   _CategoryOption('Gardener',    'GARDENER',    Icons.eco, Color(0xFF4CAF50)),
   _CategoryOption('Technician',  'TECHNICIAN',  Icons.laptop, Color(0xFF2196F3)),
@@ -144,7 +144,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   double? _lat;
   double? _lng;
 
-  static const _orange = Color(0xFFD3410A);
+  static const _orange = Color(0xFF2A9134);
   static const _bg     = Color(0xFFF2F3F7);
 
   //  Helpers
@@ -768,10 +768,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       duration: const Duration(milliseconds: 150),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
-        color: isActive ? const Color(0xFFD3410A) : Colors.white,
+        color: isActive ? const Color(0xFF2A9134) : Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: isActive ? const Color(0xFFD3410A) : const Color(0xFFE5E7EB),
+          color: isActive ? const Color(0xFF2A9134) : const Color(0xFFE5E7EB),
           width: 1.2,
         ),
       ),
@@ -815,10 +815,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               duration: const Duration(milliseconds: 150),
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               decoration: BoxDecoration(
-                color: active ? const Color(0xFFD3410A) : Colors.white,
+                color: active ? const Color(0xFF2A9134) : Colors.white,
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(
-                  color: active ? const Color(0xFFD3410A) : const Color(0xFFE5E7EB),
+                  color: active ? const Color(0xFF2A9134) : const Color(0xFFE5E7EB),
                   width: 1.2,
                 ),
               ),
@@ -886,10 +886,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         height: 44,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: active ? const Color(0xFFD3410A) : Colors.white,
+          color: active ? const Color(0xFF2A9134) : Colors.white,
           borderRadius: BorderRadius.circular(24),
           border: Border.all(
-            color: active ? const Color(0xFFD3410A) : const Color(0xFFE5E7EB),
+            color: active ? const Color(0xFF2A9134) : const Color(0xFFE5E7EB),
             width: 1.2,
           ),
         ),
@@ -950,10 +950,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         height: 44,
         padding: const EdgeInsets.symmetric(horizontal: 12),
         decoration: BoxDecoration(
-          color: active ? const Color(0xFFD3410A) : Colors.white,
+          color: active ? const Color(0xFF2A9134) : Colors.white,
           borderRadius: BorderRadius.circular(24),
           border: Border.all(
-            color: active ? const Color(0xFFD3410A) : const Color(0xFFE5E7EB),
+            color: active ? const Color(0xFF2A9134) : const Color(0xFFE5E7EB),
             width: 1.2,
           ),
         ),
@@ -1027,7 +1027,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         height: 48,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: active ? const Color(0xFFD3410A) : const Color(0xFFF2F3F7),
+          color: active ? const Color(0xFF2A9134) : const Color(0xFFF2F3F7),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Text(
@@ -1476,10 +1476,10 @@ class _ActionPill extends StatelessWidget {
         duration: const Duration(milliseconds: 150),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isActive ? const Color(0xFFD3410A) : Colors.white,
+          color: isActive ? const Color(0xFF2A9134) : Colors.white,
           borderRadius: BorderRadius.circular(24),
           border: isActive
-              ? Border.all(color: const Color(0xFFD3410A), width: 1.5)
+              ? Border.all(color: const Color(0xFF2A9134), width: 1.5)
               : Border.all(color: const Color(0xFFE5E7EB), width: 1.5),
         ),
         child: Row(

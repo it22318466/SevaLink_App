@@ -93,7 +93,7 @@ class _WorkerDashboardScreenState
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       endDrawer: const NotificationsDrawer(),
       body: RefreshIndicator(
-        color: const Color(0xFF006B5E),
+        color: const Color(0xFF054A29),
         onRefresh: () async =>
             await Future.delayed(const Duration(seconds: 1)),
         child: CustomScrollView(
@@ -150,7 +150,7 @@ class _WorkerDashboardScreenState
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [Color(0xFFD3410A), Color(0xFFE8520B)],
+            colors: [Color(0xFF2A9134), Color(0xFF3FA34D)],
           ),
           borderRadius: BorderRadius.only(
             bottomLeft: Radius.circular(36),
@@ -224,7 +224,7 @@ class _WorkerDashboardScreenState
                                 color: const Color(0xFFEF4444),
                                 shape: BoxShape.circle,
                                 border: Border.all(
-                                    color: const Color(0xFFD3410A), width: 2),
+                                    color: const Color(0xFF2A9134), width: 2),
                               ),
                             ),
                           ),
@@ -399,14 +399,14 @@ class _WorkerDashboardScreenState
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF006B5E), Color(0xFF00897B)],
+          colors: [Color(0xFF054A29), Color(0xFF00897B)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(22),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF006B5E).withValues(alpha: 0.35),
+            color: const Color(0xFF054A29).withValues(alpha: 0.35),
             blurRadius: 18,
             offset: const Offset(0, 8),
           ),
@@ -501,7 +501,7 @@ class _WorkerDashboardScreenState
           child: Text(
             '$_newJobCount new',
             style: const TextStyle(
-              color: Color(0xFF006B5E),
+              color: Color(0xFF054A29),
               fontSize: 12,
               fontWeight: FontWeight.bold,
             ),
@@ -632,7 +632,7 @@ class _WorkerDashboardScreenState
                   const Text(
                     'Rs.',
                     style: TextStyle(
-                      color: Color(0xFF006B5E),
+                      color: Color(0xFF054A29),
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
                     ),
@@ -643,7 +643,7 @@ class _WorkerDashboardScreenState
                       '${_formatBudget(job.minBudget)} - ${_formatBudget(job.maxBudget)}',
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        color: Color(0xFF006B5E),
+                        color: Color(0xFF054A29),
                         fontWeight: FontWeight.bold,
                         fontSize: 13,
                       ),
@@ -688,12 +688,12 @@ class _WorkerDashboardScreenState
                       padding: const EdgeInsets.symmetric(
                           horizontal: 14, vertical: 8),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF006B5E),
+                        color: const Color(0xFF054A29),
                         borderRadius: BorderRadius.circular(10),
                         boxShadow: [
                           BoxShadow(
                             color:
-                                const Color(0xFF006B5E).withValues(alpha: 0.3),
+                                const Color(0xFF054A29).withValues(alpha: 0.3),
                             blurRadius: 8,
                             offset: const Offset(0, 3),
                           ),
@@ -751,7 +751,7 @@ class _WorkerDashboardScreenState
         type: BottomNavigationBarType.fixed,
         backgroundColor: colors.cardBg,
         elevation: 0,
-        selectedItemColor: const Color(0xFF006B5E),
+        selectedItemColor: const Color(0xFF054A29),
         unselectedItemColor: isDark ? const Color(0xFF64748B) : Colors.grey.shade400,
         selectedLabelStyle: const TextStyle(
             fontWeight: FontWeight.bold, fontSize: 12, height: 1.5),

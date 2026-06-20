@@ -184,7 +184,7 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: const Icon(Icons.visibility_rounded,
-                        color: Color(0xFFD3410A)),
+                        color: Color(0xFF2A9134)),
                   ),
                   title: const Text('View Profile Picture'),
                   onTap: () {
@@ -202,7 +202,7 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: const Icon(Icons.photo_library_rounded,
-                      color: Color(0xFF006B5E)),
+                      color: Color(0xFF054A29)),
                 ),
                 title: const Text('Choose from Gallery'),
                 onTap: () async {
@@ -226,7 +226,7 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
                     borderRadius: BorderRadius.circular(10),
                   ),
                     child: const Icon(Icons.camera_alt_rounded,
-                        color: Color(0xFFD3410A)),
+                        color: Color(0xFF2A9134)),
                 ),
                 title: const Text('Take a Photo'),
                 onTap: () async {
@@ -322,7 +322,7 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
                 Text('Profile updated successfully'),
               ],
             ),
-            backgroundColor: const Color(0xFF006B5E),
+            backgroundColor: const Color(0xFF054A29),
             behavior: SnackBarBehavior.floating,
             shape:
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -504,7 +504,7 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFFD3410A), Color(0xFFE8520B)],
+          colors: [Color(0xFF2A9134), Color(0xFF3FA34D)],
         ),
         borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(36),
@@ -593,7 +593,7 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
                   decoration: BoxDecoration(
                     gradient: (_profileImage == null && (stats.profileImageUrl == null || stats.profileImageUrl!.isEmpty))
                         ? const LinearGradient(
-                            colors: [Color(0xFFD3410A), Color(0xFF006B5E)],
+                            colors: [Color(0xFF2A9134), Color(0xFF054A29)],
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                           )
@@ -601,7 +601,7 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFFD3410A).withValues(alpha: 0.3),
+                        color: const Color(0xFF2A9134).withValues(alpha: 0.3),
                         blurRadius: 12,
                         offset: const Offset(0, 4),
                       ),
@@ -655,8 +655,8 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
                     padding: const EdgeInsets.all(5),
                     decoration: BoxDecoration(
                       color: _isEditing
-                          ? const Color(0xFF006B5E)
-                          : const Color(0xFFD3410A),
+                          ? const Color(0xFF054A29)
+                          : const Color(0xFF2A9134),
                       shape: BoxShape.circle,
                       border: Border.all(color: Colors.white, width: 1.5),
                     ),
@@ -812,7 +812,7 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
         labelText: label,
         prefixIcon: Icon(icon,
             size: 18,
-            color: isFieldEnabled ? const Color(0xFF006B5E) : colors.textSecondary),
+            color: isFieldEnabled ? const Color(0xFF054A29) : colors.textSecondary),
         prefixText: prefix,
         labelStyle: TextStyle(
           fontSize: 13,
@@ -831,7 +831,7 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide:
-          const BorderSide(color: Color(0xFF006B5E), width: 1.5),
+          const BorderSide(color: Color(0xFF054A29), width: 1.5),
         ),
         disabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -857,17 +857,17 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
       ),
       decoration: InputDecoration(
         labelText: 'Service Category',
-        prefixIcon: const Icon(Icons.category_rounded, size: 18, color: Color(0xFF006B5E)),
+        prefixIcon: const Icon(Icons.category_rounded, size: 18, color: Color(0xFF054A29)),
         filled: true,
         fillColor: const Color(0xFFF9FAFB),
         contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFD3410A), width: 1.0),
+          borderSide: const BorderSide(color: Color(0xFF2A9134), width: 1.0),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFD3410A), width: 2.0),
+          borderSide: const BorderSide(color: Color(0xFF2A9134), width: 2.0),
         ),
       ),
       items: const [
@@ -892,7 +892,7 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
   Widget _buildRateField() {
     final colors = context.sevaColors;
     final isDark  = context.isDark;
-    final color = _isEditing ? const Color(0xFF006B5E) : colors.textSecondary;
+    final color = _isEditing ? const Color(0xFF054A29) : colors.textSecondary;
     final fillColor = isDark
         ? (_isEditing ? colors.inputFill : colors.cardBg2)
         : (_isEditing ? const Color(0xFFF9FAFB) : const Color(0xFFF3F4F6));
@@ -938,7 +938,7 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF006B5E), width: 1.5),
+          borderSide: const BorderSide(color: Color(0xFF054A29), width: 1.5),
         ),
         disabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -974,7 +974,7 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
                       horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
                     border: Border.all(
-                        color: const Color(0xFF006B5E),
+                        color: const Color(0xFF054A29),
                         style: BorderStyle.solid),
                     borderRadius: BorderRadius.circular(20),
                   ),
@@ -982,12 +982,12 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(Icons.add_rounded,
-                          size: 14, color: Color(0xFF006B5E)),
+                          size: 14, color: Color(0xFF054A29)),
                       SizedBox(width: 4),
                       Text('Add',
                           style: TextStyle(
                               fontSize: 12,
-                              color: Color(0xFF006B5E),
+                              color: Color(0xFF054A29),
                               fontWeight: FontWeight.w600)),
                     ],
                   ),
@@ -1005,7 +1005,7 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
       decoration: BoxDecoration(
         color: const Color(0xFFE8F5F2),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFF006B5E).withValues(alpha: 0.3)),
+        border: Border.all(color: const Color(0xFF054A29).withValues(alpha: 0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -1013,7 +1013,7 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
           Text(
             skill,
             style: const TextStyle(
-              color: Color(0xFF006B5E),
+              color: Color(0xFF054A29),
               fontSize: 12,
               fontWeight: FontWeight.w600,
             ),
@@ -1023,7 +1023,7 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
             GestureDetector(
               onTap: () => setState(() => _skillTags.remove(skill)),
               child: const Icon(Icons.close_rounded,
-                  size: 13, color: Color(0xFF006B5E)),
+                  size: 13, color: Color(0xFF054A29)),
             ),
           ],
         ],
@@ -1058,7 +1058,7 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
               Navigator.pop(context);
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF006B5E),
+              backgroundColor: const Color(0xFF054A29),
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12)),
             ),
@@ -1099,7 +1099,7 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
     final colors = context.sevaColors;
     return Column(
       children: [
-        Icon(icon, color: const Color(0xFF006B5E), size: 22),
+        Icon(icon, color: const Color(0xFF054A29), size: 22),
         const SizedBox(height: 6),
         Text(
           value,
@@ -1132,7 +1132,7 @@ class _WorkerProfileScreenState extends ConsumerState<WorkerProfileScreen> {
       child: ElevatedButton(
         onPressed: _isSaving ? null : _saveProfile,
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF006B5E),
+          backgroundColor: const Color(0xFF054A29),
           shape:
           RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           elevation: 0,

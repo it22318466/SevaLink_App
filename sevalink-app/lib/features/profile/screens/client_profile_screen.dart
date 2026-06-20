@@ -122,7 +122,7 @@ class _ClientProfileScreenState extends ConsumerState<ClientProfileScreen> {
                         ),
                       ),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF006D5B),
+                        backgroundColor: const Color(0xFF054A29),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),
@@ -168,7 +168,7 @@ class _ClientProfileScreenState extends ConsumerState<ClientProfileScreen> {
         Container(
           height: 160,
           width: double.infinity,
-          color: const Color(0xFF006D5B),
+          color: const Color(0xFF054A29),
           child: SafeArea(
             bottom: false,
             child: Padding(
@@ -215,7 +215,7 @@ class _ClientProfileScreenState extends ConsumerState<ClientProfileScreen> {
               width: 100,
               height: 100,
               decoration: BoxDecoration(
-                color: const Color(0xFF006D5B),
+                color: const Color(0xFF054A29),
                 shape: BoxShape.circle,
                 border: Border.all(color: Colors.white, width: 4),
               ),
@@ -352,7 +352,7 @@ class _ClientProfileScreenState extends ConsumerState<ClientProfileScreen> {
           style: const TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
-            color: Color(0xFF006D5B),
+            color: Color(0xFF054A29),
           ),
         ),
         const SizedBox(height: 4),

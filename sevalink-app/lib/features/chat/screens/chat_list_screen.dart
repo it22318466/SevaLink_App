@@ -71,7 +71,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: [Color(0xFFD3410A), Color(0xFFE8520B)],
+                colors: [Color(0xFF2A9134), Color(0xFF3FA34D)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -137,7 +137,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
                       itemCount: conversations.length,
                       itemBuilder: (context, index) => _buildConversationTile(conversations[index]),
                     ),
-              loading: () => const Center(child: CircularProgressIndicator(color: Color(0xFFD3410A))),
+              loading: () => const Center(child: CircularProgressIndicator(color: Color(0xFF2A9134))),
               error: (e, _) => Center(child: Text('Error: $e')),
             ),
           ),
@@ -170,7 +170,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
                   height: 52,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: const Color(0xFFE8520B).withValues(alpha: 0.1),
+                    color: const Color(0xFF3FA34D).withValues(alpha: 0.1),
                   ),
                   child: Center(
                     child: Text(
@@ -178,7 +178,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 18,
-                        color: Color(0xFFD3410A),
+                        color: Color(0xFF2A9134),
                       ),
                     ),
                   ),
@@ -243,7 +243,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
                           margin: const EdgeInsets.only(left: 8),
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: const BoxDecoration(
-                            color: Color(0xFFD3410A),
+                            color: Color(0xFF2A9134),
                             shape: BoxShape.circle,
                           ),
                           child: Text(
@@ -287,7 +287,7 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
         type: BottomNavigationBarType.fixed,
         backgroundColor: colors.cardBg,
         elevation: 0,
-        selectedItemColor: const Color(0xFFD3410A),
+        selectedItemColor: const Color(0xFF2A9134),
         unselectedItemColor: isDark ? const Color(0xFF64748B) : Colors.grey.shade400,
         selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, height: 1.5),
         unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 12, height: 1.5),

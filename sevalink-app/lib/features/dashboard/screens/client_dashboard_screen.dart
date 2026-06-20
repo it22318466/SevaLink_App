@@ -190,7 +190,7 @@ class _ClientDashboardScreenState extends ConsumerState<ClientDashboardScreen> {
       padding: const EdgeInsets.only(top: 65, left: 24, right: 24),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [Color(0xFFD3410A), Color(0xFFE8520B)],
+          colors: [Color(0xFF2A9134), Color(0xFF3FA34D)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -265,7 +265,7 @@ class _ClientDashboardScreenState extends ConsumerState<ClientDashboardScreen> {
                               color: const Color(0xFFEF4444),
                               shape: BoxShape.circle,
                               border: Border.all(
-                                  color: const Color(0xFFD3410A), width: 2),
+                                  color: const Color(0xFF2A9134), width: 2),
                             ),
                           ),
                         ),
@@ -356,11 +356,11 @@ class _ClientDashboardScreenState extends ConsumerState<ClientDashboardScreen> {
               child: Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFD84315), // Deep Orange for visual weight
+                  color: const Color(0xFF137547), // Deep Orange for visual weight
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFFD84315).withValues(alpha: 0.3), // Colored shadow technique
+                      color: const Color(0xFF137547).withValues(alpha: 0.3), // Colored shadow technique
                       blurRadius: 15,
                       offset: const Offset(0, 8),
                     ),
@@ -517,7 +517,7 @@ class _ClientDashboardScreenState extends ConsumerState<ClientDashboardScreen> {
                 onTap: () => context.go('/client/jobs'),
                 child: const Text(
                   'View All',
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFFD3410A)),
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF2A9134)),
                 ),
               ),
             ],
@@ -583,7 +583,7 @@ class _ClientDashboardScreenState extends ConsumerState<ClientDashboardScreen> {
                               ),
                               Text(
                                 'LKR ${worker.hourlyRate}',
-                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFFD3410A)),
+                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF2A9134)),
                               ),
                             ],
                           ),
@@ -642,12 +642,12 @@ class _ClientDashboardScreenState extends ConsumerState<ClientDashboardScreen> {
                               child: const Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(Icons.verified_outlined, color: Color(0xFFD3410A), size: 16),
+                                  Icon(Icons.verified_outlined, color: Color(0xFF2A9134), size: 16),
                                   SizedBox(width: 6),
                                   Text(
                                     'Seva Verified',
                                     style: TextStyle(
-                                      color: Color(0xFFD3410A),
+                                      color: Color(0xFF2A9134),
                                       fontSize: 12,
                                       fontWeight: FontWeight.bold,
                                     ),

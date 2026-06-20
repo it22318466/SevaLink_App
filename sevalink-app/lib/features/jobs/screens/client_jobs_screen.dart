@@ -162,7 +162,7 @@ class _ClientJobsScreenState extends ConsumerState<ClientJobsScreen>
     });
 
     return Scaffold(
-      backgroundColor: const Color(0xFFE64A19), // Deep orange background for top
+      backgroundColor: const Color(0xFF2A9134), // Deep orange background for top
       body: Column(
         children: [
           SafeArea(
@@ -325,7 +325,7 @@ class _ClientJobsScreenState extends ConsumerState<ClientJobsScreen>
                               itemCount: jobs.length,
                               itemBuilder: (context, index) => _buildJobCard(jobs[index]),
                             ),
-                      loading: () => const Center(child: CircularProgressIndicator(color: Color(0xFFD3410A))),
+                      loading: () => const Center(child: CircularProgressIndicator(color: Color(0xFF2A9134))),
                       error: (e, _) => Center(child: Text('Error loading jobs: $e')),
                     ),
                   ),
@@ -567,7 +567,7 @@ class _ClientJobsScreenState extends ConsumerState<ClientJobsScreen>
                   child: Text(
                     'Rs. ${_formatBudget(budgetMin ?? 25000)} - Rs. ${_formatBudget(budgetMax ?? 35000)}',
                     style: const TextStyle(
-                      color: Color(0xFFD3410A), // Orange text
+                      color: Color(0xFF2A9134), // Orange text
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
                     ),

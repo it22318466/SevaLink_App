@@ -309,7 +309,7 @@ class _Header extends ConsumerWidget {
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [Color(0xFFD3410A), Color(0xFFE8520B)],
+          colors: [Color(0xFF2A9134), Color(0xFF3FA34D)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),

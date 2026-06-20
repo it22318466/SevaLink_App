@@ -382,7 +382,7 @@ class _WorkerJobTimelineScreenState extends ConsumerState<WorkerJobTimelineScree
               Navigator.pop(ctx);
               _submitComplaint(desc);
             },
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFD3410A)),
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2A9134)),
             child: const Text('Submit', style: TextStyle(color: Colors.white)),
           ),
         ],
@@ -456,7 +456,7 @@ class _WorkerJobTimelineScreenState extends ConsumerState<WorkerJobTimelineScree
 
     if (_isLoading) {
       return const Scaffold(
-        body: Center(child: CircularProgressIndicator(color: Color(0xFFD3410A))),
+        body: Center(child: CircularProgressIndicator(color: Color(0xFF2A9134))),
       );
     }
 
@@ -490,7 +490,7 @@ class _WorkerJobTimelineScreenState extends ConsumerState<WorkerJobTimelineScree
     return Scaffold(
       backgroundColor: colors.bodyBg,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFD3410A),
+        backgroundColor: const Color(0xFF2A9134),
         foregroundColor: Colors.white,
         title: Text(jobTitle, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
         leading: IconButton(
@@ -524,7 +524,7 @@ class _WorkerJobTimelineScreenState extends ConsumerState<WorkerJobTimelineScree
                   icon: const Icon(Icons.navigation_rounded, color: Colors.white),
                   label: const Text('Navigate in Google Maps app', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF006B5E),
+                    backgroundColor: const Color(0xFF054A29),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
@@ -603,7 +603,7 @@ class _WorkerJobTimelineScreenState extends ConsumerState<WorkerJobTimelineScree
             Polyline(
               polylineId: const PolylineId('route'),
               points: _routePoints.isNotEmpty ? _routePoints : [jobLatLng, workerLatLng],
-              color: const Color(0xFFD3410A),
+              color: const Color(0xFF2A9134),
               width: 4,
             ),
           },
@@ -635,7 +635,7 @@ class _WorkerJobTimelineScreenState extends ConsumerState<WorkerJobTimelineScree
                 const SizedBox(height: 10),
                 Row(
                   children: [
-                    const Icon(Icons.person, color: Color(0xFFD3410A), size: 18),
+                    const Icon(Icons.person, color: Color(0xFF2A9134), size: 18),
                     const SizedBox(width: 8),
                     Text(clientName, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14)),
                   ],
@@ -643,7 +643,7 @@ class _WorkerJobTimelineScreenState extends ConsumerState<WorkerJobTimelineScree
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    const Icon(Icons.location_on, color: Color(0xFFD3410A), size: 18),
+                    const Icon(Icons.location_on, color: Color(0xFF2A9134), size: 18),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -661,11 +661,11 @@ class _WorkerJobTimelineScreenState extends ConsumerState<WorkerJobTimelineScree
             const SizedBox(width: 12),
             Container(
               decoration: BoxDecoration(
-                color: const Color(0xFF006B5E).withValues(alpha: 0.1),
+                color: const Color(0xFF054A29).withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: IconButton(
-                icon: const Icon(Icons.phone, color: Color(0xFF006B5E)),
+                icon: const Icon(Icons.phone, color: Color(0xFF054A29)),
                 onPressed: () => _makeCall(clientPhone),
               ),
             ),
@@ -826,7 +826,7 @@ class _WorkerJobTimelineScreenState extends ConsumerState<WorkerJobTimelineScree
             icon: const Icon(Icons.directions_run_rounded, color: Colors.white),
             label: const Text('Start Journey (En Route)', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF006B5E),
+              backgroundColor: const Color(0xFF054A29),
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
@@ -842,7 +842,7 @@ class _WorkerJobTimelineScreenState extends ConsumerState<WorkerJobTimelineScree
             icon: const Icon(Icons.location_on, color: Colors.white),
             label: const Text('I Have Arrived (Manual Fallback)', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF006B5E),
+              backgroundColor: const Color(0xFF054A29),
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
@@ -855,7 +855,7 @@ class _WorkerJobTimelineScreenState extends ConsumerState<WorkerJobTimelineScree
             icon: const Icon(Icons.play_arrow_rounded, color: Colors.white),
             label: const Text('Start Job', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF006B5E),
+              backgroundColor: const Color(0xFF054A29),
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),

@@ -223,7 +223,7 @@ class _JobLocationPickerScreenState extends State<JobLocationPickerScreen> {
               offset: const Offset(0, -22), // Align pin tip with exact map center
               child: const Icon(
                 Icons.location_on_rounded,
-                color: Color(0xFFD3410A), // SevaLink Brand Orange
+                color: Color(0xFF2A9134), // SevaLink Brand Orange
                 size: 44,
               ),
             ),
@@ -256,13 +256,13 @@ class _JobLocationPickerScreenState extends State<JobLocationPickerScreen> {
                     decoration: InputDecoration(
                       hintText: 'Search location...',
                       hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 15),
-                      prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFFD3410A), size: 22),
+                      prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF2A9134), size: 22),
                       suffixIcon: _isSearching
                           ? const Padding(
                               padding: EdgeInsets.all(12.0),
                               child: SizedBox(
                                 width: 16, height: 16,
-                                child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFD3410A)),
+                                child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF2A9134)),
                               ),
                             )
                           : _searchController.text.isNotEmpty
@@ -344,7 +344,7 @@ class _JobLocationPickerScreenState extends State<JobLocationPickerScreen> {
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.location_pin, color: Color(0xFFD3410A), size: 24),
+                      const Icon(Icons.location_pin, color: Color(0xFF2A9134), size: 24),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Column(
@@ -387,7 +387,7 @@ class _JobLocationPickerScreenState extends State<JobLocationPickerScreen> {
                           });
                         },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF006D5B), // SevaLink Brand Teal
+                    backgroundColor: const Color(0xFF054A29), // SevaLink Brand Teal
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),

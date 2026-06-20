@@ -52,7 +52,7 @@ class _RateWorkerScreenState extends ConsumerState<RateWorkerScreen> {
       backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
         title: const Text('Rate Worker'),
-        backgroundColor: const Color(0xFFE64A19),
+        backgroundColor: const Color(0xFF2A9134),
         foregroundColor: Colors.white,
       ),
       body: SingleChildScrollView(
@@ -98,7 +98,7 @@ class _RateWorkerScreenState extends ConsumerState<RateWorkerScreen> {
               child: ElevatedButton(
                 onPressed: _isLoading ? null : _submitReview,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFE64A19),
+                  backgroundColor: const Color(0xFF2A9134),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 ),
                 child: _isLoading
