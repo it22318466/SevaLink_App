@@ -5,6 +5,7 @@ class Quotation extends Equatable {
   final int jobPostId;
   final String jobTitle;
   final int workerId;
+  final int workerUserId;
   final String workerName;
   final String workerAvatar; // Fallback or empty if not provided
   final String workerProfession;
@@ -24,6 +25,7 @@ class Quotation extends Equatable {
     required this.jobPostId,
     required this.jobTitle,
     required this.workerId,
+    required this.workerUserId,
     required this.workerName,
     required this.workerAvatar,
     required this.workerProfession,
@@ -48,6 +50,7 @@ class Quotation extends Equatable {
       jobPostId: jobJson['id'] ?? 0,
       jobTitle: jobJson['title'] ?? '',
       workerId: workerJson['id'] ?? 0,
+      workerUserId: userJson['id'] ?? 0,
       workerName: userJson['fullName'] ?? 'Unknown Worker',
       workerAvatar: userJson['profileImageUrl'] ?? '',
       workerProfession: workerJson['category'] is Map ? (workerJson['category']['name'] ?? 'Professional') : 'Professional',
@@ -77,6 +80,7 @@ class Quotation extends Equatable {
         id,
         jobPostId,
         workerId,
+        workerUserId,
         message,
         proposedPrice,
         eta,

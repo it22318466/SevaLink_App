@@ -177,6 +177,22 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const WorkerHomeScreen(),
       ),
       GoRoute(
+        path: '/worker/chat/:userId',
+        builder: (context, state) {
+          final userId = int.tryParse(state.pathParameters['userId'] ?? '0') ?? 0;
+          final extra = state.extra as Map<String, dynamic>?;
+          final name = extra?['name'] as String? ?? 'User';
+          final jobTitle = extra?['jobTitle'] as String?;
+          final jobBudget = extra?['jobBudget'] as String?;
+          return ChatScreen(
+            otherUserId: userId,
+            otherUserName: name,
+            jobTitle: jobTitle,
+            jobBudget: jobBudget,
+          );
+        },
+      ),
+      GoRoute(
         path: '/worker/job-details',
         builder: (context, state) {
           final job = state.extra as Job;

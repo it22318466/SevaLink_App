@@ -539,6 +539,31 @@ class _ClientJobTimelineScreenState extends ConsumerState<ClientJobTimelineScree
               ),
             ),
           ],
+          const SizedBox(width: 12),
+          Container(
+            decoration: BoxDecoration(
+              color: const Color(0xFFD3410A).withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: IconButton(
+              icon: const Icon(Icons.chat_bubble_outline, color: Color(0xFFD3410A)),
+              onPressed: () {
+                final userId = user['id'] ?? 0;
+                if (userId != 0) {
+                  context.push(
+                    '/client/chat/$userId',
+                    extra: {
+                      'name': name,
+                      'jobTitle': _jobDetails?['title'],
+                      'jobBudget': _jobDetails?['budgetMin'] != null
+                          ? 'Rs. ${_jobDetails!['budgetMin']} - ${_jobDetails!['budgetMax']}'
+                          : null,
+                    },
+                  );
+                }
+              },
+            ),
+          ),
         ],
       ),
     );
