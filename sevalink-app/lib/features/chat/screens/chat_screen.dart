@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../providers/chat_provider.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../data/models/chat_message.dart';
@@ -27,6 +28,136 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final bool _isTyping = false;
+  bool _isUploading = false;
+
+  bool _isImageUrl(String content) {
+    final lowercase = content.toLowerCase();
+    if (!lowercase.startsWith('http')) return false;
+    if (lowercase.contains('/api/public/uploads/')) return true;
+    return lowercase.endsWith('.jpg') ||
+        lowercase.endsWith('.jpeg') ||
+        lowercase.endsWith('.png') ||
+        lowercase.endsWith('.gif') ||
+        lowercase.endsWith('.webp');
+  }
+
+  Future<void> _pickAndSendImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 85,
+    );
+
+    if (pickedFile == null) return;
+
+    final bytes = await pickedFile.readAsBytes();
+    final sizeInMb = bytes.length / (1024 * 1024);
+    if (sizeInMb > 5.0) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Selected image exceeds the 5MB size limit.'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+      return;
+    }
+
+    setState(() {
+      _isUploading = true;
+    });
+
+    try {
+      final repository = ref.read(chatRepositoryProvider);
+      final imageUrl = await repository.uploadAttachment(
+        pickedFile.path,
+        pickedFile.name,
+        bytes,
+      );
+
+      await ref.read(chatNotifierProvider(widget.otherUserId).notifier).sendMessage(
+        receiverId: widget.otherUserId,
+        content: imageUrl,
+      );
+      _scrollToBottom();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to upload image: $e'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isUploading = false;
+        });
+      }
+    }
+  }
+
+  void _showFullscreenImage(String url) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.black,
+        insetPadding: EdgeInsets.zero,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            GestureDetector(
+              onTap: () => Navigator.pop(context),
+              child: Container(
+                color: Colors.black,
+                width: double.infinity,
+                height: double.infinity,
+              ),
+            ),
+            InteractiveViewer(
+              panEnabled: true,
+              boundaryMargin: const EdgeInsets.all(20),
+              minScale: 0.5,
+              maxScale: 4.0,
+              child: Image.network(
+                url,
+                fit: BoxFit.contain,
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return const Center(
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                    ),
+                  );
+                },
+              ),
+            ),
+            Positioned(
+              top: MediaQuery.of(context).padding.top + 12,
+              right: 16,
+              child: GestureDetector(
+                onTap: () => Navigator.pop(context),
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.5),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.close,
+                    color: Colors.white,
+                    size: 24,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   @override
   void dispose() {
@@ -273,6 +404,34 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               ),
             ),
 
+          // Uploading indicator
+          if (_isUploading)
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+              color: Colors.grey.shade100,
+              child: const Row(
+                children: [
+                  SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFD3410A)),
+                    ),
+                  ),
+                  SizedBox(width: 12),
+                  Text(
+                    'Sending image...',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF1F2937),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
           // Message input
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -283,7 +442,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 children: [
                   IconButton(
                     icon: Icon(Icons.attach_file, color: Colors.grey.shade600),
-                    onPressed: () {},
+                    onPressed: _pickAndSendImage,
                   ),
                   Expanded(
                     child: Container(
@@ -298,6 +457,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                           hintText: 'Type a message...',
                           hintStyle: TextStyle(color: Colors.grey.shade500),
                           border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                          disabledBorder: InputBorder.none,
+                          errorBorder: InputBorder.none,
                           contentPadding: const EdgeInsets.symmetric(vertical: 12),
                         ),
                         onChanged: (text) {
@@ -355,6 +518,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 
   Widget _buildMessageBubble(ChatMessageModel message, bool isSent) {
+    final isImage = _isImageUrl(message.content);
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Align(
@@ -363,7 +527,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           constraints: BoxConstraints(
             maxWidth: MediaQuery.of(context).size.width * 0.75,
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: isImage
+              ? const EdgeInsets.all(8)
+              : const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
             color: isSent ? Colors.white : const Color(0xFFF5F0E8),
             borderRadius: BorderRadius.only(
@@ -383,14 +549,60 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           child: Column(
             crossAxisAlignment: isSent ? CrossAxisAlignment.end : CrossAxisAlignment.start,
             children: [
-              Text(
-                message.content,
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: Color(0xFF1F2937),
-                  height: 1.4,
+              if (isImage)
+                GestureDetector(
+                  onTap: () => _showFullscreenImage(message.content),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.network(
+                      message.content,
+                      fit: BoxFit.cover,
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return Container(
+                          width: double.infinity,
+                          height: 180,
+                          color: Colors.grey.shade100,
+                          child: const Center(
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.5,
+                              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFD3410A)),
+                            ),
+                          ),
+                        );
+                      },
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade100,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.broken_image_outlined, color: Colors.grey),
+                              SizedBox(width: 8),
+                              Text(
+                                'Error loading image',
+                                style: TextStyle(color: Colors.grey, fontSize: 13),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                )
+              else
+                Text(
+                  message.content,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Color(0xFF1F2937),
+                    height: 1.4,
+                  ),
                 ),
-              ),
               const SizedBox(height: 4),
               Text(
                 _formatTime(message.createdAt),

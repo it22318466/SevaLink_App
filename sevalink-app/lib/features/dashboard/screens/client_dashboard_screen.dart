@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../providers/auth_provider.dart';
+import '../../../providers/notification_provider.dart';
 import 'search_screen.dart';
+import 'notifications_drawer.dart';
 
 // ============================================================================
 // DOMAIN MODELS (Mock Data Structures)
@@ -135,15 +137,19 @@ class _ClientDashboardScreenState extends ConsumerState<ClientDashboardScreen> {
       // Catch exceptions to ensure UI layout stability if provider fails
     }
 
+    final notificationState = ref.watch(notificationProvider);
+    final hasNewNotifications = notificationState.unreadCount > 0;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
+      endDrawer: const NotificationsDrawer(),
       body: SingleChildScrollView(
         child: Column(
           children: [
             Stack(
               clipBehavior: Clip.none,
               children: [
-                _buildHeader(displayFullName, displayLocation),
+                _buildHeader(displayFullName, displayLocation, hasNewNotifications),
 
                 // Cards overlap the header boundary
                 Padding(
@@ -170,7 +176,7 @@ class _ClientDashboardScreenState extends ConsumerState<ClientDashboardScreen> {
   // COMPONENT BUILDERS
   // ==========================================================================
 
-  Widget _buildHeader(String userName, String userLocation) {
+  Widget _buildHeader(String userName, String userLocation, bool hasNewNotifications) {
     return Container(
       height: 335,
       width: double.infinity,
@@ -216,30 +222,36 @@ class _ClientDashboardScreenState extends ConsumerState<ClientDashboardScreen> {
                 ),
               ),
               const SizedBox(width: 12),
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.15),
-                  shape: BoxShape.circle,
-                ),
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    const Icon(Icons.notifications_none_rounded, color: Colors.white, size: 28),
-                    Positioned(
-                      top: 2,
-                      right: 4,
-                      child: Container(
-                        width: 10,
-                        height: 10,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFE53935),
-                          shape: BoxShape.circle,
-                          border: Border.all(color: const Color(0xFFD3410A), width: 2),
+              GestureDetector(
+                onTap: () {
+                  Scaffold.of(context).openEndDrawer();
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      const Icon(Icons.notifications_none_rounded, color: Colors.white, size: 28),
+                      if (hasNewNotifications)
+                        Positioned(
+                          top: 2,
+                          right: 4,
+                          child: Container(
+                            width: 10,
+                            height: 10,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFE53935),
+                              shape: BoxShape.circle,
+                              border: Border.all(color: const Color(0xFFD3410A), width: 2),
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ],
