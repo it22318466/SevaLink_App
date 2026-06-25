@@ -383,7 +383,7 @@ class QuotesReceivedScreen extends ConsumerWidget {
                 child: OutlinedButton(
                   onPressed: () {
                     // Navigate to chat
-                    context.push('/client/chat/${quote.workerId}', extra: {'name': quote.workerName});
+                    context.push('/client/chat/${quote.workerUserId}', extra: {'name': quote.workerName});
                   },
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 14),

@@ -2,10 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../providers/auth_provider.dart';
-import '../../../data/models/notification_model.dart';
-import '../../../providers/notification_provider.dart';
 import 'search_screen.dart';
-import '../widgets/notifications_drawer.dart';
 
 // ============================================================================
 // DOMAIN MODELS (Mock Data Structures)
@@ -78,11 +75,11 @@ class _ClientDashboardScreenState extends ConsumerState<ClientDashboardScreen> {
 
   // --- Static Data Provisioning to Match Design Specifications ---
   final List<ServiceCategory> _categories = const [
-    ServiceCategory(title: 'Electrician', icon: Icons.bolt_outlined, bgColor: Color(0xFFE8F8EE), iconColor: Color(0xFF2A9134)),
-    ServiceCategory(title: 'Plumber', icon: Icons.plumbing_outlined, bgColor: Color(0xFFE8F8EE), iconColor: Color(0xFF2A9134)),
-    ServiceCategory(title: 'Carpenter', icon: Icons.handyman_outlined, bgColor: Color(0xFFE8F8EE), iconColor: Color(0xFFE65C00)),
-    ServiceCategory(title: 'Painter', icon: Icons.format_paint_outlined, bgColor: Color(0xFFE8F8EE), iconColor: Color(0xFF2A9134)),
-    ServiceCategory(title: 'Cleaner', icon: Icons.auto_awesome_outlined, bgColor: Color(0xFFE8F8EE), iconColor: Color(0xFF3FA34D)),
+    ServiceCategory(title: 'Electrician', icon: Icons.bolt_outlined, bgColor: Color(0xFFFEF5E5), iconColor: Color(0xFFD49A00)),
+    ServiceCategory(title: 'Plumber', icon: Icons.plumbing_outlined, bgColor: Color(0xFFE8F1FE), iconColor: Color(0xFF2962FF)),
+    ServiceCategory(title: 'Carpenter', icon: Icons.handyman_outlined, bgColor: Color(0xFFFEF0E5), iconColor: Color(0xFFE65C00)),
+    ServiceCategory(title: 'Painter', icon: Icons.format_paint_outlined, bgColor: Color(0xFFF4EBFE), iconColor: Color(0xFF9C27B0)),
+    ServiceCategory(title: 'Cleaner', icon: Icons.auto_awesome_outlined, bgColor: Color(0xFFFEE8F0), iconColor: Color(0xFFE91E63)),
     ServiceCategory(title: 'Mechanic', icon: Icons.settings_outlined, bgColor: Color(0xFFF0F4F8), iconColor: Color(0xFF455A64)),
     ServiceCategory(title: 'Gardener', icon: Icons.eco_outlined, bgColor: Color(0xFFE8F8EE), iconColor: Color(0xFF2E7D32)),
     ServiceCategory(title: 'Technician', icon: Icons.laptop_chromebook_outlined, bgColor: Color(0xFFE8EAF6), iconColor: Color(0xFF3F51B5)),
@@ -140,20 +137,13 @@ class _ClientDashboardScreenState extends ConsumerState<ClientDashboardScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
-      endDrawer: NotificationsDrawer(
-        onNotificationTap: (NotificationModel notif) {
-          if (notif.relatedJobId != null) {
-            context.push('/client/jobs/${notif.relatedJobId}/timeline');
-          }
-        },
-      ),
       body: SingleChildScrollView(
         child: Column(
           children: [
             Stack(
               clipBehavior: Clip.none,
               children: [
-                _buildHeader(context, ref, displayFullName, displayLocation),
+                _buildHeader(displayFullName, displayLocation),
 
                 // Cards overlap the header boundary
                 Padding(
@@ -180,17 +170,14 @@ class _ClientDashboardScreenState extends ConsumerState<ClientDashboardScreen> {
   // COMPONENT BUILDERS
   // ==========================================================================
 
-  Widget _buildHeader(BuildContext context, WidgetRef ref, String userName, String userLocation) {
-    final notificationState = ref.watch(notificationProvider);
-    final hasNewNotifications = notificationState.unreadCount > 0;
-    
+  Widget _buildHeader(String userName, String userLocation) {
     return Container(
       height: 335,
       width: double.infinity,
       padding: const EdgeInsets.only(top: 65, left: 24, right: 24),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [Color(0xFF2A9134), Color(0xFF3FA34D)],
+          colors: [Color(0xFFD3410A), Color(0xFFE8520B)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -212,20 +199,15 @@ class _ClientDashboardScreenState extends ConsumerState<ClientDashboardScreen> {
                   children: [
                     const Text(
                       'Hello,',
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w400,
-                      ),
+                      style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w400),
                     ),
-                    const SizedBox(height: 4),
                     Text(
                       userName,
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 26,
                         fontWeight: FontWeight.bold,
-                        letterSpacing: 0.3,
+                        letterSpacing: 0.5,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -234,43 +216,30 @@ class _ClientDashboardScreenState extends ConsumerState<ClientDashboardScreen> {
                 ),
               ),
               const SizedBox(width: 12),
-              Builder(
-                builder: (drawerContext) => GestureDetector(
-                  onTap: () {
-                    Scaffold.of(drawerContext).openEndDrawer();
-                  },
-                  child: Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(11),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    const Icon(Icons.notifications_none_rounded, color: Colors.white, size: 28),
+                    Positioned(
+                      top: 2,
+                      right: 4,
+                      child: Container(
+                        width: 10,
+                        height: 10,
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.15),
+                          color: const Color(0xFFE53935),
                           shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.notifications_none_rounded,
-                          color: Colors.white,
-                          size: 26,
+                          border: Border.all(color: const Color(0xFFD3410A), width: 2),
                         ),
                       ),
-                      if (hasNewNotifications)
-                        Positioned(
-                          top: 8,
-                          right: 8,
-                          child: Container(
-                            width: 10,
-                            height: 10,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFEF4444),
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                  color: const Color(0xFF2A9134), width: 2),
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -356,11 +325,11 @@ class _ClientDashboardScreenState extends ConsumerState<ClientDashboardScreen> {
               child: Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF137547), // Deep Orange for visual weight
+                  color: const Color(0xFFD84315), // Deep Orange for visual weight
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF137547).withValues(alpha: 0.3), // Colored shadow technique
+                      color: const Color(0xFFD84315).withValues(alpha: 0.3), // Colored shadow technique
                       blurRadius: 15,
                       offset: const Offset(0, 8),
                     ),
@@ -394,11 +363,11 @@ class _ClientDashboardScreenState extends ConsumerState<ClientDashboardScreen> {
               child: Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF2A9134), // High-contrast blue for separation of intent
+                  color: const Color(0xFF2962FF), // High-contrast blue for separation of intent
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF2A9134).withValues(alpha: 0.3),
+                      color: const Color(0xFF2962FF).withValues(alpha: 0.3),
                       blurRadius: 15,
                       offset: const Offset(0, 8),
                     ),
@@ -517,7 +486,7 @@ class _ClientDashboardScreenState extends ConsumerState<ClientDashboardScreen> {
                 onTap: () => context.go('/client/jobs'),
                 child: const Text(
                   'View All',
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF2A9134)),
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFFD3410A)),
                 ),
               ),
             ],
@@ -582,8 +551,8 @@ class _ClientDashboardScreenState extends ConsumerState<ClientDashboardScreen> {
                                 ),
                               ),
                               Text(
-                                'LKR ${worker.hourlyRate}',
-                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF2A9134)),
+                                'Rs. ${worker.hourlyRate}',
+                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFFD3410A)),
                               ),
                             ],
                           ),
@@ -615,7 +584,7 @@ class _ClientDashboardScreenState extends ConsumerState<ClientDashboardScreen> {
                                   } else {
                                     iconData = Icons.star_outline_rounded;
                                   }
-                                  return Icon(iconData, color: const Color(0xFF5BBA6F), size: 18);
+                                  return Icon(iconData, color: const Color(0xFFFFC107), size: 18);
                                 }),
                               ),
                               const SizedBox(width: 8),
@@ -636,18 +605,18 @@ class _ClientDashboardScreenState extends ConsumerState<ClientDashboardScreen> {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFE8F8EE), // Subtle tint of brand primary
+                                color: const Color(0xFFFFF0E5), // Subtle tint of brand primary
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: const Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(Icons.verified_outlined, color: Color(0xFF2A9134), size: 16),
+                                  Icon(Icons.verified_outlined, color: Color(0xFFD3410A), size: 16),
                                   SizedBox(width: 6),
                                   Text(
                                     'Seva Verified',
                                     style: TextStyle(
-                                      color: Color(0xFF2A9134),
+                                      color: Color(0xFFD3410A),
                                       fontSize: 12,
                                       fontWeight: FontWeight.bold,
                                     ),
@@ -674,11 +643,11 @@ class _ClientDashboardScreenState extends ConsumerState<ClientDashboardScreen> {
       child: Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: const Color(0xFF137547), // Deep trust blue
+          color: const Color(0xFF1A56DB), // Deep trust blue
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF137547).withValues(alpha: 0.3),
+              color: const Color(0xFF1A56DB).withValues(alpha: 0.3),
               blurRadius: 15,
               offset: const Offset(0, 8),
             ),
@@ -771,5 +740,3 @@ class _ClientDashboardScreenState extends ConsumerState<ClientDashboardScreen> {
     );
   }
 }
-
-

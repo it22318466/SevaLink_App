@@ -670,6 +670,31 @@ class _WorkerJobTimelineScreenState extends ConsumerState<WorkerJobTimelineScree
               ),
             ),
           ],
+          const SizedBox(width: 12),
+          Container(
+            decoration: BoxDecoration(
+              color: const Color(0xFFD3410A).withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: IconButton(
+              icon: const Icon(Icons.chat_bubble_outline, color: Color(0xFFD3410A)),
+              onPressed: () {
+                final clientId = client['id'] ?? 0;
+                if (clientId != 0) {
+                  context.push(
+                    '/worker/chat/$clientId',
+                    extra: {
+                      'name': clientName,
+                      'jobTitle': _jobDetails?['title'],
+                      'jobBudget': _jobDetails?['budgetMin'] != null
+                          ? 'Rs. ${_jobDetails!['budgetMin']} - ${_jobDetails!['budgetMax']}'
+                          : null,
+                    },
+                  );
+                }
+              },
+            ),
+          ),
         ],
       ),
     );

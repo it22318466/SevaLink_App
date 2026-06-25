@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../providers/chat_provider.dart';
+import '../../../providers/auth_provider.dart';
 import '../../../data/models/chat_message.dart';
 import '../../../core/themes/app_theme.dart';
 
@@ -151,8 +152,14 @@ class _ChatListScreenState extends ConsumerState<ChatListScreen> {
     final colors = Theme.of(context).extension<SevaLinkColors>() ?? SevaLinkColors.light;
     return InkWell(
       onTap: () {
-        context.push('/client/chat/${conversation.partnerId}',
-            extra: {'name': conversation.partnerName});
+        final isClient = ref.read(authProvider).user?.role == 'CLIENT';
+        if (isClient) {
+          context.push('/client/chat/${conversation.partnerId}',
+              extra: {'name': conversation.partnerName});
+        } else {
+          context.push('/worker/chat/${conversation.partnerId}',
+              extra: {'name': conversation.partnerName});
+        }
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),

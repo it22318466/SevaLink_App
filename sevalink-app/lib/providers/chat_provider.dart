@@ -29,6 +29,11 @@ class ChatNotifier extends Notifier<List<ChatMessageModel>> {
   List<ChatMessageModel> build() {
     _loadMessages();
     
+    // Invalidate conversation list to update unread badge counts on open
+    Future.microtask(() {
+      ref.invalidate(conversationsProvider);
+    });
+    
     // Poll every 5 seconds for new messages to keep chat in sync
     _timer = Timer.periodic(const Duration(seconds: 5), (_) {
       _loadMessages();
@@ -36,6 +41,8 @@ class ChatNotifier extends Notifier<List<ChatMessageModel>> {
     
     ref.onDispose(() {
       _timer?.cancel();
+      // Invalidate conversation list to update unread badge counts on close
+      ref.invalidate(conversationsProvider);
     });
     
     return [];
@@ -45,7 +52,11 @@ class ChatNotifier extends Notifier<List<ChatMessageModel>> {
     try {
       final repository = ref.read(chatRepositoryProvider);
       final messages = await repository.getConversation(otherUserId);
+      final lengthChanged = messages.length != state.length;
       state = messages;
+      if (lengthChanged) {
+        ref.invalidate(conversationsProvider);
+      }
     } catch (e) {
       // Handle error
     }

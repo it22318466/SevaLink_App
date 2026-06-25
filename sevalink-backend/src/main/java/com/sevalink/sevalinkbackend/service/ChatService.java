@@ -9,6 +9,8 @@ import com.sevalink.sevalinkbackend.model.User;
 import com.sevalink.sevalinkbackend.repository.ChatMessageRepository;
 import com.sevalink.sevalinkbackend.repository.JobPostRepository;
 import com.sevalink.sevalinkbackend.repository.UserRepository;
+import com.sevalink.sevalinkbackend.model.Notification;
+import com.sevalink.sevalinkbackend.repository.NotificationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -28,6 +30,9 @@ public class ChatService {
     @Autowired
     private JobPostRepository jobPostRepository;
 
+    @Autowired
+    private NotificationRepository notificationRepository;
+
     public ChatMessageDto sendMessage(String senderEmail, SendMessageRequest request) {
         User sender = userRepository.findByEmail(senderEmail)
                 .orElseThrow(() -> new RuntimeException("Sender not found"));
@@ -46,6 +51,24 @@ public class ChatService {
         }
 
         ChatMessage saved = chatMessageRepository.save(message);
+
+        // Notify receiver about new message
+        try {
+            Notification notification = new Notification();
+            notification.setUser(receiver);
+            if (message.getJobPost() != null) {
+                notification.setJobPost(message.getJobPost());
+            }
+            notification.setTitle("New Message from " + sender.getFullName());
+            notification.setMessage(message.getContent().length() > 60
+                    ? message.getContent().substring(0, 57) + "..."
+                    : message.getContent());
+            notificationRepository.save(notification);
+        } catch (Exception e) {
+            // Notification failures should not fail the message sending itself
+            System.err.println("Failed to create message notification: " + e.getMessage());
+        }
+
         return toDto(saved);
     }
 

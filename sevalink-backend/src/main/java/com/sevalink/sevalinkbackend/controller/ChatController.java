@@ -7,7 +7,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
-
+import org.springframework.web.multipart.MultipartFile;
+import com.sevalink.sevalinkbackend.service.FileStorageService;
+import java.util.Map;
 import java.util.List;
 
 @RestController
@@ -57,6 +59,23 @@ public class ChatController {
             return ResponseEntity.ok(ApiResponse.success("Conversations fetched", conversations));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+    @Autowired
+    private FileStorageService fileStorageService;
+
+    @PostMapping("/upload")
+    public ResponseEntity<?> uploadAttachment(@RequestParam("file") MultipartFile file) {
+        try {
+            String fileName = fileStorageService.storeFile(file);
+            String fileDownloadUri = org.springframework.web.servlet.support.ServletUriComponentsBuilder.fromCurrentContextPath()
+                    .path("/api/public/uploads/")
+                    .path(fileName)
+                    .toUriString();
+            return ResponseEntity.ok(Map.of("url", fileDownloadUri));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 }
