@@ -19,6 +19,8 @@ function Login() {
   const [forgotMode, setForgotMode] = useState(false);
   const [forgotMessage, setForgotMessage] = useState(null);
   const [forgotError, setForgotError] = useState(null);
+  const [toastMessage, setToastMessage] = useState(null);
+  const [showToast, setShowToast] = useState(false);
 
   if (isLoggedIn) {
     return <App onLogout={() => {
@@ -27,6 +29,9 @@ function Login() {
       setIsLoggedIn(false);
       setEmail('');
       setPassword('');
+      setToastMessage('Logout successful. Redirecting to login...');
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 1200);
     }} />;
   }
 
@@ -40,7 +45,7 @@ function Login() {
   <div className="absolute inset-0 bg-black/50"></div>
 
   {/* LOGIN CARD */}
- <div className="relative z-10 w-[360px] bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl px-10 py-6 shadow-2xl">
+ <div className="relative z-10 w-[380px] max-h-[calc(100vh-4rem)] overflow-y-auto bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl px-7 py-6 shadow-2xl">
 
     {/* LOGO */}
     <div className="flex flex-col items-center mb-2">
@@ -48,115 +53,117 @@ function Login() {
       <img
         src={logo}
         alt="logo"
-        className="w-48 h-48 object-contain mb-4"
+        className="w-28 h-28 object-contain mb-3"
       />
 
-      <h1 className="text-3xl font-extrabold text-white -mt-8">
+      <h1 className="text-2xl font-extrabold text-white -mt-4">
         SevaLink
       </h1>
 
-      <p className="text-orange-300 tracking-[5px] text-sm mt-1">
+      <p className="text-orange-300 tracking-[3px] text-sm mt-1">
         ADMIN PANEL
       </p>
 
     </div>
 
     {/* WELCOME */}
-    <div className="text-center mb-3">
+    <div className="text-center mb-2">
 
-      <h2 className="text-2xl font-bold text-white mb-3">
+      <h2 className="text-2xl font-bold text-white mb-2">
         Welcome Back
       </h2>
 
-      <p  className="text-gray-300 mt-1 text-[10px] leading-3">
-        Securely manage workers, bookings,
-        analytics, communication, and platform
-        operations through the SevaLink system.
+      <p className="text-gray-300 text-sm leading-5 mx-auto max-w-[280px]">
+        Manage workers, bookings, analytics,
+        communication, and platform operations.
       </p>
 
     </div>
 
-    {/* EMAIL */}
-    <div className="mb-5">
+    {!registerMode && !forgotMode && (
+      <>
+        {/* EMAIL */}
+        <div className="mb-4">
 
-      <label className="block text-white mb-2 font-medium">
-        Admin Email
-      </label>
+        <label className="block text-white mb-2 font-semibold text-base">
+            Admin Email
+          </label>
 
-      <input
-        value={email}
-        onChange={e => setEmail(e.target.value)}
-        type="email"
-        placeholder="Enter your email"
-        className="w-full p-3 rounded-2xl bg-white/20 border border-white/20 text-white placeholder-gray-300 focus:outline-none focus:border-orange-400"
-      />
+          <input
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            type="email"
+            placeholder="Enter your email"
+            className="w-full p-3 rounded-2xl bg-white/20 border border-white/20 text-white placeholder-gray-300 focus:outline-none focus:border-orange-400"
+          />
+
+        </div>
+
+        {/* PASSWORD */}
+        <div className="mb-4">
+
+          <label className="block text-white mb-2 font-semibold text-base">
+            Password
+          </label>
+
+          <input
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+            type="password"
+            placeholder="Enter your password"
+            className="w-full p-3 rounded-2xl bg-white/20 border border-white/20 text-white placeholder-gray-300 focus:outline-none focus:border-orange-400"
+          />
+
+        </div>
+
+        {/* OPTIONS */}
+        <div className="flex flex-col gap-3 mb-5 text-base">
+
+          <label className="flex items-center gap-3 text-gray-200 text-base">
+            Remember me
+            <input type="checkbox" className="h-5 w-5" />
+          </label>
+
+          <button
+        type="button"
+        onClick={() => {
+          setError(null);
+          setRegisterMode(false);
+          setRegisterError(null);
+          setRegisterMessage(null);
+          setForgotMessage(null);
+          setForgotError(null);
+          setForgotMode(true);
+        }}
+        className="text-orange-300 hover:text-orange-400 text-left"
+      >
+        Forgot Password?
+      </button>
+
+      <button
+        type="button"
+        onClick={() => {
+          setError(null);
+          setForgotMode(false);
+          setForgotMessage(null);
+          setForgotError(null);
+          setRegisterError(null);
+          setRegisterMessage(null);
+          setRegisterMode(true);
+        }}
+        className="text-orange-300 hover:text-orange-400 text-left"
+      >
+        Register Admin
+      </button>
 
     </div>
-
-    {/* PASSWORD */}
-    <div className="mb-5">
-
-      <label className="block text-white mb-2 font-medium">
-        Password
-      </label>
-
-      <input
-        value={password}
-        onChange={e => setPassword(e.target.value)}
-        type="password"
-        placeholder="Enter your password"
-        className="w-full p-4 rounded-2xl bg-white/20 border border-white/20 text-white placeholder-gray-300 focus:outline-none focus:border-orange-400"
-      />
-
-    </div>
-
-    {/* OPTIONS */}
-    <div className="flex items-center justify-between mb-7 text-sm">
-
-      <label className="flex items-center gap-2 text-gray-200">
-        <input type="checkbox" />
-        Remember me
-      </label>
-
-      <div className="space-x-4">
-        <button
-          type="button"
-          onClick={() => {
-            setError(null);
-            setRegisterMode(false);
-            setRegisterError(null);
-            setRegisterMessage(null);
-            setForgotMessage(null);
-            setForgotError(null);
-            setForgotMode(true);
-          }}
-          className="text-orange-300 hover:text-orange-400"
-        >
-          Forgot Password?
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            setError(null);
-            setForgotMode(false);
-            setForgotMessage(null);
-            setForgotError(null);
-            setRegisterError(null);
-            setRegisterMessage(null);
-            setRegisterMode(true);
-          }}
-          className="text-orange-300 hover:text-orange-400"
-        >
-          Register Admin
-        </button>
-      </div>
-
-    </div>
+      </>
+    )}
 
     {registerMode ? (
-      <div className="space-y-5 mb-5">
+      <div className="space-y-4 mb-4">
         <div>
-          <label className="block text-white mb-2 font-medium">Full Name</label>
+          <label className="block text-white mb-2 font-semibold text-base">Full Name</label>
           <input
             value={fullName}
             onChange={e => setFullName(e.target.value)}
@@ -166,7 +173,7 @@ function Login() {
           />
         </div>
         <div>
-          <label className="block text-white mb-2 font-medium">Email</label>
+          <label className="block text-white mb-2 font-semibold text-base">Email</label>
           <input
             value={email}
             onChange={e => setEmail(e.target.value)}
@@ -176,7 +183,17 @@ function Login() {
           />
         </div>
         <div>
-          <label className="block text-white mb-2 font-medium">Phone Number</label>
+          <label className="block text-white mb-2 font-semibold text-base">Password</label>
+          <input
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+            type="password"
+            placeholder="Enter password"
+            className="w-full p-3 rounded-2xl bg-white/20 border border-white/20 text-white placeholder-gray-300 focus:outline-none focus:border-orange-400"
+          />
+        </div>
+        <div>
+          <label className="block text-white mb-2 font-semibold text-base">Phone Number</label>
           <input
             value={phoneNumber}
             onChange={e => setPhoneNumber(e.target.value)}
@@ -186,7 +203,7 @@ function Login() {
           />
         </div>
         <div>
-          <label className="block text-white mb-2 font-medium">Birthday</label>
+          <label className="block text-white mb-2 font-semibold text-base">Birthday</label>
           <input
             value={birthday}
             onChange={e => setBirthday(e.target.value)}
@@ -208,13 +225,18 @@ function Login() {
                 password,
                 role: 'ADMIN'
               });
+              setToastMessage('Registration successful. Redirecting to dashboard...');
+              setShowToast(true);
               setRegisterMessage('Registration successful. Redirecting to dashboard...');
-              setIsLoggedIn(true);
+              setTimeout(() => {
+                setShowToast(false);
+                setIsLoggedIn(true);
+              }, 1000);
             } catch (e) {
               setRegisterError(e.message);
             }
           }}
-          className="w-full bg-green-500 hover:bg-green-600 text-white py-3 rounded-2xl font-bold text-base transition-all duration-300 shadow-xl"
+          className="w-full bg-green-500 hover:bg-green-600 text-white py-3 rounded-2xl font-bold text-sm transition-all duration-300 shadow-xl"
         >
           Register Admin
         </button>
@@ -225,16 +247,16 @@ function Login() {
             setRegisterError(null);
             setRegisterMessage(null);
           }}
-          className="mt-2 w-full text-white text-sm underline"
+          className="mt-1 w-full text-white text-[11px] underline"
         >
           Back to Sign In
         </button>
-        {registerMessage && <p className="text-green-300 mt-3">{registerMessage}</p>}
-        {registerError && <p className="text-red-300 mt-3">{registerError}</p>}
+        {registerMessage && <p className="text-green-300 mt-1 text-sm">{registerMessage}</p>}
+        {registerError && <p className="text-red-300 mt-1 text-sm">{registerError}</p>}
       </div>
     ) : forgotMode ? (
       <div className="mb-5">
-        <label className="block text-white mb-2 font-medium">
+        <label className="block text-white mb-2 font-semibold text-base">
           Enter your email to reset password
         </label>
         <input
@@ -275,27 +297,41 @@ function Login() {
         {forgotError && <p className="text-red-300 mt-3">{forgotError}</p>}
       </div>
     ) : (
-      <button
-        onClick={async () => {
-          try {
-            setError(null);
-            await apiLogin(email, password);
-            setIsLoggedIn(true);
-          } catch (e) {
-            setError(e.message);
-          }
-        }}
-        className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-2xl font-bold text-base transition-all duration-300 shadow-xl"
-      >
-        Login
-      </button>
+      <>
+        <button
+          onClick={async () => {
+            try {
+              setError(null);
+              setToastMessage('Login successful. Redirecting to dashboard...');
+              setShowToast(true);
+              await apiLogin(email, password);
+              setTimeout(() => {
+                setShowToast(false);
+                setIsLoggedIn(true);
+              }, 1000);
+            } catch (e) {
+              setShowToast(false);
+              setError(e.message);
+            }
+          }}
+          className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-2xl font-bold text-base transition-all duration-300 shadow-xl"
+        >
+          Login
+        </button>
+      </>
     )}
     {error && <p className="text-red-400 mt-2 text-center">{error}</p>}
     <p className="text-center text-gray-300 text-sm mt-6">
-  © 2026 SevaLink. All Rights Reserved.
-</p>
-
+      © 2026 SevaLink. All Rights Reserved.
+    </p>
   </div>
+
+  {showToast && (
+      <div className="fixed bottom-6 right-10 z-50 w-[320px] rounded-2xl bg-green-600/95 px-5 py-4 shadow-2xl text-white ring-1 ring-white/20">
+        <h3 className="font-semibold text-sm">Success</h3>
+        <p className="text-sm mt-1">{toastMessage}</p>
+      </div>
+    )}
 
 </div>
 

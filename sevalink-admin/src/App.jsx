@@ -24,17 +24,80 @@ function App({ onLogout }) {
   const [profileImageUrl, setProfileImageUrl] = useState("");
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState(null);
+  const [dashboardStats, setDashboardStats] = useState({
+    totalUsers: 0,
+    totalWorkers: 0,
+    totalJobs: 0,
+    onlineUsers: 0,
+  });
+  const [workers, setWorkers] = useState([]);
+  const [workerSearch, setWorkerSearch] = useState("");
+  const [filterStatus, setFilterStatus] = useState("All");
+  const [workerLoading, setWorkerLoading] = useState(false);
+
+  const loadAdminWorkers = async () => {
+    setWorkerLoading(true);
+    try {
+      const data = await api.getAdminWorkers();
+      setWorkers(data);
+    } catch (error) {
+      console.error("Failed to load admin workers", error);
+      setWorkers([]);
+    } finally {
+      setWorkerLoading(false);
+    }
+  };
 
   useEffect(() => {
-    // fetch current user if token exists
+    // Fetch current user and dashboard stats when the admin loads the app
     api.getCurrentUser().then(user => {
       if (user) {
         setAdminName(user.fullName || "");
         setAdminEmail(user.email || "");
         setProfileImageUrl(user.profileImageUrl || "");
       }
-    }).catch(()=>{});
+    }).catch(() => {});
+
+    api.getAdminDashboardStats()
+      .then(stats => setDashboardStats(stats))
+      .catch(() => {
+        setDashboardStats({
+          totalUsers: 0,
+          totalWorkers: 0,
+          totalJobs: 0,
+          onlineUsers: 0,
+        });
+      });
+
+    loadAdminWorkers();
   }, []);
+
+  const handleWorkerStatusChange = async (workerId, status) => {
+    try {
+      await api.updateWorkerStatus(workerId, status);
+      await loadAdminWorkers();
+    } catch (error) {
+      console.error("Unable to update worker status", error);
+    }
+  };
+
+  const filteredWorkers = workers.filter(worker => {
+    const matchesSearch = workerSearch.length === 0 ||
+      worker.fullName?.toLowerCase().includes(workerSearch.toLowerCase()) ||
+      worker.email?.toLowerCase().includes(workerSearch.toLowerCase()) ||
+      worker.skills?.toLowerCase().includes(workerSearch.toLowerCase()) ||
+      worker.category?.toLowerCase().includes(workerSearch.toLowerCase());
+
+    const matchesStatus = filterStatus === "All" || worker.status === filterStatus;
+    return matchesSearch && matchesStatus;
+  });
+
+  const workerCounts = {
+    total: workers.length,
+    pending: workers.filter(w => w.status === "PENDING" || w.status === "Pending").length,
+    verified: workers.filter(w => w.status === "VERIFIED" || w.status === "Verified").length,
+    rejected: workers.filter(w => w.status === "REJECTED" || w.status === "Rejected").length,
+  };
 
   const [activePage, setActivePage] = useState("dashboard");
   const [showFilter, setShowFilter] = useState(false);
@@ -60,69 +123,123 @@ const lineData = [
   { day: "Thu", users: 600 },
   { day: "Fri", users: 750 },
 ];
-  const workers = [
-  {
-    name: "Sunil Perera",
-    category: "Plumbing",
-    rating: "4.8",
-    status: "Verified",
-    jobs: 128,
-  },
 
-  {
-    name: "Kamal Fernando",
-    category: "Electrical",
-    rating: "4.6",
-    status: "Pending",
-    jobs: 96,
-  },
+  const [users, setUsers] = useState([]);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [userSearch, setUserSearch] = useState("");
+  const [userFilter, setUserFilter] = useState("All");
 
-  {
-    name: "Saman Kumara",
-    category: "Cleaning",
-    rating: "4.5",
-    status: "Rejected",
-    jobs: 52,
-  },
-];
-const totalWorkers = workers.length;
+  const loadUsers = async () => {
+    setUsersLoading(true);
+    try {
+      const data = await api.getAllUsers();
+      setUsers(data || []);
+    } catch (e) {
+      console.error('Failed to load users', e);
+      setUsers([]);
+    } finally {
+      setUsersLoading(false);
+    }
+  };
 
-const pendingWorkers = workers.filter(w => w.status === "Pending").length;
+  useEffect(() => {
+    loadUsers();
+  }, []);
 
-const verifiedWorkers = workers.filter(w => w.status === "Verified").length;
+  // Jobs state and actions
+  const [jobs, setJobs] = useState([]);
+  const [jobsLoading, setJobsLoading] = useState(false);
+  const [jobSearch, setJobSearch] = useState("");
+  const [jobFilter, setJobFilter] = useState("All");
 
-const rejectedWorkers = workers.filter(w => w.status === "Rejected").length;
-const users = [
+  const loadJobs = async () => {
+    setJobsLoading(true);
+    try {
+      const data = await api.getAllJobs();
+      setJobs(data || []);
+    } catch (e) {
+      console.error('Failed to load jobs', e);
+      setJobs([]);
+    } finally {
+      setJobsLoading(false);
+    }
+  };
 
-  {
-    name: "Nimal Perera",
-    role: "Client",
-    email: "nimal@gmail.com",
-    status: "Active",
-  },
+  useEffect(() => {
+    loadJobs();
+  }, []);
 
-  {
-    name: "Kasun Silva",
-    role: "Worker",
-    email: "kasun@gmail.com",
-    status: "Pending",
-  },
+  const handleViewJob = (job) => {
+    alert(JSON.stringify(job, null, 2));
+  };
 
-  {
-    name: "Admin User",
-    role: "Admin",
-    email: "admin@sevalink.com",
-    status: "Active",
-  },
+  const handleEditJob = async (job) => {
+    const newTitle = prompt('Job title', job.title || '');
+    if (newTitle == null) return;
+    try {
+      await api.updateJob(job.id, { title: newTitle });
+      await loadJobs();
+    } catch (e) {
+      console.error('Failed to update job', e);
+      alert('Update failed');
+    }
+  };
 
-  {
-    name: "Blocked User",
-    role: "Blocked",
-    email: "blocked@gmail.com",
-    status: "Blocked",
-  },
+  const handleDeleteJob = async (job) => {
+    if (!confirm(`Delete job ${job.title}?`)) return;
+    try {
+      await api.deleteJob(job.id);
+      await loadJobs();
+    } catch (e) {
+      console.error('Failed to delete job', e);
+      alert('Delete failed');
+    }
+  };
 
-];
+  const handleUpdateJobStatus = async (job, status) => {
+    try {
+      await api.updateJob(job.id, { status });
+      await loadJobs();
+    } catch (e) {
+      console.error('Failed to update job status', e);
+      alert('Status update failed');
+    }
+  };
+
+  const handleViewUser = (user) => {
+    // quick view - can be replaced with modal
+    alert(JSON.stringify(user, null, 2));
+  };
+
+  const handleEditUser = async (user) => {
+    const newName = prompt('Full name', user.fullName || '');
+    if (newName == null) return; // cancelled
+    try {
+      await api.updateUser(user.id, { fullName: newName });
+      await loadUsers();
+    } catch (e) {
+      console.error('Failed to update user', e);
+      alert('Update failed');
+    }
+  };
+
+  const handleBlockUser = async (user) => {
+    if (!confirm(`Block user ${user.email}?`)) return;
+    try {
+      await api.blockUser(user.id);
+      await loadUsers();
+    } catch (e) {
+      console.error('Failed to block user', e);
+      alert('Block failed');
+    }
+  };
+
+  const handleLogout = () => {
+    api.logout();
+    if (typeof onLogout === 'function') {
+      onLogout();
+    }
+  };
   // ================= DASHBOARD =================
   if (activePage === "dashboard") {
     return (
@@ -196,15 +313,7 @@ const users = [
   Settings
 </button>
 
-            <button
-              onClick={() => {
-                api.logout();
-                if (typeof onLogout === 'function') {
-                  onLogout();
-                }
-              }}
-              className="w-full text-left hover:bg-red-500 py-2 px-4 rounded-xl text-sm"
-            >
+            <button onClick={handleLogout} className="w-full text-left hover:bg-red-500 py-2 px-4 rounded-xl text-sm">
               Logout
             </button>
 
@@ -227,11 +336,11 @@ const users = [
     </p>
 
     <h1 className="text-5xl font-bold mt-3 text-gray-800">
-      8,542
+      {dashboardStats.totalUsers.toLocaleString()}
     </h1>
 
     <p className="text-green-500 mt-2 text-sm">
-      +12% this month
+      {dashboardStats.totalUsers === 0 ? 'No users yet' : '+ Active platform users'}
     </p>
   </div>
 
@@ -241,11 +350,11 @@ const users = [
     </p>
 
     <h1 className="text-5xl font-bold mt-3 text-gray-800">
-      2,145
+      {dashboardStats.totalWorkers.toLocaleString()}
     </h1>
 
     <p className="text-green-500 mt-2 text-sm">
-      +8% this month
+      {dashboardStats.totalWorkers === 0 ? 'No workers yet' : 'Verified worker accounts'}
     </p>
   </div>
 
@@ -255,11 +364,11 @@ const users = [
     </p>
 
     <h1 className="text-5xl font-bold mt-3 text-gray-800">
-      1,245
+      {dashboardStats.totalJobs.toLocaleString()}
     </h1>
 
     <p className="text-orange-500 mt-2 text-sm">
-      84 Pending Jobs
+      {dashboardStats.totalJobs === 0 ? 'No jobs posted yet' : 'Jobs currently in the system'}
     </p>
   </div>
 
@@ -269,11 +378,11 @@ const users = [
     </p>
 
     <h1 className="text-5xl font-bold mt-3 text-gray-800">
-      542
+      {dashboardStats.onlineUsers.toLocaleString()}
     </h1>
 
     <p className="text-green-500 mt-2 text-sm">
-      Active Now
+      {dashboardStats.onlineUsers === 0 ? 'No active users' : 'Active within last 10 min'}
     </p>
   </div>
   </div>
@@ -351,7 +460,7 @@ const users = [
   Settings
 </button>
 
-            <button className="w-full text-left hover:bg-red-500 py-2 px-4 rounded-xl text-sm">
+            <button onClick={handleLogout} className="w-full text-left hover:bg-red-500 py-2 px-4 rounded-xl text-sm">
               Logout
             </button>
 
@@ -370,28 +479,22 @@ const users = [
 
   <div className="bg-white p-6 rounded-3xl shadow-md border-l-4 border-orange-500">
     <p className="text-gray-500">Total Workers</p>
-    <h1 className="text-4xl font-bold mt-2">{workers.length}</h1>
+    <h1 className="text-4xl font-bold mt-2">{workerCounts.total}</h1>
   </div>
 
   <div className="bg-white p-6 rounded-3xl shadow-md border-l-4 border-yellow-400">
     <p className="text-gray-500">Pending Workers</p>
-    <h1 className="text-4xl font-bold mt-2">
-      {workers.filter(w => w.status === "Pending").length}
-    </h1>
+    <h1 className="text-4xl font-bold mt-2">{workerCounts.pending}</h1>
   </div>
 
   <div className="bg-white p-6 rounded-3xl shadow-md border-l-4 border-green-500">
     <p className="text-gray-500">Verified Workers</p>
-    <h1 className="text-4xl font-bold mt-2">
-      {workers.filter(w => w.status === "Verified").length}
-    </h1>
+    <h1 className="text-4xl font-bold mt-2">{workerCounts.verified}</h1>
   </div>
 
   <div className="bg-white p-6 rounded-3xl shadow-md border-l-4 border-red-500">
     <p className="text-gray-500">Rejected Workers</p>
-    <h1 className="text-4xl font-bold mt-2">
-      {workers.filter(w => w.status === "Rejected").length}
-    </h1>
+    <h1 className="text-4xl font-bold mt-2">{workerCounts.rejected}</h1>
   </div>
 
 </div>
@@ -401,6 +504,8 @@ const users = [
 
   <input
     type="text"
+    value={workerSearch}
+    onChange={e => setWorkerSearch(e.target.value)}
     placeholder="Search workers..."
     className="flex-1 border border-gray-300 px-5 py-4 rounded-2xl"
   />
@@ -474,29 +579,33 @@ const users = [
 
 <div className="flex gap-4 mb-6 flex-wrap">
 
-  <button className="bg-orange-500 text-white px-5 py-3 rounded-2xl">
-    All Workers
-  </button>
+<button
+        onClick={() => setFilterStatus("All")}
+        className={`px-5 py-3 rounded-2xl ${filterStatus === "All" ? "bg-orange-500 text-white" : "bg-gray-200"}`}>
+        All Workers
+      </button>
 
-  <button className="bg-yellow-400 px-5 py-3 rounded-2xl">
-    Plumbing
-  </button>
+      <button
+        onClick={() => setFilterStatus("VERIFIED")}
+        className={`px-5 py-3 rounded-2xl ${filterStatus === "VERIFIED" ? "bg-yellow-400" : "bg-gray-200"}`}>
+        Verified
+      </button>
 
-  <button className="bg-gray-500 text-white px-5 py-3 rounded-2xl">
-    Electrical
-  </button>
+      <button
+        onClick={() => setFilterStatus("PENDING")}
+        className={`px-5 py-3 rounded-2xl ${filterStatus === "PENDING" ? "bg-gray-500 text-white" : "bg-gray-200"}`}>
+        Pending
+      </button>
 
-  <button className="bg-green-500 text-white px-5 py-3 rounded-2xl">
-    Cleaning
-  </button>
+      <button
+        onClick={() => setFilterStatus("REJECTED")}
+        className={`px-5 py-3 rounded-2xl ${filterStatus === "REJECTED" ? "bg-green-500 text-white" : "bg-gray-200"}`}>
+        Rejected
+      </button>
 
-  <button className="bg-orange-300 px-5 py-3 rounded-2xl">
-    Carpentry
-  </button>
-
-  <button className="bg-gray-300 px-5 py-3 rounded-2xl">
-    Painting
-  </button>
+      <button className="bg-gray-300 px-5 py-3 rounded-2xl">
+        More Categories
+      </button>
 
   <select className="border border-gray-300 px-5 py-3 rounded-2xl bg-white">
     <option>More Categories</option>
@@ -521,36 +630,43 @@ const users = [
 
             </div>
 
-            <div className="grid grid-cols-7 items-center p-4 border-b">
-
-              <p>Sunil Perera</p>
-              <p>Plumbing</p>
-              <p>⭐ 4.8</p>
-
-              <span className="text-green-500">
-                Verified
-              </span>
-
-              <p>128</p>
-              <p>20 May 2024</p>
-
-              <div className="flex gap-2">
-
-                <button className="bg-blue-500 text-white px-3 py-1 rounded-lg">
-                  View
-                </button>
-
-                <button className="bg-green-500 text-white px-3 py-1 rounded-lg">
-                  Verify
-                </button>
-
-                <button className="bg-red-500 text-white px-3 py-1 rounded-lg">
-                  Reject
-                </button>
-
+            {workerLoading ? (
+            <div className="p-6 text-center text-gray-600">Loading workers...</div>
+          ) : filteredWorkers.length === 0 ? (
+            <div className="p-6 text-center text-gray-600">No workers found.</div>
+          ) : (
+            filteredWorkers.map(worker => (
+              <div key={worker.id} className="grid grid-cols-7 items-center p-4 border-b">
+                <div>
+                  <p className="font-semibold">{worker.fullName || "Unnamed"}</p>
+                  <p className="text-sm text-gray-500">{worker.email}</p>
+                </div>
+                <p>{worker.category || "Uncategorized"}</p>
+                <p>⭐ {worker.rating?.toFixed(1) || "0.0"}</p>
+                <span className={
+                  `px-3 py-1 rounded-full text-sm ${worker.status === "VERIFIED" ? "bg-green-100 text-green-700" : worker.status === "REJECTED" ? "bg-red-100 text-red-700" : "bg-yellow-100 text-yellow-700"}`
+                }>
+                  {worker.status}
+                </span>
+                <p>{worker.totalJobs ?? 0}</p>
+                <p>{worker.createdAt ? new Date(worker.createdAt).toLocaleDateString() : "-"}</p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleWorkerStatusChange(worker.id, "VERIFIED")}
+                    className="bg-green-500 text-white px-3 py-1 rounded-lg"
+                  >
+                    Verify
+                  </button>
+                  <button
+                    onClick={() => handleWorkerStatusChange(worker.id, "REJECTED")}
+                    className="bg-red-500 text-white px-3 py-1 rounded-lg"
+                  >
+                    Reject
+                  </button>
+                </div>
               </div>
-
-            </div>
+            ))
+          )}
 
           </div>
 
@@ -629,7 +745,7 @@ const users = [
   Settings
 </button>
 
-            <button className="w-full text-left hover:bg-red-500 py-2 px-4 rounded-xl text-sm">
+            <button onClick={handleLogout} className="w-full text-left hover:bg-red-500 py-2 px-4 rounded-xl text-sm">
               Logout
             </button>
 
@@ -647,30 +763,32 @@ const users = [
 
   <div className="bg-white p-6 rounded-3xl shadow-md">
     <p className="text-gray-500">Total Users</p>
-    <h1 className="text-5xl font-bold mt-3">8,542</h1>
+    <h1 className="text-5xl font-bold mt-3">{users.length}</h1>
   </div>
 
   <div className="bg-white p-6 rounded-3xl shadow-md">
     <p className="text-gray-500">Clients</p>
-    <h1 className="text-5xl font-bold text-orange-500 mt-3">5,200</h1>
+    <h1 className="text-5xl font-bold text-orange-500 mt-3">{users.filter(u => u.role === 'CLIENT').length}</h1>
   </div>
 
   <div className="bg-white p-6 rounded-3xl shadow-md">
     <p className="text-gray-500">Workers</p>
-    <h1 className="text-5xl font-bold text-green-500 mt-3">2,145</h1>
+    <h1 className="text-5xl font-bold text-green-500 mt-3">{users.filter(u => u.role === 'WORKER').length}</h1>
   </div>
 
   <div className="bg-white p-6 rounded-3xl shadow-md">
     <p className="text-gray-500">Blocked Users</p>
-    <h1 className="text-5xl font-bold text-red-500 mt-3">84</h1>
+    <h1 className="text-5xl font-bold text-red-500 mt-3">{users.filter(u => u.isActive === false).length}</h1>
   </div>
 
 </div>
 
-<div className="flex gap-4 mb-6">
+  <div className="flex gap-4 mb-6">
 
   <input
     type="text"
+    value={userSearch}
+    onChange={e => setUserSearch(e.target.value)}
     placeholder="Search users..."
     className="flex-1 border border-gray-300 px-5 py-4 rounded-2xl"
   />
@@ -680,23 +798,23 @@ const users = [
 
 <div className="flex gap-4 mb-6 flex-wrap">
 
-  <button className="bg-orange-500 text-white px-5 py-3 rounded-2xl">
+  <button onClick={() => setUserFilter('All')} className={`px-5 py-3 rounded-2xl ${userFilter==='All' ? 'bg-orange-500 text-white' : 'bg-gray-200'}`}>
     All Users
   </button>
 
-  <button className="bg-yellow-400 px-5 py-3 rounded-2xl">
+  <button onClick={() => setUserFilter('CLIENT')} className={`px-5 py-3 rounded-2xl ${userFilter==='CLIENT' ? 'bg-yellow-400' : 'bg-gray-200'}`}>
     Clients
   </button>
 
-  <button className="bg-green-500 text-white px-5 py-3 rounded-2xl">
+  <button onClick={() => setUserFilter('WORKER')} className={`px-5 py-3 rounded-2xl ${userFilter==='WORKER' ? 'bg-green-500 text-white' : 'bg-gray-200'}`}>
     Workers
   </button>
 
-  <button className="bg-gray-500 text-white px-5 py-3 rounded-2xl">
+  <button onClick={() => setUserFilter('ADMIN')} className={`px-5 py-3 rounded-2xl ${userFilter==='ADMIN' ? 'bg-gray-500 text-white' : 'bg-gray-200'}`}>
     Admins
   </button>
 
-  <button className="bg-red-500 text-white px-5 py-3 rounded-2xl">
+  <button onClick={() => setUserFilter('BLOCKED')} className={`px-5 py-3 rounded-2xl ${userFilter==='BLOCKED' ? 'bg-red-500 text-white' : 'bg-gray-200'}`}>
     Blocked
 
   </button>
@@ -715,35 +833,44 @@ const users = [
 
             </div>
 
-            <div className="grid grid-cols-6 items-center p-4 border-b">
-
-              <p>Nimal Perera</p>
-              <p>Client</p>
-              <p>nimal@gmail.com</p>
-
-              <span className="text-green-500">
-                Active
-              </span>
-
-              <p>15 May 2024</p>
-
-              <div className="flex gap-2">
-
-                <button className="bg-blue-500 text-white px-3 py-1 rounded-lg">
-                  View
-                </button>
-
-                <button className="bg-yellow-500 text-white px-3 py-1 rounded-lg">
-                  Edit
-                </button>
-
-                <button className="bg-red-500 text-white px-3 py-1 rounded-lg">
-                  Delete
-                </button>
-
-              </div>
-
-            </div>
+            {usersLoading ? (
+              <div className="p-6 text-center text-gray-600">Loading users...</div>
+            ) : users.length === 0 ? (
+              <div className="p-6 text-center text-gray-600">No users found.</div>
+            ) : (
+              users
+                .filter(u => {
+                  if (userFilter === 'BLOCKED') return u.isActive === false;
+                  if (userFilter === 'All') return true;
+                  if (['CLIENT','WORKER','ADMIN'].includes(userFilter)) return u.role === userFilter;
+                  return true;
+                })
+                .filter(u => {
+                  if (!userSearch) return true;
+                  const s = userSearch.toLowerCase();
+                  return (u.fullName && u.fullName.toLowerCase().includes(s)) ||
+                         (u.email && u.email.toLowerCase().includes(s));
+                })
+                .map(u => (
+                  <div key={u.id} className="grid grid-cols-6 items-center p-4 border-b">
+                    <div>
+                      <p className="font-semibold">{u.fullName}</p>
+                      <p className="text-sm text-gray-500">{u.email}</p>
+                    </div>
+                    <p>{u.role}</p>
+                    <p>{u.email}</p>
+                    <span className={u.isActive ? 'text-green-500' : 'text-red-500'}>
+                      {u.isActive ? 'Active' : 'Blocked'}
+                    </span>
+                    <p>{u.createdAt ? new Date(u.createdAt).toLocaleDateString() : '-'}</p>
+                    <div className="flex gap-2">
+                      <button onClick={() => handleViewUser(u)} className="bg-blue-500 text-white px-3 py-1 rounded-lg">View</button>
+                      <button onClick={() => handleEditUser(u)} className="bg-yellow-500 text-white px-3 py-1 rounded-lg">Edit</button>
+                      <button onClick={() => handleBlockUser(u)} className="bg-red-500 text-white px-3 py-1 rounded-lg">Block</button>
+                    </div>
+                  </div>
+                ))
+            )}
 
           </div>
 
@@ -820,7 +947,7 @@ if (activePage === "jobs") {
   Settings
 </button>
 
-    <button className="w-full text-left hover:bg-red-500 py-2 px-4 rounded-xl text-sm">
+    <button onClick={handleLogout} className="w-full text-left hover:bg-red-500 py-2 px-4 rounded-xl text-sm">
       Logout
     </button>
 
@@ -838,31 +965,24 @@ if (activePage === "jobs") {
 
         {/* Statistics Cards */}
         <div className="grid grid-cols-4 gap-6 mb-8">
-
           <div className="bg-white p-6 rounded-3xl shadow-md">
             <p className="text-gray-500">Total Jobs</p>
-            <h1 className="text-5xl font-bold mt-3">1,245</h1>
+            <h1 className="text-5xl font-bold mt-3">{jobs.length}</h1>
           </div>
 
           <div className="bg-white p-6 rounded-3xl shadow-md">
             <p className="text-gray-500">Pending</p>
-            <h1 className="text-5xl font-bold text-yellow-500 mt-3">
-              84
-            </h1>
+            <h1 className="text-5xl font-bold text-yellow-500 mt-3">{jobs.filter(j=> ['OPEN','PENDING','Pending','ASSIGNED'].includes(j.status)).length}</h1>
           </div>
 
           <div className="bg-white p-6 rounded-3xl shadow-md">
             <p className="text-gray-500">Completed</p>
-            <h1 className="text-5xl font-bold text-green-500 mt-3">
-              1,032
-            </h1>
+            <h1 className="text-5xl font-bold text-green-500 mt-3">{jobs.filter(j=> j.status === 'COMPLETED' || j.status === 'Completed').length}</h1>
           </div>
 
           <div className="bg-white p-6 rounded-3xl shadow-md">
             <p className="text-gray-500">Cancelled</p>
-            <h1 className="text-5xl font-bold text-red-500 mt-3">
-              129
-            </h1>
+            <h1 className="text-5xl font-bold text-red-500 mt-3">{jobs.filter(j=> j.status === 'CANCELLED' || j.status === 'Cancelled').length}</h1>
           </div>
 
         </div>
@@ -873,6 +993,8 @@ if (activePage === "jobs") {
 
           <input
             type="text"
+            value={jobSearch}
+            onChange={e => setJobSearch(e.target.value)}
             placeholder="Search jobs..."
             className="flex-1 border border-gray-300 px-5 py-4 rounded-2xl"
           />
@@ -882,19 +1004,19 @@ if (activePage === "jobs") {
         {/* Status Buttons */}
         <div className="flex gap-4 mb-6 flex-wrap">
 
-          <button className="bg-orange-500 text-white px-5 py-3 rounded-2xl">
+          <button onClick={() => setJobFilter('All')} className={`px-5 py-3 rounded-2xl ${jobFilter==='All' ? 'bg-orange-500 text-white' : 'bg-gray-200'}`}>
             All Jobs
           </button>
 
-          <button className="bg-yellow-400 px-5 py-3 rounded-2xl">
+          <button onClick={() => setJobFilter('PENDING')} className={`px-5 py-3 rounded-2xl ${jobFilter==='PENDING' ? 'bg-yellow-400' : 'bg-gray-200'}`}>
             Pending
           </button>
 
-          <button className="bg-green-500 text-white px-5 py-3 rounded-2xl">
+          <button onClick={() => setJobFilter('COMPLETED')} className={`px-5 py-3 rounded-2xl ${jobFilter==='COMPLETED' ? 'bg-green-500 text-white' : 'bg-gray-200'}`}>
             Completed
           </button>
 
-          <button className="bg-red-500 text-white px-5 py-3 rounded-2xl">
+          <button onClick={() => setJobFilter('CANCELLED')} className={`px-5 py-3 rounded-2xl ${jobFilter==='CANCELLED' ? 'bg-red-500 text-white' : 'bg-gray-200'}`}>
             Cancelled
           </button>
 
@@ -914,35 +1036,46 @@ if (activePage === "jobs") {
 
           </div>
 
-          <div className="grid grid-cols-6 items-center p-4 border-b">
-
-            <p>House Cleaning</p>
-            <p>Nimal</p>
-            <p>Saman</p>
-
-            <span className="text-green-500">
-              Completed
-            </span>
-
-            <p>15 May 2024</p>
-
-            <div className="flex gap-2">
-
-              <button className="bg-blue-500 text-white px-3 py-1 rounded-lg">
-                View
-              </button>
-
-              <button className="bg-yellow-500 text-white px-3 py-1 rounded-lg">
-                Edit
-              </button>
-
-              <button className="bg-red-500 text-white px-3 py-1 rounded-lg">
-                Delete
-              </button>
-
-            </div>
-
-          </div>
+          {jobsLoading ? (
+            <div className="p-6 text-center text-gray-600">Loading jobs...</div>
+          ) : jobs.length === 0 ? (
+            <div className="p-6 text-center text-gray-600">No jobs found.</div>
+          ) : (
+            jobs
+              .filter(j => {
+                if (jobFilter === 'All') return true;
+                if (jobFilter === 'PENDING') return ['OPEN','PENDING','Pending','ASSIGNED'].includes(j.status);
+                if (jobFilter === 'COMPLETED') return j.status === 'COMPLETED' || j.status === 'Completed';
+                if (jobFilter === 'CANCELLED') return j.status === 'CANCELLED' || j.status === 'Cancelled';
+                return true;
+              })
+              .filter(j => {
+                if (!jobSearch) return true;
+                const s = jobSearch.toLowerCase();
+                return (j.title && j.title.toLowerCase().includes(s)) ||
+                       (j.clientName && j.clientName.toLowerCase().includes(s)) ||
+                       (j.workerName && j.workerName.toLowerCase().includes(s));
+              })
+              .map(j => (
+                <div key={j.id} className="grid grid-cols-6 items-center p-4 border-b">
+                  <div>
+                    <p className="font-semibold">{j.title}</p>
+                    <p className="text-sm text-gray-500">{j.description}</p>
+                  </div>
+                  <p>{j.clientName || j.client?.fullName || '-'}</p>
+                  <p>{j.workerName || j.worker?.fullName || '-'}</p>
+                  <span className={j.status && (j.status === 'COMPLETED' || j.status === 'Completed') ? 'text-green-500' : j.status && (['OPEN','PENDING','Pending','ASSIGNED'].includes(j.status)) ? 'text-yellow-500' : 'text-red-500'}>
+                    {j.status}
+                  </span>
+                  <p>{j.createdAt ? new Date(j.createdAt).toLocaleDateString() : '-'}</p>
+                  <div className="flex gap-2">
+                    <button onClick={()=>handleViewJob(j)} className="bg-blue-500 text-white px-3 py-1 rounded-lg">View</button>
+                    <button onClick={()=>handleEditJob(j)} className="bg-yellow-500 text-white px-3 py-1 rounded-lg">Edit</button>
+                    <button onClick={()=>handleDeleteJob(j)} className="bg-red-500 text-white px-3 py-1 rounded-lg">Delete</button>
+                  </div>
+                </div>
+              ))
+          )}
 
         </div>
 
@@ -1025,7 +1158,7 @@ if (activePage === "chat") {
   Settings
 </button>
 
-          <button className="w-full text-left hover:bg-red-500 py-2 px-4 rounded-xl text-sm">
+          <button onClick={handleLogout} className="w-full text-left hover:bg-red-500 py-2 px-4 rounded-xl text-sm">
             Logout
           </button>
 
@@ -1318,7 +1451,7 @@ if (activePage === "analytics") {
   Settings
 </button>
 
-          <button className="w-full text-left hover:bg-red-500 py-2 px-4 rounded-xl text-sm">
+          <button onClick={handleLogout} className="w-full text-left hover:bg-red-500 py-2 px-4 rounded-xl text-sm">
             Logout
           </button>
 
@@ -1673,7 +1806,7 @@ if (activePage === "disputes") {
   Settings
 </button>
 
-          <button className="w-full text-left hover:bg-red-500 py-2 px-4 rounded-xl text-sm">
+          <button onClick={handleLogout} className="w-full text-left hover:bg-red-500 py-2 px-4 rounded-xl text-sm">
             Logout
           </button>
 
@@ -1986,7 +2119,7 @@ if (activePage === "settings") {
             Settings
           </button>
 
-          <button className="w-full text-left hover:bg-red-500 py-2 px-4 rounded-xl text-sm">
+          <button onClick={handleLogout} className="w-full text-left hover:bg-red-500 py-2 px-4 rounded-xl text-sm">
             Logout
           </button>
 
