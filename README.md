@@ -13,19 +13,19 @@ Sri Lanka's Service Marketplace — connecting clients with verified local worke
 ## Quick Start
 
 ### Backend
-cd sevalink-backend
+cd sevalink-backend:
 <br/>
 ./mvnw spring-boot:run
 
 
 ### Flutter App
-cd sevalink-app
+cd sevalink-app:
 <br/>
 flutter run
 
 
 ### Admin Panel
-cd sevalink-admin
+cd sevalink-admin:
 <br/>
 npm run dev
 
