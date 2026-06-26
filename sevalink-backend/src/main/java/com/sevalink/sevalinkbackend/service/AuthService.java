@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.UUID;
+import com.sevalink.sevalinkbackend.dto.UpdateProfileRequest;
 
 @Service
 public class AuthService {
@@ -217,6 +218,38 @@ public class AuthService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         return convertToDTO(user);
+    }
+
+    /**
+     * UPDATE PROFILE - Update current user's profile
+     */
+    @Transactional
+    public UserDTO updateProfile(String email, UpdateProfileRequest request) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // If email is being changed, ensure it's not taken
+        if (request.getEmail() != null && !request.getEmail().equals(user.getEmail())) {
+            if (userRepository.existsByEmail(request.getEmail())) {
+                throw new RuntimeException("Email already in use");
+            }
+            user.setEmail(request.getEmail());
+        }
+
+        if (request.getFullName() != null) user.setFullName(request.getFullName());
+        if (request.getPhoneNumber() != null) user.setPhoneNumber(request.getPhoneNumber());
+        if (request.getBirthday() != null) user.setBirthday(request.getBirthday());
+        if (request.getLocation() != null) user.setLocation(request.getLocation());
+        if (request.getProfileImageUrl() != null) user.setProfileImageUrl(request.getProfileImageUrl());
+
+        // Change password if requested
+        if (request.getNewPassword() != null && !request.getNewPassword().isBlank()) {
+            user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+        }
+
+        user.setUpdatedAt(LocalDateTime.now());
+        User saved = userRepository.save(user);
+        return convertToDTO(saved);
     }
 
     /**

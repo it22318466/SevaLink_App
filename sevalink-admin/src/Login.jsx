@@ -1,0 +1,305 @@
+import React, { useState } from "react";
+import App from "./App";
+import { login as apiLogin, forgotPassword, register as apiRegister } from "./api";
+import logo from "./assets/logo.png";
+import bgImage from "./assets/login-bg.png";
+
+function Login() {
+
+  const [isLoggedIn, setIsLoggedIn] = useState(() => !!localStorage.getItem('accessToken'));
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [birthday, setBirthday] = useState('');
+  const [registerError, setRegisterError] = useState(null);
+  const [registerMessage, setRegisterMessage] = useState(null);
+  const [registerMode, setRegisterMode] = useState(false);
+  const [error, setError] = useState(null);
+  const [forgotMode, setForgotMode] = useState(false);
+  const [forgotMessage, setForgotMessage] = useState(null);
+  const [forgotError, setForgotError] = useState(null);
+
+  if (isLoggedIn) {
+    return <App onLogout={() => {
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+      setIsLoggedIn(false);
+      setEmail('');
+      setPassword('');
+    }} />;
+  }
+
+  return (
+<div
+  className="h-screen w-full bg-cover bg-center flex items-center justify-center relative overflow-hidden"
+  style={{ backgroundImage: `url(${bgImage})` }}
+>
+
+  {/* DARK OVERLAY */}
+  <div className="absolute inset-0 bg-black/50"></div>
+
+  {/* LOGIN CARD */}
+ <div className="relative z-10 w-[360px] bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl px-10 py-6 shadow-2xl">
+
+    {/* LOGO */}
+    <div className="flex flex-col items-center mb-2">
+
+      <img
+        src={logo}
+        alt="logo"
+        className="w-48 h-48 object-contain mb-4"
+      />
+
+      <h1 className="text-3xl font-extrabold text-white -mt-8">
+        SevaLink
+      </h1>
+
+      <p className="text-orange-300 tracking-[5px] text-sm mt-1">
+        ADMIN PANEL
+      </p>
+
+    </div>
+
+    {/* WELCOME */}
+    <div className="text-center mb-3">
+
+      <h2 className="text-2xl font-bold text-white mb-3">
+        Welcome Back
+      </h2>
+
+      <p  className="text-gray-300 mt-1 text-[10px] leading-3">
+        Securely manage workers, bookings,
+        analytics, communication, and platform
+        operations through the SevaLink system.
+      </p>
+
+    </div>
+
+    {/* EMAIL */}
+    <div className="mb-5">
+
+      <label className="block text-white mb-2 font-medium">
+        Admin Email
+      </label>
+
+      <input
+        value={email}
+        onChange={e => setEmail(e.target.value)}
+        type="email"
+        placeholder="Enter your email"
+        className="w-full p-3 rounded-2xl bg-white/20 border border-white/20 text-white placeholder-gray-300 focus:outline-none focus:border-orange-400"
+      />
+
+    </div>
+
+    {/* PASSWORD */}
+    <div className="mb-5">
+
+      <label className="block text-white mb-2 font-medium">
+        Password
+      </label>
+
+      <input
+        value={password}
+        onChange={e => setPassword(e.target.value)}
+        type="password"
+        placeholder="Enter your password"
+        className="w-full p-4 rounded-2xl bg-white/20 border border-white/20 text-white placeholder-gray-300 focus:outline-none focus:border-orange-400"
+      />
+
+    </div>
+
+    {/* OPTIONS */}
+    <div className="flex items-center justify-between mb-7 text-sm">
+
+      <label className="flex items-center gap-2 text-gray-200">
+        <input type="checkbox" />
+        Remember me
+      </label>
+
+      <div className="space-x-4">
+        <button
+          type="button"
+          onClick={() => {
+            setError(null);
+            setRegisterMode(false);
+            setRegisterError(null);
+            setRegisterMessage(null);
+            setForgotMessage(null);
+            setForgotError(null);
+            setForgotMode(true);
+          }}
+          className="text-orange-300 hover:text-orange-400"
+        >
+          Forgot Password?
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setError(null);
+            setForgotMode(false);
+            setForgotMessage(null);
+            setForgotError(null);
+            setRegisterError(null);
+            setRegisterMessage(null);
+            setRegisterMode(true);
+          }}
+          className="text-orange-300 hover:text-orange-400"
+        >
+          Register Admin
+        </button>
+      </div>
+
+    </div>
+
+    {registerMode ? (
+      <div className="space-y-5 mb-5">
+        <div>
+          <label className="block text-white mb-2 font-medium">Full Name</label>
+          <input
+            value={fullName}
+            onChange={e => setFullName(e.target.value)}
+            type="text"
+            placeholder="Enter full name"
+            className="w-full p-3 rounded-2xl bg-white/20 border border-white/20 text-white placeholder-gray-300 focus:outline-none focus:border-orange-400"
+          />
+        </div>
+        <div>
+          <label className="block text-white mb-2 font-medium">Email</label>
+          <input
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            type="email"
+            placeholder="Enter email"
+            className="w-full p-3 rounded-2xl bg-white/20 border border-white/20 text-white placeholder-gray-300 focus:outline-none focus:border-orange-400"
+          />
+        </div>
+        <div>
+          <label className="block text-white mb-2 font-medium">Phone Number</label>
+          <input
+            value={phoneNumber}
+            onChange={e => setPhoneNumber(e.target.value)}
+            type="tel"
+            placeholder="Enter phone number"
+            className="w-full p-3 rounded-2xl bg-white/20 border border-white/20 text-white placeholder-gray-300 focus:outline-none focus:border-orange-400"
+          />
+        </div>
+        <div>
+          <label className="block text-white mb-2 font-medium">Birthday</label>
+          <input
+            value={birthday}
+            onChange={e => setBirthday(e.target.value)}
+            type="date"
+            className="w-full p-3 rounded-2xl bg-white/20 border border-white/20 text-white placeholder-gray-300 focus:outline-none focus:border-orange-400"
+          />
+        </div>
+        <button
+          type="button"
+          onClick={async () => {
+            try {
+              setRegisterError(null);
+              setRegisterMessage(null);
+              const user = await apiRegister({
+                fullName,
+                email,
+                phoneNumber,
+                birthday,
+                password,
+                role: 'ADMIN'
+              });
+              setRegisterMessage('Registration successful. Redirecting to dashboard...');
+              setIsLoggedIn(true);
+            } catch (e) {
+              setRegisterError(e.message);
+            }
+          }}
+          className="w-full bg-green-500 hover:bg-green-600 text-white py-3 rounded-2xl font-bold text-base transition-all duration-300 shadow-xl"
+        >
+          Register Admin
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setRegisterMode(false);
+            setRegisterError(null);
+            setRegisterMessage(null);
+          }}
+          className="mt-2 w-full text-white text-sm underline"
+        >
+          Back to Sign In
+        </button>
+        {registerMessage && <p className="text-green-300 mt-3">{registerMessage}</p>}
+        {registerError && <p className="text-red-300 mt-3">{registerError}</p>}
+      </div>
+    ) : forgotMode ? (
+      <div className="mb-5">
+        <label className="block text-white mb-2 font-medium">
+          Enter your email to reset password
+        </label>
+        <input
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          type="email"
+          placeholder="Enter your email"
+          className="w-full p-3 rounded-2xl bg-white/20 border border-white/20 text-white placeholder-gray-300 focus:outline-none focus:border-orange-400"
+        />
+        <button
+          type="button"
+          onClick={async () => {
+            try {
+              setForgotError(null);
+              setForgotMessage(null);
+              const message = await forgotPassword(email);
+              setForgotMessage(message);
+            } catch (e) {
+              setForgotError(e.message);
+            }
+          }}
+          className="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-2xl font-bold text-base transition-all duration-300 shadow-xl"
+        >
+          Send Reset Link
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setForgotMode(false);
+            setForgotMessage(null);
+            setForgotError(null);
+          }}
+          className="mt-2 w-full text-white text-sm underline"
+        >
+          Back to Sign In
+        </button>
+        {forgotMessage && <p className="text-green-300 mt-3">{forgotMessage}</p>}
+        {forgotError && <p className="text-red-300 mt-3">{forgotError}</p>}
+      </div>
+    ) : (
+      <button
+        onClick={async () => {
+          try {
+            setError(null);
+            await apiLogin(email, password);
+            setIsLoggedIn(true);
+          } catch (e) {
+            setError(e.message);
+          }
+        }}
+        className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-2xl font-bold text-base transition-all duration-300 shadow-xl"
+      >
+        Login
+      </button>
+    )}
+    {error && <p className="text-red-400 mt-2 text-center">{error}</p>}
+    <p className="text-center text-gray-300 text-sm mt-6">
+  © 2026 SevaLink. All Rights Reserved.
+</p>
+
+  </div>
+
+</div>
+
+  );
+}
+
+export default Login;
