@@ -4,6 +4,8 @@ import com.sevalink.sevalinkbackend.dto.*;
 import com.sevalink.sevalinkbackend.model.User;
 import com.sevalink.sevalinkbackend.repository.UserRepository;
 import com.sevalink.sevalinkbackend.security.JwtTokenProvider;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -15,6 +17,8 @@ import com.sevalink.sevalinkbackend.dto.UpdateProfileRequest;
 
 @Service
 public class AuthService {
+
+    private static final Logger logger = LoggerFactory.getLogger(AuthService.class);
 
     @Autowired
     private UserRepository userRepository;
@@ -140,7 +144,10 @@ public class AuthService {
         userRepository.save(user);
 
         // Send email with reset link
-        emailService.sendPasswordResetEmail(user.getEmail(), resetToken);
+        boolean emailSent = emailService.sendPasswordResetEmail(user.getEmail(), resetToken);
+        if (!emailSent) {
+            logger.warn("Password reset PIN was generated successfully but email delivery failed. PIN logged in server output.");
+        }
     }
 
     /**

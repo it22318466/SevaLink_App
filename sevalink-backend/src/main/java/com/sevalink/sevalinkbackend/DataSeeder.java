@@ -1,22 +1,27 @@
 package com.sevalink.sevalinkbackend;
 
-import com.sevalink.sevalinkbackend.model.Category;
-import com.sevalink.sevalinkbackend.model.User;
-import com.sevalink.sevalinkbackend.model.UserRole;
-import com.sevalink.sevalinkbackend.model.Worker;
-import com.sevalink.sevalinkbackend.model.WorkerStatus;
-import com.sevalink.sevalinkbackend.repository.CategoryRepository;
-import com.sevalink.sevalinkbackend.repository.UserRepository;
-import com.sevalink.sevalinkbackend.repository.WorkerRepository;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.List;
+import com.sevalink.sevalinkbackend.model.Category;
+import com.sevalink.sevalinkbackend.model.Complaint;
+import com.sevalink.sevalinkbackend.model.JobPost;
+import com.sevalink.sevalinkbackend.model.User;
+import com.sevalink.sevalinkbackend.model.UserRole;
+import com.sevalink.sevalinkbackend.model.Worker;
+import com.sevalink.sevalinkbackend.model.WorkerStatus;
+import com.sevalink.sevalinkbackend.repository.CategoryRepository;
+import com.sevalink.sevalinkbackend.repository.ComplaintRepository;
+import com.sevalink.sevalinkbackend.repository.JobPostRepository;
+import com.sevalink.sevalinkbackend.repository.UserRepository;
+import com.sevalink.sevalinkbackend.repository.WorkerRepository;
 
 @Component
 public class DataSeeder implements CommandLineRunner {
@@ -29,6 +34,12 @@ public class DataSeeder implements CommandLineRunner {
 
     @Autowired
     private WorkerRepository workerRepository;
+
+    @Autowired
+    private ComplaintRepository complaintRepository;
+
+    @Autowired
+    private JobPostRepository jobPostRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -79,6 +90,54 @@ public class DataSeeder implements CommandLineRunner {
             createWorkerSample("Nadeesha Silva", "nadeesha@sevalink.com", "+94773456789", "Carpentry", "Furniture repair, Door installation", 1300.0, 4.7, 74, WorkerStatus.VERIFIED, LocalDate.of(1993, 11, 15), "Negombo");
             createWorkerSample("Priya Wijesinghe", "priya@sevalink.com", "+94774567890", "Painting", "Interior painting, Wall finishing", 1000.0, 4.4, 68, WorkerStatus.PENDING, LocalDate.of(1996, 7, 20), "Matara");
             System.out.println("Seeded sample worker users and profiles.");
+        }
+
+        if (complaintRepository.count() == 0) {
+            User client = userRepository.findByEmail("client@example.com").orElseGet(() -> {
+                User newClient = new User();
+                newClient.setFullName("Sample Client");
+                newClient.setEmail("client@example.com");
+                newClient.setPhoneNumber("0770000001");
+                newClient.setPasswordHash(passwordEncoder.encode("Client@123"));
+                newClient.setRole(UserRole.CLIENT);
+                newClient.setBirthday(LocalDate.of(1995, 1, 1));
+                newClient.setIsPhoneVerified(true);
+                newClient.setIsEmailVerified(true);
+                newClient.setIsActive(true);
+                newClient.setCreatedAt(LocalDateTime.now());
+                newClient.setUpdatedAt(LocalDateTime.now());
+                return userRepository.save(newClient);
+            });
+
+            JobPost jobPost = jobPostRepository.findAll().stream().findFirst().orElseGet(() -> {
+                JobPost newJob = new JobPost();
+                newJob.setClient(client);
+                newJob.setTitle("Plumbing repair request");
+                newJob.setDescription("Need urgent plumbing repair at home.");
+                newJob.setLocationName("Colombo");
+                newJob.setBudgetMin(1500.0);
+                newJob.setBudgetMax(2500.0);
+                newJob.setUrgency("URGENT");
+                newJob.setStatus("OPEN");
+                newJob.setCreatedAt(LocalDateTime.now());
+                return jobPostRepository.save(newJob);
+            });
+
+            Complaint firstComplaint = new Complaint();
+            firstComplaint.setJobPost(jobPost);
+            firstComplaint.setFiledBy(client);
+            firstComplaint.setDescription("The worker requested payment before finishing the service and never responded.");
+            firstComplaint.setCreatedAt(LocalDateTime.now());
+            complaintRepository.save(firstComplaint);
+
+            Complaint secondComplaint = new Complaint();
+            secondComplaint.setJobPost(jobPost);
+            secondComplaint.setFiledBy(client);
+            secondComplaint.setDescription("I suspect this is a fake job posting and the client is trying to scam workers.");
+            secondComplaint.setCreatedAt(LocalDateTime.now());
+            complaintRepository.save(secondComplaint);
+
+            System.out.println("Seeded sample complaints for the admin reports page.");
         }
     }
 

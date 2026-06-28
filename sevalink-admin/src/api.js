@@ -164,6 +164,30 @@ export async function getAllJobs() {
   return body?.data ?? body ?? [];
 }
 
+export async function getAdminComplaints() {
+  const res = await fetch(`${BASE}/api/admin/complaints`, {
+    headers: { ...authHeaders() }
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok || body?.success === false) {
+    throw new Error(body?.message || 'Failed to load complaints');
+  }
+  return body?.data ?? [];
+}
+
+export async function updateComplaintStatus(complaintId, status) {
+  const res = await fetch(`${BASE}/api/admin/complaints/${complaintId}/status`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify({ status })
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok || body?.success === false) {
+    throw new Error(body?.message || 'Failed to update complaint status');
+  }
+  return body?.data ?? body;
+}
+
 export async function updateJob(jobId, payload) {
   const res = await fetch(`${BASE}/api/jobs/${jobId}`, {
     method: 'PUT',

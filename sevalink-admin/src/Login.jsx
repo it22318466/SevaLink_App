@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import App from "./App";
-import { login as apiLogin, forgotPassword, register as apiRegister } from "./api";
+import { login as apiLogin, forgotPassword, resetPassword, register as apiRegister } from "./api";
 import logo from "./assets/logo.png";
 import bgImage from "./assets/login-bg.png";
 
@@ -17,8 +17,14 @@ function Login() {
   const [registerMode, setRegisterMode] = useState(false);
   const [error, setError] = useState(null);
   const [forgotMode, setForgotMode] = useState(false);
+  const [resetMode, setResetMode] = useState(false);
+  const [resetToken, setResetToken] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [forgotMessage, setForgotMessage] = useState(null);
   const [forgotError, setForgotError] = useState(null);
+  const [resetMessage, setResetMessage] = useState(null);
+  const [resetError, setResetError] = useState(null);
   const [toastMessage, setToastMessage] = useState(null);
   const [showToast, setShowToast] = useState(false);
 
@@ -125,38 +131,41 @@ function Login() {
           </label>
 
           <button
-        type="button"
-        onClick={() => {
-          setError(null);
-          setRegisterMode(false);
-          setRegisterError(null);
-          setRegisterMessage(null);
-          setForgotMessage(null);
-          setForgotError(null);
-          setForgotMode(true);
-        }}
-        className="text-orange-300 hover:text-orange-400 text-left"
-      >
-        Forgot Password?
-      </button>
+            type="button"
+            onClick={() => {
+              setError(null);
+              setRegisterMode(false);
+              setRegisterError(null);
+              setRegisterMessage(null);
+              setForgotMessage(null);
+              setForgotError(null);
+              setResetMessage(null);
+              setResetError(null);
+              setResetMode(false);
+              setForgotMode(true);
+            }}
+            className="text-orange-300 hover:text-orange-400 text-left"
+          >
+            Forgot Password?
+          </button>
 
-      <button
-        type="button"
-        onClick={() => {
-          setError(null);
-          setForgotMode(false);
-          setForgotMessage(null);
-          setForgotError(null);
-          setRegisterError(null);
-          setRegisterMessage(null);
-          setRegisterMode(true);
-        }}
-        className="text-orange-300 hover:text-orange-400 text-left"
-      >
-        Register Admin
-      </button>
+          <button
+            type="button"
+            onClick={() => {
+              setError(null);
+              setForgotMode(false);
+              setForgotMessage(null);
+              setForgotError(null);
+              setRegisterError(null);
+              setRegisterMessage(null);
+              setRegisterMode(true);
+            }}
+            className="text-orange-300 hover:text-orange-400 text-left"
+          >
+            Register Admin
+          </button>
 
-    </div>
+      </div>
       </>
     )}
 
@@ -254,6 +263,90 @@ function Login() {
         {registerMessage && <p className="text-green-300 mt-1 text-sm">{registerMessage}</p>}
         {registerError && <p className="text-red-300 mt-1 text-sm">{registerError}</p>}
       </div>
+    ) : resetMode ? (
+      <div className="space-y-4 mb-5">
+        <div>
+          <label className="block text-white mb-2 font-semibold text-base">Reset PIN</label>
+          <input
+            value={resetToken}
+            onChange={e => setResetToken(e.target.value)}
+            type="text"
+            placeholder="Enter the PIN from your email"
+            className="w-full p-3 rounded-2xl bg-white/20 border border-white/20 text-white placeholder-gray-300 focus:outline-none focus:border-orange-400"
+          />
+        </div>
+        <div>
+          <label className="block text-white mb-2 font-semibold text-base">New Password</label>
+          <input
+            value={newPassword}
+            onChange={e => setNewPassword(e.target.value)}
+            type="password"
+            placeholder="Choose a new password"
+            className="w-full p-3 rounded-2xl bg-white/20 border border-white/20 text-white placeholder-gray-300 focus:outline-none focus:border-orange-400"
+          />
+        </div>
+        <div>
+          <label className="block text-white mb-2 font-semibold text-base">Confirm New Password</label>
+          <input
+            value={confirmPassword}
+            onChange={e => setConfirmPassword(e.target.value)}
+            type="password"
+            placeholder="Repeat new password"
+            className="w-full p-3 rounded-2xl bg-white/20 border border-white/20 text-white placeholder-gray-300 focus:outline-none focus:border-orange-400"
+          />
+        </div>
+        <button
+          type="button"
+          onClick={async () => {
+            try {
+              setResetError(null);
+              setResetMessage(null);
+              if (!resetToken.trim()) throw new Error('Reset PIN is required');
+              if (newPassword.length < 6) throw new Error('Password must be at least 6 characters');
+              if (newPassword !== confirmPassword) throw new Error('Passwords do not match');
+              await resetPassword(resetToken.trim(), newPassword);
+              setResetMessage('Password reset successful. Please sign in with your new password.');
+              setResetMode(false);
+              setForgotMode(false);
+              setPassword('');
+              setResetToken('');
+              setNewPassword('');
+              setConfirmPassword('');
+            } catch (e) {
+              setResetError(e.message);
+            }
+          }}
+          className="mt-4 w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-2xl font-bold text-base transition-all duration-300 shadow-xl"
+        >
+          Reset Password
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setResetMode(false);
+            setForgotMode(true);
+            setResetError(null);
+            setResetMessage(null);
+          }}
+          className="mt-2 w-full text-white text-sm underline"
+        >
+          I need a reset PIN instead
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setResetMode(false);
+            setForgotMode(false);
+            setResetError(null);
+            setResetMessage(null);
+          }}
+          className="mt-2 w-full text-white text-sm underline"
+        >
+          Back to Sign In
+        </button>
+        {resetMessage && <p className="text-green-300 mt-3">{resetMessage}</p>}
+        {resetError && <p className="text-red-300 mt-3">{resetError}</p>}
+      </div>
     ) : forgotMode ? (
       <div className="mb-5">
         <label className="block text-white mb-2 font-semibold text-base">
@@ -280,7 +373,7 @@ function Login() {
           }}
           className="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-2xl font-bold text-base transition-all duration-300 shadow-xl"
         >
-          Send Reset Link
+          Send Reset PIN
         </button>
         <button
           type="button"
@@ -292,6 +385,18 @@ function Login() {
           className="mt-2 w-full text-white text-sm underline"
         >
           Back to Sign In
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setForgotMode(false);
+            setResetMode(true);
+            setForgotError(null);
+            setForgotMessage(null);
+          }}
+          className="mt-2 w-full text-white text-sm underline"
+        >
+          I already have a PIN
         </button>
         {forgotMessage && <p className="text-green-300 mt-3">{forgotMessage}</p>}
         {forgotError && <p className="text-red-300 mt-3">{forgotError}</p>}
