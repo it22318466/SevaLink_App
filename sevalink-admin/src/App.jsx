@@ -897,7 +897,7 @@ const lineData = [
               <p>Worker</p>
               <p>Category</p>
               <p>Rating</p>
-              <p>Status</p>
+              <p className="text-center">Status</p>
               <p>Jobs</p>
               <p>Joined</p>
               <p>Actions</p>
@@ -917,9 +917,7 @@ const lineData = [
                 </div>
                 <p>{worker.category || "Uncategorized"}</p>
                 <p>⭐ {worker.rating?.toFixed(1) || "0.0"}</p>
-                <span className={
-                  `inline-flex w-fit items-center rounded-full px-10 py-1.5 text-sm font-medium ${worker.status === "VERIFIED" ? "bg-green-100 text-green-700" : worker.status === "REJECTED" ? "bg-red-100 text-red-700" : "bg-yellow-100 text-yellow-700"}`
-                }>
+                <span className={`inline-flex w-35 justify-center items-center rounded-full bg-opacity-100 px-3 py-1 text-sm font-medium ${worker.status === "VERIFIED" ? "bg-green-100 text-green-700" : worker.status === "REJECTED" ? "bg-red-100 text-red-700" : "bg-yellow-100 text-yellow-700"}`}>
                   {worker.status}
                 </span>
                 <p>{worker.totalJobs ?? 0}</p>
@@ -1169,7 +1167,7 @@ const lineData = [
               <p>User</p>
               <p>Role</p>
               <p>Email</p>
-              <p>Status</p>
+              <p className="text-center">Status</p>
               <p>Joined</p>
               <p>Actions</p>
 
@@ -1201,7 +1199,7 @@ const lineData = [
                     </div>
                     <p>{u.role}</p>
                     <p>{u.email}</p>
-                    <span className={u.isActive ? 'text-green-500' : 'text-red-500'}>
+                    <span className={`inline-flex w-32 justify-center items-center rounded-full px-3 py-1 text-sm font-medium ${u.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                       {u.isActive ? 'Active' : 'Blocked'}
                     </span>
                     <p>{u.createdAt ? new Date(u.createdAt).toLocaleDateString() : '-'}</p>
@@ -1532,7 +1530,7 @@ if (activePage === "jobs") {
             <p>Job</p>
             <p>Client</p>
             <p>Worker</p>
-            <p>Status</p>
+            <p className="text-center">Status</p>
             <p>Date</p>
             <p>Actions</p>
 
@@ -1566,7 +1564,7 @@ if (activePage === "jobs") {
                   </div>
                   <p>{j.clientName || j.client?.fullName || '-'}</p>
                   <p>{j.workerName || j.worker?.fullName || '-'}</p>
-                  <span className={j.status && (j.status === 'COMPLETED' || j.status === 'Completed') ? 'text-green-500' : j.status && (['OPEN','PENDING','Pending','ASSIGNED'].includes(j.status)) ? 'text-yellow-500' : 'text-red-500'}>
+                  <span className={`inline-flex w-36 justify-center items-center rounded-full px-3 py-1 text-sm font-medium ${j.status && (j.status === 'COMPLETED' || j.status === 'Completed') ? 'bg-green-100 text-green-700' : j.status && (['OPEN','PENDING','Pending','ASSIGNED'].includes(j.status)) ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>
                     {j.status}
                   </span>
                   <p>{j.createdAt ? new Date(j.createdAt).toLocaleDateString() : '-'}</p>
@@ -2559,7 +2557,7 @@ if (activePage === "disputes") {
                 <p>Job</p>
                 <p>Category</p>
                 <p>Priority</p>
-                <p>Status</p>
+                <p className="text-center">Status</p>
                 <p>Actions</p>
               </div>
 
@@ -2570,7 +2568,7 @@ if (activePage === "disputes") {
               ) : (
                 filteredComplaints.map((complaint) => {
                   const priorityClass = complaint.priority === "High" ? "text-red-500" : complaint.priority === "Medium" ? "text-yellow-500" : "text-green-500";
-                  const statusClass = complaint.status === "Resolved" ? "text-green-500" : complaint.status === "Investigating" ? "text-yellow-500" : "text-orange-500";
+                  const statusClass = complaint.status === "Resolved" ? "bg-green-100 text-green-700" : complaint.status === "Investigating" ? "bg-yellow-100 text-yellow-700" : complaint.status === "Suspended" ? "bg-red-100 text-red-700" : "bg-orange-100 text-orange-700";
                   return (
                     <div key={complaint.id} className="grid grid-cols-7 items-center p-4 border-b gap-2" style={{ minWidth: 900 }}>
                       <p>#{complaint.id}</p>
@@ -2578,7 +2576,7 @@ if (activePage === "disputes") {
                       <p>{complaint.jobTitle || `Job #${complaint.jobId || "?"}`}</p>
                       <p className="truncate">{complaint.category || "General"}</p>
                       <span className={`${priorityClass} font-bold`}>{complaint.priority || "Low"}</span>
-                      <span className={`${statusClass} font-bold`}>{complaint.status || "Pending"}</span>
+                      <span className={`inline-flex w-35 justify-center items-center rounded-full px-3 py-1 text-sm font-medium ${statusClass}`}>{complaint.status || "Pending"}</span>
                       <div className="flex gap-2">
                         <button
                           onClick={() => handleViewComplaint(complaint)}
