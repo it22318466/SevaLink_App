@@ -38,6 +38,7 @@ function App({ onLogout }) {
   const [workerStatusFilters, setWorkerStatusFilters] = useState([]);
   const [workerRatingFilters, setWorkerRatingFilters] = useState([]);
   const [workerJobFilters, setWorkerJobFilters] = useState([]);
+  const [workerViewModal, setWorkerViewModal] = useState(null);
 
   const loadAdminWorkers = async () => {
     setWorkerLoading(true);
@@ -83,6 +84,14 @@ function App({ onLogout }) {
     } catch (error) {
       console.error("Unable to update worker status", error);
     }
+  };
+
+  const handleViewWorker = (worker) => {
+    setWorkerViewModal(worker);
+  };
+
+  const closeWorkerViewModal = () => {
+    setWorkerViewModal(null);
   };
 
   const workerCategories = ["All", ...new Set(workers.map(worker => worker.category || "Uncategorized"))];
@@ -917,6 +926,12 @@ const lineData = [
                 <p>{worker.createdAt ? new Date(worker.createdAt).toLocaleDateString() : "-"}</p>
                 <div className="flex gap-2">
                   <button
+                    onClick={() => handleViewWorker(worker)}
+                    className="bg-blue-500 text-white px-3 py-1 rounded-lg"
+                  >
+                    View
+                  </button>
+                  <button
                     onClick={() => handleWorkerStatusChange(worker.id, "VERIFIED")}
                     className="bg-green-500 text-white px-3 py-1 rounded-lg"
                   >
@@ -934,6 +949,68 @@ const lineData = [
           )}
 
           </div>
+
+          {workerViewModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 py-6">
+              <div className="w-full max-w-2xl rounded-3xl bg-white p-6 shadow-2xl">
+                <div className="mb-6 flex items-start justify-between">
+                  <div>
+                    <p className="text-sm font-semibold uppercase tracking-wide text-orange-500">Worker profile</p>
+                    <h2 className="text-2xl font-bold text-gray-900">{workerViewModal.fullName || "Unnamed worker"}</h2>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={closeWorkerViewModal}
+                    className="rounded-full bg-gray-100 px-3 py-2 text-sm text-gray-600 hover:bg-gray-200"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="rounded-2xl bg-gray-50 p-4">
+                    <p className="text-sm font-semibold text-gray-500">Email</p>
+                    <p className="mt-1 font-medium text-gray-900">{workerViewModal.email || "—"}</p>
+                  </div>
+                  <div className="rounded-2xl bg-gray-50 p-4">
+                    <p className="text-sm font-semibold text-gray-500">Category</p>
+                    <p className="mt-1 font-medium text-gray-900">{workerViewModal.category || "Uncategorized"}</p>
+                  </div>
+                  <div className="rounded-2xl bg-gray-50 p-4">
+                    <p className="text-sm font-semibold text-gray-500">Phone</p>
+                    <p className="mt-1 font-medium text-gray-900">{workerViewModal.phoneNumber || "—"}</p>
+                  </div>
+                  <div className="rounded-2xl bg-gray-50 p-4">
+                    <p className="text-sm font-semibold text-gray-500">Status</p>
+                    <p className="mt-1 font-medium text-gray-900">{workerViewModal.status || "Pending"}</p>
+                  </div>
+                  <div className="rounded-2xl bg-gray-50 p-4">
+                    <p className="text-sm font-semibold text-gray-500">Rating</p>
+                    <p className="mt-1 font-medium text-gray-900">⭐ {workerViewModal.rating?.toFixed(1) || "0.0"}</p>
+                  </div>
+                  <div className="rounded-2xl bg-gray-50 p-4">
+                    <p className="text-sm font-semibold text-gray-500">Jobs completed</p>
+                    <p className="mt-1 font-medium text-gray-900">{workerViewModal.totalJobs ?? 0}</p>
+                  </div>
+                </div>
+
+                <div className="mt-4 rounded-2xl bg-gray-50 p-4">
+                  <p className="text-sm font-semibold text-gray-500">Skills</p>
+                  <p className="mt-1 font-medium text-gray-900">{workerViewModal.skills || "No skills listed yet."}</p>
+                </div>
+
+                <div className="mt-6 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={closeWorkerViewModal}
+                    className="rounded-2xl bg-gray-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-gray-800"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
         </div>
 
