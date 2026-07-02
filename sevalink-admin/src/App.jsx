@@ -918,7 +918,7 @@ const lineData = [
                 <p>{worker.category || "Uncategorized"}</p>
                 <p>⭐ {worker.rating?.toFixed(1) || "0.0"}</p>
                 <span className={
-                  `px-3 py-1 rounded-full text-sm ${worker.status === "VERIFIED" ? "bg-green-100 text-green-700" : worker.status === "REJECTED" ? "bg-red-100 text-red-700" : "bg-yellow-100 text-yellow-700"}`
+                  `inline-flex w-fit items-center rounded-full px-10 py-1.5 text-sm font-medium ${worker.status === "VERIFIED" ? "bg-green-100 text-green-700" : worker.status === "REJECTED" ? "bg-red-100 text-red-700" : "bg-yellow-100 text-yellow-700"}`
                 }>
                   {worker.status}
                 </span>
