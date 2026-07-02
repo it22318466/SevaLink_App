@@ -516,7 +516,7 @@ const lineData = [
   onClick={() => setActivePage("disputes")}
   className="w-full text-left hover:bg-gray-800 py-2 px-4 rounded-xl text-sm"
 >
-  Reports and Complaints 
+  Reports & Complaints 
 </button>
 
             <button
@@ -664,7 +664,7 @@ const lineData = [
   onClick={() => setActivePage("disputes")}
   className="w-full text-left hover:bg-gray-800 py-2 px-4 rounded-xl text-sm"
 >
-  reports and complaints 
+  Reports & Complaints 
 </button>
             <button
   onClick={() => setActivePage("settings")}
@@ -1075,7 +1075,7 @@ const lineData = [
   onClick={() => setActivePage("disputes")}
   className="w-full text-left hover:bg-gray-800 py-2 px-4 rounded-xl text-sm"
 >
-  Reports and Complaints 
+  Reports & Complaints 
 </button>
 
             <button
@@ -1438,7 +1438,7 @@ if (activePage === "jobs") {
   onClick={() => setActivePage("disputes")}
   className="w-full text-left hover:bg-gray-800 py-2 px-4 rounded-xl text-sm"
 >
-  Reports and Complaints 
+  Reports & Complaints 
 </button>
     <button
   onClick={() => setActivePage("settings")}
@@ -1792,7 +1792,7 @@ if (activePage === "chat") {
   onClick={() => setActivePage("disputes")}
   className="w-full text-left hover:bg-gray-800 py-2 px-4 rounded-xl text-sm"
 >
-  Reports and Complaints 
+  Reports & Complaints 
 </button>
           <button
   onClick={() => setActivePage("settings")}
@@ -2084,7 +2084,7 @@ if (activePage === "analytics") {
   onClick={() => setActivePage("disputes")}
   className="w-full text-left hover:bg-gray-800 py-2 px-4 rounded-xl text-sm"
 >
-  Reports and Complaints 
+  Reports & Complaints 
 </button>
 
           <button
